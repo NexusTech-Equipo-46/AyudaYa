@@ -426,3 +426,19 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# Secretos y configuración local
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Rider / JetBrains
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Supabase CLI (solo si lo usan)
+supabase/.temp/
