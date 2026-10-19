@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AyudaYa.Data/AyudaYa.Data.csproj" />
+  <Project Path="AyudaYa.Dominio/AyudaYa.Dominio.csproj" />
+  <Project Path="AyudaYa.Negocio/AyudaYa.Negocio.csproj" />
+  <Project Path="AyudaYa.Web/AyudaYa.Web.csproj" />
+</Solution>

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\AyudaYa.Negocio\AyudaYa.Negocio.csproj" />
+    <ProjectReference Include="..\AyudaYa.Data\AyudaYa.Data.csproj" />
+    <ProjectReference Include="..\AyudaYa.Dominio\AyudaYa.Dominio.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
