@@ -110,7 +110,9 @@
                     "</dl>" +
                     (c.latitud !== null && window.L
                         ? '<div id="mapa-centro" role="region" aria-label="Mapa con la ubicación de ' + A.escapar(c.nombre) + '"></div>'
-                        : '<p class="texto-suave" style="margin-top:1rem">Este centro no cargó su ubicación en el mapa.</p>') +
+                        : '<p class="texto-suave" style="margin-top:1rem">' +
+                            (c.latitud === null ? "Este centro no cargó su ubicación en el mapa." : "No se pudo cargar el mapa. Usá la dirección o “Cómo llegar”.") +
+                          "</p>") +
                     '<a class="boton boton-secundario" href="' + comoLlegar + '" target="_blank" rel="noopener">Cómo llegar<span class="visualmente-oculto"> (se abre en otra pestaña)</span></a>' +
                 "</section>" +
 
