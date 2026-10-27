@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Crear cuenta · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+</head>
+<body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">Prototipo navegable · Zona visitante · Datos ficticios</div>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" href="index.html" aria-label="AyudaYa, ir al inicio">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal">
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="mapa.html">Mapa de centros</a></li>
+                    <li><a href="login.html">Iniciar sesión</a></li>
+                    <li><a class="boton" href="registro.html" aria-current="page">Crear cuenta</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido" class="pagina-cuenta" tabindex="-1">
+        <div class="contenedor">
+            <div class="tarjeta" id="tarjeta-registro">
+                <h1>Crear cuenta</h1>
+                <p class="texto-suave">Con una sola cuenta podés pedir ayuda, sumarte como voluntario o representar a una organización. Eso lo elegís después, desde tu panel.</p>
+
+                <div class="alerta alerta-info" id="aviso-destino" hidden></div>
+
+                <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+
+                <form id="form-registro" novalidate>
+                    <div class="campo">
+                        <label for="nombre">Nombre y apellido</label>
+                        <input type="text" id="nombre" name="nombre" autocomplete="name" required aria-describedby="error-nombre">
+                        <p class="error-campo" id="error-nombre"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="email">Correo electrónico</label>
+                        <span class="ayuda" id="ayuda-email">Lo vas a usar para iniciar sesión.</span>
+                        <input type="email" id="email" name="email" autocomplete="email" inputmode="email" required aria-describedby="ayuda-email error-email">
+                        <p class="error-campo" id="error-email"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="dni">DNI <span class="opcional">(opcional)</span></label>
+                        <span class="ayuda" id="ayuda-dni">Con o sin puntos. Nunca se muestra en público.</span>
+                        <input type="text" id="dni" name="dni" inputmode="numeric" autocomplete="off" maxlength="12" aria-describedby="ayuda-dni error-dni">
+                        <p class="error-campo" id="error-dni"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="contrasena">Contraseña</label>
+                        <div class="con-boton">
+                            <input type="password" id="contrasena" name="contrasena" autocomplete="new-password" required aria-describedby="requisitos error-contrasena">
+                            <button type="button" class="boton-texto" data-mostrar="contrasena" aria-pressed="false">Mostrar<span class="visualmente-oculto"> contraseña</span></button>
+                        </div>
+                        <ul class="requisitos" id="requisitos">
+                            <li data-regla="largo">Al menos 8 caracteres</li>
+                            <li data-regla="mayuscula">Una letra mayúscula</li>
+                            <li data-regla="minuscula">Una letra minúscula</li>
+                            <li data-regla="numero">Un número</li>
+                        </ul>
+                        <p class="error-campo" id="error-contrasena"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="confirmacion">Repetí la contraseña</label>
+                        <input type="password" id="confirmacion" name="confirmacion" autocomplete="new-password" required aria-describedby="error-confirmacion">
+                        <p class="error-campo" id="error-confirmacion"></p>
+                    </div>
+
+                    <button type="submit" class="boton">Crear cuenta</button>
+                </form>
+
+                <p class="alternativa">¿Ya tenés cuenta? <a href="login.html" id="enlace-login">Iniciá sesión</a></p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="pie">
+        <div class="contenedor">
+            <p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p>
+            <p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p>
+        </div>
+    </footer>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/formularios.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const F = window.Formularios;
+
+            const para = new URLSearchParams(location.search).get("para");
+            const avisos = {
+                voluntario: "Primero creá tu cuenta. Después, desde tu panel, completás “Quiero ser voluntario” con tu ciudad, zona y teléfono.",
+                solicitar: "Primero creá tu cuenta. Después vas a poder cargar tu pedido de ayuda."
+            };
+            if (avisos[para]) {
+                const aviso = document.getElementById("aviso-destino");
+                aviso.innerHTML = A.iconos.info + "<p>" + avisos[para] + "</p>";
+                aviso.hidden = false;
+                document.getElementById("enlace-login").href = "login.html?volver=" + (para === "voluntario" ? "voluntario" : "nueva-solicitud");
+            }
+
+            const nombre = document.getElementById("nombre");
+            const email = document.getElementById("email");
+            const dni = document.getElementById("dni");
+            const contrasena = document.getElementById("contrasena");
+            const confirmacion = document.getElementById("confirmacion");
+
+            // Reglas de contraseña (a confirmar con la configuración de Identity).
+            const reglas = {
+                largo: (v) => v.length >= 8,
+                mayuscula: (v) => /[A-ZÁÉÍÓÚÑ]/.test(v),
+                minuscula: (v) => /[a-záéíóúñ]/.test(v),
+                numero: (v) => /\d/.test(v)
+            };
+            const itemsRequisitos = document.querySelectorAll("#requisitos li");
+
+            function actualizarRequisitos() {
+                itemsRequisitos.forEach((li) => {
+                    const cumple = reglas[li.dataset.regla](contrasena.value);
+                    li.classList.toggle("cumple", cumple);
+                    // El estado también se anuncia con texto, no solo con el tilde verde.
+                    let estado = li.querySelector(".visualmente-oculto");
+                    if (!estado) {
+                        estado = document.createElement("span");
+                        estado.className = "visualmente-oculto";
+                        li.append(estado);
+                    }
+                    estado.textContent = cumple ? " (cumplido)" : " (pendiente)";
+                });
+            }
+            contrasena.addEventListener("input", actualizarRequisitos);
+            actualizarRequisitos();
+
+            F.iniciar(document.getElementById("form-registro"), {
+                resumen: "resumen-errores",
+                validar() {
+                    const errores = [];
+                    const n = nombre.value.trim();
+                    if (!n) errores.push({ campo: nombre, mensaje: "Escribí tu nombre y apellido" });
+                    else if (n.length < 3) errores.push({ campo: nombre, mensaje: "El nombre y apellido es demasiado corto" });
+
+                    const e = email.value.trim();
+                    if (!e) errores.push({ campo: email, mensaje: "Escribí tu correo electrónico" });
+                    else if (!F.EMAIL.test(e)) errores.push({ campo: email, mensaje: "Escribí un correo con el formato nombre@ejemplo.com" });
+
+                    // Igual que la base: 6 a 9 dígitos. Aceptamos que lo escriban con puntos.
+                    const d = dni.value.replace(/[.\s]/g, "");
+                    if (d && !/^\d{6,9}$/.test(d)) errores.push({ campo: dni, mensaje: "El DNI tiene que tener entre 6 y 9 números" });
+
+                    const p = contrasena.value;
+                    if (!p) errores.push({ campo: contrasena, mensaje: "Elegí una contraseña" });
+                    else if (!Object.values(reglas).every((r) => r(p))) errores.push({ campo: contrasena, mensaje: "La contraseña no cumple todos los requisitos" });
+
+                    if (!confirmacion.value) errores.push({ campo: confirmacion, mensaje: "Repetí la contraseña" });
+                    else if (p && confirmacion.value !== p) errores.push({ campo: confirmacion, mensaje: "Las contraseñas no coinciden" });
+
+                    return errores;
+                },
+                alEnviar() {
+                    const siguiente = para === "voluntario"
+                        ? "completar “Quiero ser voluntario” (<code>/voluntariado</code>)"
+                        : para === "solicitar"
+                            ? "cargar tu pedido en Nueva solicitud (<code>/solicitudes/nueva</code>)"
+                            : "tu panel personal (<code>/panel</code>)";
+                    F.mostrarExito(document.getElementById("tarjeta-registro"),
+                        '<div class="alerta alerta-exito">' + A.iconos.ok +
+                        "<div><h1>Cuenta creada</h1>" +
+                        "<p>¡Listo, " + A.escapar(nombre.value.trim().split(/\s+/)[0]) + "! En la aplicación real ahora irías a " + siguiente + ".</p></div></div>" +
+                        '<p class="alternativa"><a href="index.html">Volver al inicio del prototipo</a></p>');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iniciar sesión · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+</head>
+<body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">Prototipo navegable · Zona visitante · Datos ficticios</div>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" href="index.html" aria-label="AyudaYa, ir al inicio">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal">
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="mapa.html">Mapa de centros</a></li>
+                    <li><a href="login.html" aria-current="page">Iniciar sesión</a></li>
+                    <li><a class="boton" href="registro.html">Crear cuenta</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido" class="pagina-cuenta" tabindex="-1">
+        <div class="contenedor">
+            <div class="tarjeta" id="tarjeta-login">
+                <h1>Iniciar sesión</h1>
+
+                <div class="alerta alerta-info" id="aviso-destino" hidden></div>
+
+                <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+
+                <form id="form-login" novalidate>
+                    <div class="campo">
+                        <label for="email">Correo electrónico</label>
+                        <input type="email" id="email" name="email" autocomplete="email" inputmode="email" required aria-describedby="error-email">
+                        <p class="error-campo" id="error-email"></p>
+                    </div>
+
+                    <div class="campo">
+                        <label for="contrasena">Contraseña</label>
+                        <div class="con-boton">
+                            <input type="password" id="contrasena" name="contrasena" autocomplete="current-password" required aria-describedby="error-contrasena">
+                            <button type="button" class="boton-texto" data-mostrar="contrasena" aria-pressed="false">Mostrar<span class="visualmente-oculto"> contraseña</span></button>
+                        </div>
+                        <p class="error-campo" id="error-contrasena"></p>
+                    </div>
+
+                    <div class="fila">
+                        <label class="check"><input type="checkbox" name="recordarme"> Recordarme en este dispositivo</label>
+                        <a href="#" id="olvide">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    <p id="nota-olvide" class="texto-suave" role="status"></p>
+
+                    <button type="submit" class="boton">Iniciar sesión</button>
+                </form>
+
+                <p class="alternativa">¿Todavía no tenés cuenta? <a href="registro.html" id="enlace-registro">Creá una</a></p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="pie">
+        <div class="contenedor">
+            <p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p>
+            <p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p>
+        </div>
+    </footer>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/formularios.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const F = window.Formularios;
+
+            // A dónde iría después de iniciar sesión (ej: desde "Pedir ayuda").
+            const destinos = {
+                "nueva-solicitud": {
+                    aviso: "Para pedir ayuda necesitás iniciar sesión. Así podemos avisarte cuando alguien tome tu solicitud. Tu dirección y teléfono solo los ve quien te asista.",
+                    ruta: "/solicitudes/nueva",
+                    nombre: "Nueva solicitud"
+                },
+                "voluntario": {
+                    aviso: "Para sumarte como voluntario necesitás iniciar sesión.",
+                    ruta: "/voluntariado",
+                    nombre: "Quiero ser voluntario"
+                }
+            };
+            const volver = new URLSearchParams(location.search).get("volver");
+            const destino = destinos[volver] || { ruta: "/panel", nombre: "tu panel personal" };
+
+            if (destinos[volver]) {
+                const aviso = document.getElementById("aviso-destino");
+                aviso.innerHTML = A.iconos.info + "<p>" + destino.aviso + "</p>";
+                aviso.hidden = false;
+                document.getElementById("enlace-registro").href = "registro.html?para=" + (volver === "voluntario" ? "voluntario" : "solicitar");
+            }
+
+            document.getElementById("olvide").addEventListener("click", (e) => {
+                e.preventDefault();
+                document.getElementById("nota-olvide").textContent =
+                    "Prototipo: la recuperación de contraseña es una pantalla de Identity que todavía no está diseñada.";
+            });
+
+            const email = document.getElementById("email");
+            const contrasena = document.getElementById("contrasena");
+
+            F.iniciar(document.getElementById("form-login"), {
+                resumen: "resumen-errores",
+                validar() {
+                    const errores = [];
+                    const v = email.value.trim();
+                    if (!v) errores.push({ campo: email, mensaje: "Escribí tu correo electrónico" });
+                    else if (!F.EMAIL.test(v)) errores.push({ campo: email, mensaje: "Escribí un correo con el formato nombre@ejemplo.com" });
+                    if (!contrasena.value) errores.push({ campo: contrasena, mensaje: "Escribí tu contraseña" });
+                    return errores;
+                },
+                alEnviar() {
+                    F.mostrarExito(document.getElementById("tarjeta-login"),
+                        '<div class="alerta alerta-exito">' + A.iconos.ok +
+                        "<div><h1>Sesión iniciada</h1>" +
+                        "<p>En la aplicación real ahora irías a <strong>" + destino.nombre + "</strong> (<code>" + destino.ruta + "</code>). " +
+                        "Esa pantalla es de la zona de usuario autenticado del prototipo.</p></div></div>" +
+                        '<p class="alternativa"><a href="index.html">Volver al inicio del prototipo</a></p>');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

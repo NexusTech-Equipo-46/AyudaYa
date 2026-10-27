@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AyudaYa · Encontrá ayuda cerca tuyo</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+</head>
+<body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">Prototipo navegable · Zona visitante · Datos ficticios</div>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" href="index.html" aria-label="AyudaYa, ir al inicio">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal">
+                <ul>
+                    <li><a href="index.html" aria-current="page">Inicio</a></li>
+                    <li><a href="mapa.html">Mapa de centros</a></li>
+                    <li><a href="login.html">Iniciar sesión</a></li>
+                    <li><a class="boton" href="registro.html">Crear cuenta</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido" tabindex="-1">
+        <section class="portada" aria-labelledby="titulo-portada">
+            <div class="contenedor">
+                <div>
+                    <h1 id="titulo-portada">Encontrá ayuda cerca tuyo en una emergencia</h1>
+                    <p class="bajada">AyudaYa reúne en un solo lugar los refugios, comedores, salitas y puntos de donación de tu ciudad, con lo que tiene disponible cada uno.</p>
+                    <div class="acciones">
+                        <a class="boton" href="mapa.html">Ver centros de ayuda</a>
+                        <a class="boton boton-secundario" href="login.html?volver=nueva-solicitud">Pedir ayuda</a>
+                    </div>
+
+                    <div class="necesidades">
+                        <h2>¿Qué necesitás?</h2>
+                        <ul>
+                            <li><a href="mapa.html?recurso=agua">Agua</a></li>
+                            <li><a href="mapa.html?recurso=alimentos">Alimentos</a></li>
+                            <li><a href="mapa.html?recurso=abrigo">Abrigo</a></li>
+                            <li><a href="mapa.html?recurso=alojamiento">Alojamiento</a></li>
+                            <li><a href="mapa.html?recurso=medicamentos">Medicamentos</a></li>
+                            <li><a href="mapa.html?recurso=higiene">Higiene</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
+                    <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
+                    <p class="texto-suave">No esperes: llamá directamente a emergencias.</p>
+                    <ul>
+                        <li><a href="tel:911">911 <span>Emergencias</span></a></li>
+                        <li><a href="tel:107">107 <span>SAME · Emergencias médicas</span></a></li>
+                        <li><a href="tel:100">100 <span>Bomberos</span></a></li>
+                    </ul>
+                </aside>
+            </div>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-como">
+            <div class="contenedor">
+                <h2 id="titulo-como">Cómo funciona</h2>
+                <ol class="pasos">
+                    <li class="tarjeta">
+                        <h3>Buscá un centro</h3>
+                        <p>Mirá en el mapa o en la lista qué centros están abiertos y qué recursos tienen. No hace falta registrarse.</p>
+                    </li>
+                    <li class="tarjeta">
+                        <h3>Pedí ayuda</h3>
+                        <p>Con tu cuenta podés cargar una solicitud. Tu dirección y teléfono solo los ve quien te asista.</p>
+                    </li>
+                    <li class="tarjeta">
+                        <h3>Sumate a ayudar</h3>
+                        <p>Anotate como voluntario o registrá tu organización para atender solicitudes de tu zona.</p>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-recientes">
+            <div class="contenedor">
+                <div class="encabezado-seccion">
+                    <h2 id="titulo-recientes">Actualizados recientemente</h2>
+                    <a href="mapa.html">Ver todos los centros</a>
+                </div>
+                <ul class="grilla-centros" id="centros-recientes"></ul>
+            </div>
+        </section>
+    </main>
+
+    <footer class="pie">
+        <div class="contenedor">
+            <p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p>
+            <p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p>
+        </div>
+    </footer>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/comun.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            // Los tres centros abiertos con la disponibilidad más reciente.
+            const recientes = window.DATOS.centros
+                .filter((c) => c.estado_operativo !== "cerrado")
+                .sort((a, b) => new Date(b.recursos_actualizado_at) - new Date(a.recursos_actualizado_at))
+                .slice(0, 3);
+
+            document.getElementById("centros-recientes").innerHTML = recientes
+                .map((c) => "<li>" + AyudaYa.tarjetaCentro(c) + "</li>")
+                .join("");
+        })();
+    </script>
+</body>
+</html>
