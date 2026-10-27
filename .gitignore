@@ -442,3 +442,8 @@ Thumbs.db
 
 # Supabase CLI (solo si lo usan)
 supabase/.temp/
+
+pgpass.conf
+*.pgpass
+*.dump
+*.backup
