@@ -129,10 +129,7 @@
 
     if (c.latitud !== null && window.L) {
         const mapa = L.map("mapa-centro", { scrollWheelZoom: false, keyboard: false }).setView([c.latitud, c.longitud], 15);
-        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(mapa);
+        A.capaMapa().addTo(mapa);
         L.marker([c.latitud, c.longitud], { title: c.nombre, alt: c.nombre, keyboard: false }).addTo(mapa);
     }
 })();

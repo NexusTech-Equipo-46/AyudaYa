@@ -52,10 +52,7 @@
 
     if (window.L) {
         mapa = L.map("mapa", { scrollWheelZoom: false }).setView([-34.455, -58.64], 12);
-        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(mapa);
+        A.capaMapa().addTo(mapa);
 
         centros.filter((c) => c.latitud !== null).forEach((c) => {
             const m = L.marker([c.latitud, c.longitud], { title: c.nombre, alt: c.nombre, keyboard: true });

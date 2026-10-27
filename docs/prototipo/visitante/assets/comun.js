@@ -105,6 +105,24 @@
             "</article>";
     }
 
+    // Capa base del mapa. Los mosaicos de OpenStreetMap exigen el encabezado
+    // Referer y, al abrir el prototipo con doble clic (file://), Chrome no lo
+    // manda: OSM devuelve un mosaico "403 Access blocked". En ese caso se usa
+    // el estilo humanitario (HOT) que sirve OSM Francia con los mismos datos.
+    function capaMapa() {
+        if (location.protocol === "file:") {
+            return L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
+                subdomains: "abc",
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://www.hotosm.org/">HOT</a> / <a href="https://openstreetmap.fr/">OSM France</a>'
+            });
+        }
+        return L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        });
+    }
+
     // Menú en pantallas chicas.
     function iniciarMenu() {
         const boton = document.querySelector(".boton-menu");
@@ -131,6 +149,6 @@
     window.AyudaYa = {
         iconos, niveles, estados, tiposOrganizacion,
         escapar, insigniaNivel, insigniaEstado, haceCuanto, fechaCompleta, horasDesde,
-        nombreRecurso, recursosDe, tarjetaCentro
+        nombreRecurso, recursosDe, tarjetaCentro, capaMapa
     };
 })();
