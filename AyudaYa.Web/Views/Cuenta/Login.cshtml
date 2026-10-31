@@ -1,0 +1,39 @@
+@model AyudaYa.Web.Models.Cuenta.LoginViewModel
+@{
+    ViewData["Title"] = "Ingresar";
+}
+
+<h1>Ingresar</h1>
+
+<div class="row">
+    <div class="col-md-6 col-lg-5">
+        <form asp-action="Login" method="post">
+            <input asp-for="ReturnUrl" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" autocomplete="email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="Recordarme" class="form-check-input" />
+                <label asp-for="Recordarme" class="form-check-label"></label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Ingresar</button>
+            <a asp-action="Registro" class="btn btn-link">Crear cuenta</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

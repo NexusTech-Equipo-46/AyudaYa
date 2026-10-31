@@ -1,0 +1,33 @@
+@model AyudaYa.Web.Models.Cuenta.PerfilViewModel
+@{
+    ViewData["Title"] = "Mi perfil";
+}
+
+<h1>Mi perfil</h1>
+
+@if (TempData["Mensaje"] is string mensaje)
+{
+    <div class="alert alert-success">@mensaje</div>
+}
+
+<dl class="row">
+    <dt class="col-sm-3">Nombre</dt>
+    <dd class="col-sm-9">@Model.NombreCompleto</dd>
+
+    <dt class="col-sm-3">Email</dt>
+    <dd class="col-sm-9">@Model.Email</dd>
+
+    <dt class="col-sm-3">Roles</dt>
+    <dd class="col-sm-9">@string.Join(", ", Model.Roles)</dd>
+
+    <dt class="col-sm-3">Estado</dt>
+    <dd class="col-sm-9">
+        <span class="badge @(Model.Activo ? "bg-success" : "bg-secondary")">
+            @(Model.Activo ? "Activo" : "Inactivo")
+        </span>
+    </dd>
+</dl>
+
+<form asp-action="Logout" method="post">
+    <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
+</form>
