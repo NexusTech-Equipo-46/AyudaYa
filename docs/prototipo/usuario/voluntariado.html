@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quiero ser voluntario · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-usuario.css">
+</head>
+<body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">Prototipo navegable · Zona usuario autenticado · Datos ficticios</div>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" href="panel.html" aria-label="AyudaYa, ir a mi panel">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal">
+                <ul>
+                    <li><a href="panel.html">Panel</a></li>
+                    <li><a href="mis-solicitudes.html">Mis solicitudes</a></li>
+                    <li><a href="../visitante/mapa.html">Mapa de centros</a></li>
+                    <li><a href="perfil.html">Perfil</a></li>
+                    <li><a class="boton" href="nueva-solicitud.html">Nueva solicitud</a></li>
+                    <li><a href="../visitante/index.html">Cerrar sesión</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido" class="pagina-usuario" tabindex="-1">
+        <div class="contenedor">
+            <nav class="migas" aria-label="Estás en">
+                <ol>
+                    <li><a href="panel.html">Panel</a></li>
+                    <li><a href="voluntariado.html" aria-current="page">Quiero ser voluntario</a></li>
+                </ol>
+            </nav>
+
+            <div class="formulario-solicitud" id="contenedor-voluntariado">
+                <h1>Quiero ser voluntario</h1>
+                <p class="texto-suave">Sumate para atender pedidos de ayuda de tu zona. Podés dejar de ser voluntario/a cuando quieras.</p>
+
+                <section class="tarjeta" aria-labelledby="t-como" style="margin-bottom:1.25rem">
+                    <h2 id="t-como" style="font-size:1.25rem">Cómo funciona</h2>
+                    <ul class="lista-simple">
+                        <li>Ves las solicitudes abiertas de tu ciudad y zona.</li>
+                        <li>Vos elegís cuáles tomar: nadie te asigna sin que lo aceptes.</li>
+                        <li>Al tomar una solicitud, ves la dirección y el teléfono de quien pidió ayuda para poder asistirlo.</li>
+                    </ul>
+                </section>
+
+                <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+
+                <form id="form-voluntario" novalidate>
+                    <section class="tarjeta" aria-labelledby="t-datos" style="margin-bottom:1.25rem">
+                        <h2 id="t-datos" style="font-size:1.25rem">Dónde podés ayudar</h2>
+
+                        <div class="campo">
+                            <label for="ciudad">Ciudad</label>
+                            <select id="ciudad" name="ciudad" required aria-describedby="error-ciudad">
+                                <option value="">Elegí una ciudad</option>
+                            </select>
+                            <p class="error-campo" id="error-ciudad"></p>
+                        </div>
+
+                        <div class="campo">
+                            <label for="zona">Zona <span class="opcional">(opcional)</span></label>
+                            <span class="ayuda" id="ayuda-zona">Si no elegís, ves las solicitudes de toda la ciudad.</span>
+                            <select id="zona" name="zona" aria-describedby="ayuda-zona">
+                                <option value="">Toda la ciudad</option>
+                            </select>
+                        </div>
+
+                        <div class="campo">
+                            <label for="telefono">Teléfono de contacto</label>
+                            <span class="ayuda" id="ayuda-telefono">Lo ven las personas a las que asistas y el equipo administrador. Con característica.</span>
+                            <input type="tel" id="telefono" name="telefono" autocomplete="tel" inputmode="tel" maxlength="20" required aria-describedby="ayuda-telefono error-telefono">
+                            <p class="error-campo" id="error-telefono"></p>
+                        </div>
+
+                        <div class="campo">
+                            <label class="check"><input type="checkbox" id="acepto" name="acepto" required aria-describedby="error-acepto"> Acepto que compartan mi nombre y teléfono con quien yo asista.</label>
+                            <p class="error-campo" id="error-acepto"></p>
+                        </div>
+                    </section>
+
+                    <div class="acciones" style="margin-top:0">
+                        <button type="submit" class="boton">Sumarme como voluntario</button>
+                        <a class="boton boton-secundario" href="panel.html">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="pie">
+        <div class="contenedor">
+            <p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p>
+            <p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p>
+        </div>
+    </footer>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-usuario.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-usuario.js"></script>
+    <script src="assets/formularios.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const F = window.Formularios;
+            const { ciudad, zonas } = window.DATOS;
+
+            const selCiudad = document.getElementById("ciudad");
+            const selZona = document.getElementById("zona");
+            const telefono = document.getElementById("telefono");
+            const acepto = document.getElementById("acepto");
+
+            // Hoy hay una sola ciudad cargada; el select ya queda listo para varias.
+            const o = document.createElement("option");
+            o.value = ciudad.id;
+            o.textContent = ciudad.nombre + ", " + ciudad.provincia;
+            selCiudad.append(o);
+            selCiudad.value = ciudad.id;
+
+            zonas.forEach((z) => {
+                const op = document.createElement("option");
+                op.value = z.id;
+                op.textContent = z.nombre;
+                selZona.append(op);
+            });
+
+            F.iniciar(document.getElementById("form-voluntario"), {
+                resumen: "resumen-errores",
+                validar() {
+                    const errores = [];
+                    if (!selCiudad.value) errores.push({ campo: selCiudad, mensaje: "Elegí tu ciudad" });
+
+                    const digitos = telefono.value.replace(/\D/g, "");
+                    if (!telefono.value.trim()) errores.push({ campo: telefono, mensaje: "Escribí un teléfono de contacto" });
+                    else if (digitos.length < 8 || digitos.length > 13) errores.push({ campo: telefono, mensaje: "Escribí un teléfono válido, con característica" });
+
+                    if (!acepto.checked) errores.push({ campo: acepto, mensaje: "Tenés que aceptar para poder sumarte" });
+                    return errores;
+                },
+                alEnviar() {
+                    const zonaTexto = selZona.value ? selZona.options[selZona.selectedIndex].text : "toda la ciudad";
+                    window.DATOS_USUARIO.usuario.voluntario = { ciudad: ciudad.nombre, zona: zonaTexto, telefono: telefono.value.trim() };
+                    F.mostrarExito(document.getElementById("contenedor-voluntariado"),
+                        '<div class="alerta alerta-exito">' + A.iconos.ok +
+                        "<div><h1 style=\"font-size:1.75rem\">¡Ya sos voluntario/a!</h1>" +
+                        "<p>Vas a poder atender solicitudes de <strong>" + A.escapar(zonaTexto) + "</strong> en " + A.escapar(ciudad.nombre) + ". " +
+                        "Gracias por sumarte.</p></div></div>" +
+                        '<div class="acciones"><a class="boton" href="panel.html">Volver al panel</a>' +
+                        '<a class="boton boton-secundario" href="../visitante/mapa.html">Ver centros de ayuda</a></div>');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

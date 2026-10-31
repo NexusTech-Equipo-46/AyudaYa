@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nueva solicitud · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-usuario.css">
+</head>
+<body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">Prototipo navegable · Zona usuario autenticado · Datos ficticios</div>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" href="panel.html" aria-label="AyudaYa, ir a mi panel">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal">
+                <ul>
+                    <li><a href="panel.html">Panel</a></li>
+                    <li><a href="mis-solicitudes.html">Mis solicitudes</a></li>
+                    <li><a href="../visitante/mapa.html">Mapa de centros</a></li>
+                    <li><a href="perfil.html">Perfil</a></li>
+                    <li><a class="boton" href="nueva-solicitud.html" aria-current="page">Nueva solicitud</a></li>
+                    <li><a href="../visitante/index.html">Cerrar sesión</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido" class="pagina-usuario" tabindex="-1">
+        <div class="contenedor">
+            <nav class="migas" aria-label="Estás en">
+                <ol>
+                    <li><a href="panel.html">Panel</a></li>
+                    <li><a href="nueva-solicitud.html" aria-current="page">Nueva solicitud</a></li>
+                </ol>
+            </nav>
+
+            <div class="formulario-solicitud">
+                <h1>Pedir ayuda</h1>
+                <p class="texto-suave">Contanos qué necesitás. Un voluntario o una organización de tu zona va a tomar tu pedido.</p>
+
+                <div class="alerta alerta-advertencia" style="margin-bottom:1.5rem">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5L22.5 21h-21z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.3" fill="currentColor"/></svg>
+                    <p><strong>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</strong> AyudaYa no reemplaza a los servicios de emergencia.</p>
+                </div>
+
+                <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+
+                <form id="form-solicitud" novalidate>
+                    <section class="tarjeta" aria-labelledby="t-situacion">
+                        <h2 id="t-situacion">1. Tu situación</h2>
+
+                        <div class="campo">
+                            <label for="zona">Zona donde estás</label>
+                            <span class="ayuda" id="ayuda-zona">Ciudad: <span id="nombre-ciudad">Tigre</span></span>
+                            <select id="zona" name="zona" required aria-describedby="ayuda-zona error-zona">
+                                <option value="">Elegí una zona</option>
+                            </select>
+                            <p class="error-campo" id="error-zona"></p>
+                        </div>
+
+                        <fieldset class="grupo" aria-describedby="ayuda-urgencia">
+                            <legend>Urgencia</legend>
+                            <span class="ayuda" id="ayuda-urgencia">Marcá “Crítica” solo si la situación no puede esperar. Se atienden primero.</span>
+                            <div class="opciones-radio">
+                                <label class="opcion">
+                                    <input type="radio" name="urgencia" value="normal" checked>
+                                    <span><strong>Normal</strong><small>Necesito ayuda, pero puedo esperar unas horas.</small></span>
+                                </label>
+                                <label class="opcion">
+                                    <input type="radio" name="urgencia" value="critica">
+                                    <span><strong>Crítica</strong><small>Es grave o no puede esperar.</small></span>
+                                </label>
+                            </div>
+                        </fieldset>
+
+                        <div class="campo">
+                            <label for="personas">Personas afectadas</label>
+                            <span class="ayuda" id="ayuda-personas">Contate a vos también.</span>
+                            <input type="number" id="personas" name="personas" min="1" step="1" inputmode="numeric" required aria-describedby="ayuda-personas error-personas">
+                            <p class="error-campo" id="error-personas"></p>
+                        </div>
+                    </section>
+
+                    <section class="tarjeta" aria-labelledby="t-recursos">
+                        <h2 id="t-recursos">2. Qué necesitás</h2>
+                        <fieldset class="grupo" id="recursos-grupo" tabindex="-1" aria-describedby="ayuda-recursos error-recursos-grupo">
+                            <legend class="visualmente-oculto">Recursos que necesitás</legend>
+                            <span class="ayuda" id="ayuda-recursos">Elegí uno o más. Para cada uno, indicá cuántas personas lo necesitan.</span>
+                            <div class="recursos-lista" id="recursos-lista"></div>
+                            <p class="error-campo" id="error-recursos-grupo"></p>
+                        </fieldset>
+
+                        <div class="campo">
+                            <label for="descripcion">Descripción <span class="opcional">(opcional)</span></label>
+                            <span class="ayuda" id="ayuda-descripcion">Otros usuarios con cuenta pueden leer esto. No escribas tu dirección ni tu teléfono: van en el siguiente paso.</span>
+                            <textarea id="descripcion" name="descripcion" rows="4" maxlength="500" aria-describedby="ayuda-descripcion error-descripcion"></textarea>
+                            <p class="error-campo" id="error-descripcion"></p>
+                        </div>
+                    </section>
+
+                    <section class="tarjeta" aria-labelledby="t-contacto">
+                        <h2 id="t-contacto">3. Cómo ubicarte</h2>
+                        <p class="nota-privada">
+                            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.2 7V5a2.8 2.8 0 0 1 5.6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+                            <span>Tu dirección y teléfono solo los ven quienes te asistan y el equipo administrador. No se muestran en listados ni en el mapa.</span>
+                        </p>
+
+                        <div class="campo">
+                            <label for="direccion">Dirección exacta</label>
+                            <span class="ayuda" id="ayuda-direccion">Calle, número y referencias para encontrarte.</span>
+                            <input type="text" id="direccion" name="direccion" autocomplete="street-address" maxlength="200" required aria-describedby="ayuda-direccion error-direccion">
+                            <p class="error-campo" id="error-direccion"></p>
+                        </div>
+
+                        <div class="campo">
+                            <label for="telefono">Teléfono de contacto</label>
+                            <span class="ayuda" id="ayuda-telefono">Con característica, por ejemplo 011 5555-0123.</span>
+                            <input type="tel" id="telefono" name="telefono" autocomplete="tel" inputmode="tel" maxlength="20" required aria-describedby="ayuda-telefono error-telefono">
+                            <p class="error-campo" id="error-telefono"></p>
+                        </div>
+                    </section>
+
+                    <div class="acciones">
+                        <button type="submit" class="boton">Enviar solicitud</button>
+                        <a class="boton boton-secundario" href="panel.html">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="pie">
+        <div class="contenedor">
+            <p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p>
+            <p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p>
+        </div>
+    </footer>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-usuario.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-usuario.js"></script>
+    <script src="assets/formularios.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const F = window.Formularios;
+            const { ciudad, zonas, tiposRecurso } = window.DATOS;
+
+            const zona = document.getElementById("zona");
+            const personas = document.getElementById("personas");
+            const direccion = document.getElementById("direccion");
+            const telefono = document.getElementById("telefono");
+            const grupo = document.getElementById("recursos-grupo");
+            const lista = document.getElementById("recursos-lista");
+
+            document.getElementById("nombre-ciudad").textContent = ciudad.nombre;
+            zonas.forEach((z) => {
+                const o = document.createElement("option");
+                o.value = z.id;
+                o.textContent = z.nombre;
+                zona.append(o);
+            });
+
+            // Un bloque por tipo_recurso: casilla + personas + detalle (solicitud_recurso).
+            lista.innerHTML = tiposRecurso.map((t) =>
+                '<div class="recurso-opcion">' +
+                    '<label class="check"><input type="checkbox" id="r-' + t.codigo + '" name="recurso" value="' + t.codigo + '" aria-controls="datos-' + t.codigo + '"> ' + A.escapar(t.nombre) + "</label>" +
+                    '<div class="recurso-datos" id="datos-' + t.codigo + '" hidden>' +
+                        '<div class="campo"><label for="p-' + t.codigo + '">Personas que lo necesitan</label>' +
+                            '<input type="number" id="p-' + t.codigo + '" min="1" step="1" inputmode="numeric" aria-describedby="error-p-' + t.codigo + '">' +
+                            '<p class="error-campo" id="error-p-' + t.codigo + '"></p></div>' +
+                        '<div class="campo"><label for="d-' + t.codigo + '">Detalle <span class="opcional">(opcional)</span></label>' +
+                            '<input type="text" id="d-' + t.codigo + '" maxlength="200">' +
+                            '<p class="error-campo" id="error-d-' + t.codigo + '"></p></div>' +
+                    "</div>" +
+                "</div>"
+            ).join("");
+
+            const casillas = [...lista.querySelectorAll('input[type="checkbox"]')];
+
+            lista.addEventListener("change", (e) => {
+                const c = e.target.closest('input[type="checkbox"]');
+                if (!c) return;
+                const datos = document.getElementById("datos-" + c.value);
+                datos.hidden = !c.checked;
+                const p = document.getElementById("p-" + c.value);
+                // Sugerimos el total de personas afectadas para ahorrar tipeo.
+                if (c.checked && !p.value && personas.value) p.value = personas.value;
+            });
+
+            F.iniciar(document.getElementById("form-solicitud"), {
+                resumen: "resumen-errores",
+                validar() {
+                    const errores = [];
+                    const entero = (v) => /^\d+$/.test(String(v).trim()) ? Number(v) : NaN;
+
+                    if (!zona.value) errores.push({ campo: zona, mensaje: "Elegí la zona donde estás" });
+
+                    const total = entero(personas.value);
+                    if (!personas.value.trim()) errores.push({ campo: personas, mensaje: "Indicá cuántas personas necesitan ayuda" });
+                    else if (!(total > 0)) errores.push({ campo: personas, mensaje: "Escribí un número entero mayor a cero" });
+
+                    const marcadas = casillas.filter((c) => c.checked);
+                    if (!marcadas.length) errores.push({ campo: grupo, mensaje: "Elegí al menos un recurso que necesitás" });
+
+                    marcadas.forEach((c) => {
+                        const p = document.getElementById("p-" + c.value);
+                        const nombre = A.nombreRecurso(c.value).toLowerCase();
+                        const n = entero(p.value);
+                        if (!p.value.trim() || !(n > 0)) {
+                            errores.push({ campo: p, mensaje: "Indicá cuántas personas necesitan " + nombre });
+                        } else if (total > 0 && n > total) {
+                            errores.push({ campo: p, mensaje: "Las personas que necesitan " + nombre + " no pueden ser más que las afectadas (" + total + ")" });
+                        }
+                    });
+
+                    if (!direccion.value.trim()) errores.push({ campo: direccion, mensaje: "Escribí tu dirección para que puedan encontrarte" });
+
+                    const digitos = telefono.value.replace(/\D/g, "");
+                    if (!telefono.value.trim()) errores.push({ campo: telefono, mensaje: "Escribí un teléfono de contacto" });
+                    else if (digitos.length < 8 || digitos.length > 13) errores.push({ campo: telefono, mensaje: "Escribí un teléfono válido, con característica" });
+
+                    return errores;
+                },
+                alEnviar() {
+                    // Guardamos un resumen para mostrarlo en la pantalla Pendiente.
+                    try {
+                        sessionStorage.setItem("ayudaya-ultima-solicitud", JSON.stringify({
+                            urgencia: document.querySelector('input[name="urgencia"]:checked').value,
+                            zona: zona.options[zona.selectedIndex].text,
+                            personas: Number(personas.value),
+                            recursos: casillas.filter((c) => c.checked).map((c) => ({
+                                tipo_recurso: c.value,
+                                personas: Number(document.getElementById("p-" + c.value).value),
+                                detalle: document.getElementById("d-" + c.value).value.trim() || null
+                            }))
+                        }));
+                    } catch (e) { /* sin almacenamiento: la pantalla Pendiente usa datos de ejemplo */ }
+                    location.href = "pendiente.html";
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

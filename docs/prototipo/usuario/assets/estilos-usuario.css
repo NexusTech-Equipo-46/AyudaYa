@@ -1,0 +1,176 @@
+/* AyudaYa - Prototipo zona Usuario autenticado
+   Se carga DESPUÉS de estilos.css y reutiliza sus variables, así que la paleta
+   y los contrastes (>= 4.5:1 texto, >= 3:1 bordes de controles) son los mismos. */
+
+/* --- Controles que estilos.css todavía no cubría --- */
+
+textarea, input[type="number"], input[type="tel"] {
+    width: 100%;
+    min-height: 48px;
+    padding: .55rem .8rem;
+    border: 2px solid var(--borde-control);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+}
+textarea { min-height: 7rem; resize: vertical; }
+textarea:focus-visible { outline-offset: 0; border-color: var(--foco); }
+textarea[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--peligro); border-width: 3px; }
+
+/* .campo label es block; una casilla dentro de .campo sigue siendo fila. */
+.campo label.check { display: flex; }
+
+.boton-peligro { background: var(--peligro); border-color: var(--peligro); }
+.boton-peligro:hover { background: #991B1B; border-color: #991B1B; }
+
+/* --- Estructura de las páginas --- */
+
+.pagina-usuario { padding: 0 0 1rem; }
+
+.cabecera-pagina {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+.cabecera-pagina h1 { margin-bottom: .25rem; }
+.cabecera-pagina p { margin: 0; }
+
+.panel { display: grid; grid-template-columns: 3fr 2fr; gap: 1.25rem; align-items: start; }
+.panel > div { display: grid; gap: 1.25rem; }
+.panel h2 { font-size: 1.3rem; }
+
+.formulario-solicitud { max-width: 760px; margin: 0 auto; }
+.formulario-solicitud .tarjeta { margin-bottom: 1.25rem; }
+.formulario-solicitud h2 { font-size: 1.25rem; }
+.formulario-solicitud .acciones { margin-top: 0; }
+
+.nota-privada { display: flex; gap: .6rem; align-items: flex-start; color: var(--texto-suave); font-size: .92rem; margin: 0 0 1rem; }
+.nota-privada svg { width: 18px; height: 18px; flex: none; margin-top: .2rem; color: var(--principal-oscuro); }
+
+@media (max-width: 900px) {
+    .panel { grid-template-columns: 1fr; }
+}
+
+/* --- Estados de solicitud: siempre ícono + texto --- */
+
+.sol-pendiente { background: var(--neutro-claro); color: var(--neutro-oscuro); border-color: var(--neutro-oscuro); }
+.sol-asignada, .sol-en_atencion { background: var(--principal-claro); color: var(--principal-oscuro); border-color: var(--principal-oscuro); }
+.sol-parcial { background: var(--advertencia-claro); color: var(--advertencia); border-color: var(--advertencia); }
+.sol-resuelta { background: var(--exito-claro); color: var(--exito); border-color: var(--exito); }
+.sol-cancelada { background: var(--superficie); color: var(--neutro-oscuro); border-color: var(--neutro-oscuro); border-style: dashed; }
+
+.urgencia-critica { background: var(--peligro-claro); color: var(--peligro); border-color: var(--peligro); }
+.urgencia-normal { background: var(--neutro-claro); color: var(--neutro-oscuro); border-color: var(--neutro-claro); font-weight: 500; }
+
+.insignias { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+/* --- Tarjeta de solicitud (lista) --- */
+
+.lista-solicitudes { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
+
+.solicitud { display: flex; flex-direction: column; gap: .6rem; }
+.solicitud .cabeza { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: .5rem 1rem; }
+.solicitud h3 { margin: 0; font-size: 1.15rem; }
+.solicitud h3 a { color: var(--texto); }
+.solicitud h3 a:hover { color: var(--principal-oscuro); }
+.solicitud .meta { margin: 0; color: var(--texto-suave); font-size: .95rem; }
+.solicitud .descripcion {
+    margin: 0; color: var(--texto-suave);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.solicitud .pie-solicitud {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .25rem .75rem;
+    border-top: 1px solid var(--borde); padding-top: .5rem;
+    font-size: .9rem; color: var(--texto-suave);
+}
+.solicitud .pie-solicitud a { font-weight: 600; }
+
+/* --- Resumen en el panel --- */
+
+.resumen { margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+.resumen div { background: var(--fondo); border: 1px solid var(--borde); border-radius: var(--radio); padding: .75rem 1rem; }
+.resumen dt { font-size: .9rem; color: var(--texto-suave); font-weight: 600; }
+.resumen dd { margin: 0; font-size: 1.9rem; font-weight: 800; line-height: 1.2; }
+
+.estado-vacio { text-align: center; padding: 2rem 1rem; }
+.estado-vacio .acciones { justify-content: center; }
+
+/* --- Filtro por estado (Mis solicitudes) --- */
+
+.filtro-estado { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--principal); border-radius: var(--radio); overflow: hidden; }
+.filtro-estado button {
+    min-height: 44px; padding: 0 1.1rem;
+    border: 0; background: var(--superficie); color: var(--principal-oscuro);
+    font: inherit; font-weight: 600; cursor: pointer;
+}
+.filtro-estado button[aria-pressed="true"] { background: var(--principal); color: #fff; }
+
+/* --- Formulario Nueva solicitud --- */
+
+.grupo { border: 0; padding: 0; margin: 0 0 1.5rem; min-width: 0; }
+.grupo legend { font-weight: 600; padding: 0; margin-bottom: .3rem; }
+.grupo .ayuda { display: block; font-size: .9rem; color: var(--texto-suave); margin: 0 0 .6rem; }
+
+.opciones-radio { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.opcion {
+    display: flex; gap: .7rem; align-items: flex-start;
+    min-height: 44px; padding: .8rem 1rem;
+    border: 2px solid var(--borde-control); border-radius: var(--radio);
+    background: var(--superficie); cursor: pointer;
+}
+.opcion input { width: 22px; height: 22px; accent-color: var(--principal); flex: none; margin-top: .15rem; }
+.opcion strong { display: block; }
+.opcion small { display: block; color: var(--texto-suave); font-size: .9rem; line-height: 1.4; }
+.opcion:has(input:checked) { border-color: var(--principal); background: var(--principal-claro); }
+.opcion:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: 2px; }
+
+.recursos-lista { display: grid; gap: .5rem; }
+.recurso-opcion { border: 1px solid var(--borde); border-radius: var(--radio); padding: 0 1rem; background: var(--superficie); }
+.recurso-opcion:has(input:checked) { border-color: var(--principal); background: var(--fondo); }
+.recurso-datos { display: grid; grid-template-columns: 1fr 2fr; gap: 0 1rem; border-top: 1px dashed var(--borde); padding-top: 1rem; }
+.recurso-datos .campo { margin-bottom: .9rem; }
+.recurso-datos[hidden] { display: none; }
+
+@media (max-width: 600px) {
+    .opciones-radio, .recurso-datos { grid-template-columns: 1fr; }
+}
+
+/* --- Detalle de solicitud --- */
+
+.tabla-scroll { overflow-x: auto; }
+.tabla-scroll:focus-visible { outline-offset: 0; }
+.tabla-recursos td .detalle-recurso { display: block; color: var(--texto-suave); font-size: .9rem; }
+
+.cronologia { list-style: none; margin: 0; padding: 0; }
+.cronologia li { position: relative; margin-left: .55rem; padding: 0 0 1.25rem 1.6rem; border-left: 2px solid var(--borde); }
+.cronologia li:last-child { padding-bottom: 0; border-left-color: transparent; }
+.cronologia li::before {
+    content: ""; position: absolute; left: -.6rem; top: .2rem;
+    width: 1rem; height: 1rem; border-radius: 50%;
+    background: var(--principal); border: 3px solid var(--superficie); box-shadow: 0 0 0 2px var(--principal);
+}
+.cronologia .cuando { display: block; font-size: .9rem; color: var(--texto-suave); margin-top: .2rem; }
+.cronologia .motivo { margin: .25rem 0 0; }
+
+.cronologia .paso-futuro::before { background: var(--superficie); box-shadow: 0 0 0 2px var(--borde-control); }
+.cronologia .paso-actual::before { background: var(--advertencia); box-shadow: 0 0 0 2px var(--advertencia); }
+.cronologia .paso-futuro { color: var(--texto-suave); }
+
+dialog {
+    width: calc(100% - 32px); max-width: 500px;
+    border: 1px solid var(--borde); border-radius: var(--radio);
+    padding: 1.5rem; color: var(--texto); background: var(--superficie);
+    box-shadow: 0 8px 32px rgb(15 23 42 / .3);
+}
+dialog::backdrop { background: rgb(15 23 42 / .6); }
+dialog h2 { font-size: 1.3rem; }
+dialog .acciones { margin-top: .5rem; }
+
+/* --- Perfil / Voluntariado --- */
+
+.dato-fijo { margin: 0; padding: .6rem .8rem; background: var(--fondo); border: 1px solid var(--borde); border-radius: var(--radio); }
+.tarjeta form .boton { margin-top: .25rem; }
+.tarjeta > h2 + .texto-suave { margin-top: -.25rem; }
+.lista-simple { margin: 0 0 1rem; padding-left: 1.2rem; }
+.lista-simple li { margin-bottom: .3rem; }
