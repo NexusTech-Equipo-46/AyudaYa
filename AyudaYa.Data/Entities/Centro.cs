@@ -47,6 +47,8 @@ public partial class Centro
 
     public virtual UsuarioIdentity? AprobadoPorNavigation { get; set; }
 
+    public virtual ICollection<CentroHorario> CentroHorario { get; set; } = new List<CentroHorario>();
+
     public virtual ICollection<CentroRecurso> CentroRecurso { get; set; } = new List<CentroRecurso>();
 
     public virtual UsuarioIdentity CreadoPorNavigation { get; set; } = null!;

@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace AyudaYa.Data;
 
 /// <summary>
-/// Dirección y teléfono exactos. Solo solicitante, asignados activos y administrador.
+/// Dirección, teléfono y coordenadas exactas. Solo solicitante, personas asignadas activas,
+/// miembros activos de la organización asignada y administrador.
 /// </summary>
 public partial class SolicitudContacto
 {
@@ -13,6 +14,10 @@ public partial class SolicitudContacto
     public string Direccion { get; set; } = null!;
 
     public string Telefono { get; set; } = null!;
+
+    public double? Latitud { get; set; }
+
+    public double? Longitud { get; set; }
 
     public DateTime CreadoAt { get; set; }
 

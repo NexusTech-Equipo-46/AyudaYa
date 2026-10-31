@@ -13,6 +13,10 @@ public partial class Zona
 
     public bool Activa { get; set; }
 
+    public double? LatitudCentro { get; set; }
+
+    public double? LongitudCentro { get; set; }
+
     public DateTime CreadoAt { get; set; }
 
     public DateTime ActualizadoAt { get; set; }

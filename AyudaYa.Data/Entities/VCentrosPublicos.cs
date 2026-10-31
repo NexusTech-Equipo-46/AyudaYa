@@ -46,4 +46,8 @@ public partial class VCentrosPublicos
     public DateTime? RecursosActualizadoAt { get; set; }
 
     public string? Recursos { get; set; }
+
+    public DateTime? HorariosActualizadoAt { get; set; }
+
+    public string? Horarios { get; set; }
 }
