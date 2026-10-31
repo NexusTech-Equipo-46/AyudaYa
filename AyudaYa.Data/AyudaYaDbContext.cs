@@ -17,6 +17,8 @@ public partial class AyudaYaDbContext : IdentityDbContext<UsuarioIdentity, RolId
 
     public virtual DbSet<Centro> Centro { get; set; }
 
+    public virtual DbSet<CentroHorario> CentroHorario { get; set; }
+
     public virtual DbSet<CentroRecurso> CentroRecurso { get; set; }
 
     public virtual DbSet<Ciudad> Ciudad { get; set; }
@@ -42,6 +44,8 @@ public partial class AyudaYaDbContext : IdentityDbContext<UsuarioIdentity, RolId
     public virtual DbSet<UsuarioDatosPrivados> UsuarioDatosPrivados { get; set; }
 
     public virtual DbSet<VCentrosPublicos> VCentrosPublicos { get; set; }
+
+    public virtual DbSet<VMapaSolicitudesPorZona> VMapaSolicitudesPorZona { get; set; }
 
     public virtual DbSet<VMetricasPersonasPorRecurso> VMetricasPersonasPorRecurso { get; set; }
 
@@ -292,6 +296,53 @@ public partial class AyudaYaDbContext : IdentityDbContext<UsuarioIdentity, RolId
                 .HasForeignKey(d => d.TipoRecursoId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_centro_recurso_tipo");
+        });
+
+        modelBuilder.Entity<CentroHorario>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pk_centro_horario");
+
+            entity.ToTable("centro_horario", tb => tb.HasComment(
+                "Horarios semanales de atención. Varias filas por día permiten varios turnos; sin filas se considera horario no informado."));
+
+            entity.HasIndex(e => new { e.CentroId, e.DiaSemana, e.Abre }, "ix_centro_horario_centro");
+
+            entity.HasIndex(e => new { e.CentroId, e.DiaSemana, e.Abre, e.Cierra }, "ux_centro_horario_turno")
+                .IsUnique()
+                .HasFilter("abre IS NOT NULL AND cierra IS NOT NULL");
+
+            entity.HasIndex(e => new { e.CentroId, e.DiaSemana }, "ux_centro_horario_todo_el_dia")
+                .IsUnique()
+                .HasFilter("todo_el_dia");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.Abre).HasColumnName("abre");
+            entity.Property(e => e.ActualizadoAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("actualizado_at");
+            entity.Property(e => e.ActualizadoPor).HasColumnName("actualizado_por");
+            entity.Property(e => e.CentroId).HasColumnName("centro_id");
+            entity.Property(e => e.Cierra).HasColumnName("cierra");
+            entity.Property(e => e.CreadoAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("creado_at");
+            entity.Property(e => e.DiaSemana).HasColumnName("dia_semana");
+            entity.Property(e => e.Notas).HasColumnName("notas");
+            entity.Property(e => e.TodoElDia)
+                .HasDefaultValue(false)
+                .HasColumnName("todo_el_dia");
+
+            entity.HasOne(d => d.ActualizadoPorNavigation).WithMany()
+                .HasForeignKey(d => d.ActualizadoPor)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_centro_horario_actualizado_por");
+
+            entity.HasOne(d => d.Centro).WithMany(p => p.CentroHorario)
+                .HasForeignKey(d => d.CentroId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_centro_horario_centro");
         });
 
         modelBuilder.Entity<Ciudad>(entity =>
@@ -546,7 +597,8 @@ public partial class AyudaYaDbContext : IdentityDbContext<UsuarioIdentity, RolId
         {
             entity.HasKey(e => e.SolicitudId).HasName("pk_solicitud_contacto");
 
-            entity.ToTable("solicitud_contacto", tb => tb.HasComment("Dirección y teléfono exactos. Solo solicitante, asignados activos y administrador."));
+            entity.ToTable("solicitud_contacto", tb => tb.HasComment(
+                "Dirección, teléfono y coordenadas exactas. Solo solicitante, personas asignadas activas, miembros activos de la organización asignada y administrador."));
 
             entity.Property(e => e.SolicitudId)
                 .ValueGeneratedNever()
@@ -558,6 +610,8 @@ public partial class AyudaYaDbContext : IdentityDbContext<UsuarioIdentity, RolId
                 .HasDefaultValueSql("now()")
                 .HasColumnName("creado_at");
             entity.Property(e => e.Direccion).HasColumnName("direccion");
+            entity.Property(e => e.Latitud).HasColumnName("latitud");
+            entity.Property(e => e.Longitud).HasColumnName("longitud");
             entity.Property(e => e.Telefono).HasColumnName("telefono");
 
             entity.HasOne(d => d.Solicitud).WithOne(p => p.SolicitudContacto)
@@ -705,6 +759,10 @@ public partial class AyudaYaDbContext : IdentityDbContext<UsuarioIdentity, RolId
             entity.Property(e => e.OrganizacionId).HasColumnName("organizacion_id");
             entity.Property(e => e.OrganizacionNombre).HasColumnName("organizacion_nombre");
             entity.Property(e => e.OrganizacionTipo).HasColumnName("organizacion_tipo");
+            entity.Property(e => e.Horarios)
+                .HasColumnType("jsonb")
+                .HasColumnName("horarios");
+            entity.Property(e => e.HorariosActualizadoAt).HasColumnName("horarios_actualizado_at");
             entity.Property(e => e.Recursos)
                 .HasColumnType("jsonb")
                 .HasColumnName("recursos");
@@ -712,6 +770,26 @@ public partial class AyudaYaDbContext : IdentityDbContext<UsuarioIdentity, RolId
             entity.Property(e => e.TelefonoContacto).HasColumnName("telefono_contacto");
             entity.Property(e => e.TipoCentroCodigo).HasColumnName("tipo_centro_codigo");
             entity.Property(e => e.TipoCentroNombre).HasColumnName("tipo_centro_nombre");
+            entity.Property(e => e.ZonaId).HasColumnName("zona_id");
+            entity.Property(e => e.ZonaNombre).HasColumnName("zona_nombre");
+        });
+
+        modelBuilder.Entity<VMapaSolicitudesPorZona>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("v_mapa_solicitudes_por_zona")
+                .HasAnnotation("Npgsql:StorageParameter:security_invoker", "true");
+
+            entity.Property(e => e.CiudadId).HasColumnName("ciudad_id");
+            entity.Property(e => e.CiudadNombre).HasColumnName("ciudad_nombre");
+            entity.Property(e => e.LatitudAproximada).HasColumnName("latitud_aproximada");
+            entity.Property(e => e.LongitudAproximada).HasColumnName("longitud_aproximada");
+            entity.Property(e => e.PersonasAfectadas).HasColumnName("personas_afectadas");
+            entity.Property(e => e.Recursos)
+                .HasColumnType("jsonb")
+                .HasColumnName("recursos");
+            entity.Property(e => e.SolicitudesAbiertas).HasColumnName("solicitudes_abiertas");
             entity.Property(e => e.ZonaId).HasColumnName("zona_id");
             entity.Property(e => e.ZonaNombre).HasColumnName("zona_nombre");
         });
@@ -819,6 +897,8 @@ public partial class AyudaYaDbContext : IdentityDbContext<UsuarioIdentity, RolId
             entity.Property(e => e.CreadoAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("creado_at");
+            entity.Property(e => e.LatitudCentro).HasColumnName("latitud_centro");
+            entity.Property(e => e.LongitudCentro).HasColumnName("longitud_centro");
             entity.Property(e => e.Nombre).HasColumnName("nombre");
 
             entity.HasOne(d => d.Ciudad).WithMany(p => p.Zona)

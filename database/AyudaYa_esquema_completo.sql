@@ -180,6 +180,8 @@ CREATE TABLE zona (
     ciudad_id uuid NOT NULL,
     nombre text NOT NULL,
     activa boolean NOT NULL DEFAULT true,
+    latitud_centro double precision,
+    longitud_centro double precision,
     creado_at timestamptz NOT NULL DEFAULT now(),
     actualizado_at timestamptz NOT NULL DEFAULT now(),
 
@@ -187,6 +189,12 @@ CREATE TABLE zona (
     CONSTRAINT uq_zona_id_ciudad UNIQUE (id, ciudad_id),
     CONSTRAINT fk_zona_ciudad FOREIGN KEY (ciudad_id)
         REFERENCES ciudad (id) ON DELETE RESTRICT,
+    CONSTRAINT ck_zona_centro_aproximado CHECK (
+        (latitud_centro IS NULL AND longitud_centro IS NULL)
+        OR
+        (latitud_centro BETWEEN -90 AND 90
+         AND longitud_centro BETWEEN -180 AND 180)
+    ),
     CONSTRAINT ck_zona_nombre CHECK (btrim(nombre) <> '')
 );
 
@@ -424,6 +432,48 @@ CREATE TABLE centro_recurso (
 CREATE INDEX ix_centro_recurso_tipo
     ON centro_recurso (tipo_recurso_id, nivel);
 
+CREATE TABLE centro_horario (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    centro_id uuid NOT NULL,
+    dia_semana smallint NOT NULL,
+    abre time,
+    cierra time,
+    todo_el_dia boolean NOT NULL DEFAULT false,
+    notas text,
+    actualizado_por uuid NOT NULL,
+    creado_at timestamptz NOT NULL DEFAULT now(),
+    actualizado_at timestamptz NOT NULL DEFAULT now(),
+
+    CONSTRAINT pk_centro_horario PRIMARY KEY (id),
+    CONSTRAINT fk_centro_horario_centro FOREIGN KEY (centro_id)
+        REFERENCES centro (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_centro_horario_actualizado_por FOREIGN KEY (actualizado_por)
+        REFERENCES "AspNetUsers" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT ck_centro_horario_dia CHECK (dia_semana BETWEEN 1 AND 7),
+    CONSTRAINT ck_centro_horario_horas CHECK (
+        (todo_el_dia AND abre IS NULL AND cierra IS NULL)
+        OR
+        (NOT todo_el_dia
+         AND abre IS NOT NULL
+         AND cierra IS NOT NULL
+         AND abre < cierra)
+    ),
+    CONSTRAINT ck_centro_horario_notas CHECK (
+        notas IS NULL OR btrim(notas) <> ''
+    )
+);
+
+CREATE UNIQUE INDEX ux_centro_horario_turno
+    ON centro_horario (centro_id, dia_semana, abre, cierra)
+    WHERE abre IS NOT NULL AND cierra IS NOT NULL;
+
+CREATE UNIQUE INDEX ux_centro_horario_todo_el_dia
+    ON centro_horario (centro_id, dia_semana)
+    WHERE todo_el_dia;
+
+CREATE INDEX ix_centro_horario_centro
+    ON centro_horario (centro_id, dia_semana, abre);
+
 -- =====================================================================
 -- 6. VOLUNTARIOS
 -- =====================================================================
@@ -523,6 +573,8 @@ CREATE TABLE solicitud_contacto (
     solicitud_id uuid NOT NULL,
     direccion text NOT NULL,
     telefono text NOT NULL,
+    latitud double precision,
+    longitud double precision,
     creado_at timestamptz NOT NULL DEFAULT now(),
     actualizado_at timestamptz NOT NULL DEFAULT now(),
 
@@ -530,7 +582,12 @@ CREATE TABLE solicitud_contacto (
     CONSTRAINT fk_solicitud_contacto_solicitud FOREIGN KEY (solicitud_id)
         REFERENCES solicitud (id) ON DELETE RESTRICT,
     CONSTRAINT ck_solicitud_contacto_direccion CHECK (btrim(direccion) <> ''),
-    CONSTRAINT ck_solicitud_contacto_telefono CHECK (btrim(telefono) <> '')
+    CONSTRAINT ck_solicitud_contacto_telefono CHECK (btrim(telefono) <> ''),
+    CONSTRAINT ck_solicitud_contacto_ubicacion CHECK (
+        (latitud IS NULL AND longitud IS NULL)
+        OR
+        (latitud BETWEEN -90 AND 90 AND longitud BETWEEN -180 AND 180)
+    )
 );
 
 CREATE TABLE solicitud_recurso (
@@ -789,6 +846,10 @@ CREATE TRIGGER trg_centro_actualizado_at
 
 CREATE TRIGGER trg_centro_recurso_actualizado_at
     BEFORE UPDATE ON centro_recurso
+    FOR EACH ROW EXECUTE FUNCTION fn_set_actualizado_at();
+
+CREATE TRIGGER trg_centro_horario_actualizado_at
+    BEFORE UPDATE ON centro_horario
     FOR EACH ROW EXECUTE FUNCTION fn_set_actualizado_at();
 
 CREATE TRIGGER trg_voluntario_actualizado_at
@@ -1567,7 +1628,29 @@ SELECT
              WHERE cr.centro_id = c.id
         ),
         '{}'::jsonb
-    ) AS recursos
+    ) AS recursos,
+    (
+        SELECT max(ch.actualizado_at)
+          FROM centro_horario ch
+         WHERE ch.centro_id = c.id
+    ) AS horarios_actualizado_at,
+    COALESCE(
+        (
+            SELECT jsonb_agg(
+                       jsonb_build_object(
+                           'dia_semana', ch.dia_semana,
+                           'abre', ch.abre::text,
+                           'cierra', ch.cierra::text,
+                           'todo_el_dia', ch.todo_el_dia,
+                           'notas', ch.notas
+                       )
+                       ORDER BY ch.dia_semana, ch.abre NULLS FIRST
+                   )
+              FROM centro_horario ch
+             WHERE ch.centro_id = c.id
+        ),
+        '[]'::jsonb
+    ) AS horarios
 FROM centro c
 JOIN organizacion o ON o.id = c.organizacion_id
 JOIN ciudad ci ON ci.id = c.ciudad_id
@@ -1614,6 +1697,58 @@ FROM solicitud s
 JOIN ciudad ci ON ci.id = s.ciudad_id
 JOIN zona z ON z.id = s.zona_id
 WHERE s.estado IN ('pendiente', 'asignada', 'en_atencion', 'parcial');
+
+CREATE OR REPLACE VIEW v_mapa_solicitudes_por_zona AS
+SELECT
+    s.ciudad_id,
+    ci.nombre AS ciudad_nombre,
+    s.zona_id,
+    z.nombre AS zona_nombre,
+    z.latitud_centro AS latitud_aproximada,
+    z.longitud_centro AS longitud_aproximada,
+    count(*) AS solicitudes_abiertas,
+    COALESCE(sum(s.personas_afectadas), 0) AS personas_afectadas,
+    COALESCE(
+        (
+            SELECT jsonb_agg(
+                       jsonb_build_object(
+                           'tipo_recurso', r.tipo_recurso,
+                           'tipo_recurso_nombre', r.tipo_recurso_nombre,
+                           'solicitudes', r.solicitudes,
+                           'personas', r.personas
+                       )
+                       ORDER BY r.tipo_recurso
+                   )
+              FROM (
+                  SELECT
+                      tr.codigo AS tipo_recurso,
+                      tr.nombre AS tipo_recurso_nombre,
+                      count(DISTINCT s2.id) AS solicitudes,
+                      sum(sr.personas) AS personas
+                  FROM solicitud s2
+                  JOIN solicitud_recurso sr ON sr.solicitud_id = s2.id
+                  JOIN tipo_recurso tr ON tr.id = sr.tipo_recurso_id
+                  WHERE s2.zona_id = s.zona_id
+                    AND s2.estado IN ('pendiente', 'asignada', 'en_atencion', 'parcial')
+                    AND sr.estado <> 'cancelada'
+                  GROUP BY tr.codigo, tr.nombre
+              ) r
+        ),
+        '[]'::jsonb
+    ) AS recursos
+FROM solicitud s
+JOIN ciudad ci ON ci.id = s.ciudad_id
+JOIN zona z ON z.id = s.zona_id
+WHERE s.estado IN ('pendiente', 'asignada', 'en_atencion', 'parcial')
+  AND z.latitud_centro IS NOT NULL
+  AND z.longitud_centro IS NOT NULL
+GROUP BY
+    s.ciudad_id,
+    ci.nombre,
+    s.zona_id,
+    z.nombre,
+    z.latitud_centro,
+    z.longitud_centro;
 
 CREATE OR REPLACE VIEW v_metricas_personas_por_recurso AS
 SELECT
@@ -1697,7 +1832,37 @@ COMMENT ON TABLE usuario_datos_privados
     IS 'DNI y datos sensibles separados de la tabla principal. Acceso solo administrador o el propio usuario.';
 
 COMMENT ON TABLE solicitud_contacto
-    IS 'Dirección y teléfono exactos. Solo solicitante, asignados activos y administrador.';
+    IS 'Dirección, teléfono y coordenadas exactas. Solo solicitante, personas asignadas activas, miembros activos de la organización asignada y administrador.';
+
+COMMENT ON COLUMN solicitud_contacto.latitud
+    IS 'Latitud exacta de la solicitud. Dato privado: no se expone en el mapa público.';
+
+COMMENT ON COLUMN solicitud_contacto.longitud
+    IS 'Longitud exacta de la solicitud. Dato privado: no se expone en el mapa público.';
+
+COMMENT ON COLUMN zona.latitud_centro
+    IS 'Latitud aproximada de la zona para el mapa público. No es una ubicación exacta.';
+
+COMMENT ON COLUMN zona.longitud_centro
+    IS 'Longitud aproximada de la zona para el mapa público. No es una ubicación exacta.';
+
+COMMENT ON TABLE centro_horario
+    IS 'Horarios semanales de atención. Varias filas por día permiten varios turnos; sin filas se considera horario no informado.';
+
+COMMENT ON COLUMN centro_horario.dia_semana
+    IS 'Día ISO 8601: 1 = lunes, 7 = domingo.';
+
+COMMENT ON COLUMN centro_horario.abre
+    IS 'Hora local de apertura. NULL cuando todo_el_dia es true.';
+
+COMMENT ON COLUMN centro_horario.cierra
+    IS 'Hora local de cierre. NULL cuando todo_el_dia es true.';
+
+COMMENT ON COLUMN centro_horario.todo_el_dia
+    IS 'Si es true, el centro atiende las 24 horas de ese día.';
+
+COMMENT ON COLUMN centro_horario.notas
+    IS 'Aclaración opcional, por ejemplo “solo con turno previo”.';
 
 COMMENT ON COLUMN solicitud_recurso.personas
     IS 'Personas alcanzadas por ESTE recurso. Es la unidad de la métrica; una misma persona puede contarse en más de un recurso.';
@@ -1712,10 +1877,13 @@ COMMENT ON TABLE evento_administrativo
     IS 'Auditoría de acciones administrativas. No guardar datos sensibles innecesarios en detalle.';
 
 COMMENT ON VIEW v_centros_publicos
-    IS 'Centros aprobados de organizaciones activas. Proyección segura para el mapa público.';
+    IS 'Centros aprobados de organizaciones activas. Incluye recursos y horarios de atención para el mapa público.';
 
 COMMENT ON VIEW v_solicitudes_abiertas
     IS 'Solicitudes abiertas sin datos de contacto exactos. Para usuarios autenticados. La descripción y el detalle pueden contener datos privados: no exponerlos en el mapa público.';
+
+COMMENT ON VIEW v_mapa_solicitudes_por_zona
+    IS 'Agregado público y aproximado por zona, solo para zonas con centroide: cantidades y recursos, sin dirección, teléfono, descripción ni coordenadas exactas.';
 
 COMMENT ON VIEW v_metricas_personas_por_recurso
     IS 'Personas alcanzadas por recurso resuelto, agrupadas por ciudad, mes y tipo. Puede contar dos veces a la misma persona.';
