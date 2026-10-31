@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mi panel · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-usuario.css">
+</head>
+<body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">Prototipo navegable · Zona usuario autenticado · Datos ficticios</div>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" href="panel.html" aria-label="AyudaYa, ir a mi panel">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal">
+                <ul>
+                    <li><a href="panel.html" aria-current="page">Panel</a></li>
+                    <li><a href="mis-solicitudes.html">Mis solicitudes</a></li>
+                    <li><a href="../visitante/mapa.html">Mapa de centros</a></li>
+                    <li><a href="perfil.html">Perfil</a></li>
+                    <li><a class="boton" href="nueva-solicitud.html">Nueva solicitud</a></li>
+                    <li><a href="../visitante/index.html">Cerrar sesión</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido" class="pagina-usuario" tabindex="-1">
+        <div class="contenedor">
+            <div class="cabecera-pagina">
+                <div>
+                    <h1 id="saludo">Hola</h1>
+                    <p class="texto-suave">Desde acá seguís tus pedidos de ayuda y tu participación como voluntario.</p>
+                </div>
+                <a class="boton" href="nueva-solicitud.html">Pedir ayuda</a>
+            </div>
+
+            <div class="panel">
+                <div>
+                    <section aria-labelledby="titulo-abiertas">
+                        <div class="encabezado-seccion">
+                            <h2 id="titulo-abiertas">Solicitudes abiertas</h2>
+                            <a href="mis-solicitudes.html">Ver todas mis solicitudes</a>
+                        </div>
+                        <ul class="lista-solicitudes" id="lista-abiertas"></ul>
+                        <div class="tarjeta estado-vacio" id="vacio" hidden>
+                            <h3>No tenés solicitudes abiertas</h3>
+                            <p>Si necesitás agua, alimentos, abrigo u otra ayuda, cargá un pedido y alguien de tu zona lo va a tomar.</p>
+                            <div class="acciones"><a class="boton" href="nueva-solicitud.html">Pedir ayuda</a></div>
+                        </div>
+                    </section>
+                </div>
+
+                <div>
+                    <section class="tarjeta" aria-labelledby="titulo-resumen-panel">
+                        <h2 id="titulo-resumen-panel">Tu actividad</h2>
+                        <dl class="resumen">
+                            <div><dt>Abiertas</dt><dd id="n-abiertas">0</dd></div>
+                            <div><dt>Resueltas</dt><dd id="n-resueltas">0</dd></div>
+                        </dl>
+                    </section>
+
+                    <section class="tarjeta llamado" aria-labelledby="titulo-voluntario">
+                        <h2 id="titulo-voluntario">Voluntariado</h2>
+                        <p>Todavía no sos voluntario/a. Sumate para atender solicitudes de tu zona: vos elegís cuáles tomar.</p>
+                        <div class="acciones"><a class="boton boton-secundario" href="voluntariado.html">Quiero ser voluntario</a></div>
+                    </section>
+
+                    <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
+                        <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
+                        <p class="texto-suave">No esperes una respuesta de la app: llamá directamente.</p>
+                        <ul>
+                            <li><a href="tel:911">911 <span>Emergencias</span></a></li>
+                            <li><a href="tel:107">107 <span>SAME · Emergencias médicas</span></a></li>
+                        </ul>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="pie">
+        <div class="contenedor">
+            <p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p>
+            <p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p>
+        </div>
+    </footer>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-usuario.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-usuario.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const AU = window.AyudaYaUsuario;
+            const { usuario, solicitudes } = window.DATOS_USUARIO;
+
+            document.getElementById("saludo").textContent = "Hola, " + usuario.nombre.split(/\s+/)[0];
+
+            const porFecha = (a, b) => new Date(b.creado_at) - new Date(a.creado_at);
+            const abiertas = solicitudes.filter(AU.esAbierta).sort(porFecha);
+            const resueltas = solicitudes.filter((s) => s.estado === "resuelta");
+
+            document.getElementById("n-abiertas").textContent = abiertas.length;
+            document.getElementById("n-resueltas").textContent = resueltas.length;
+
+            document.getElementById("lista-abiertas").innerHTML = abiertas
+                .slice(0, 3)
+                .map((s) => "<li>" + AU.tarjetaSolicitud(s) + "</li>")
+                .join("");
+            document.getElementById("vacio").hidden = abiertas.length > 0;
+        })();
+    </script>
+</body>
+</html>

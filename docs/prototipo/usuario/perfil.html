@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mi perfil · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-usuario.css">
+</head>
+<body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">Prototipo navegable · Zona usuario autenticado · Datos ficticios</div>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" href="panel.html" aria-label="AyudaYa, ir a mi panel">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal">
+                <ul>
+                    <li><a href="panel.html">Panel</a></li>
+                    <li><a href="mis-solicitudes.html">Mis solicitudes</a></li>
+                    <li><a href="../visitante/mapa.html">Mapa de centros</a></li>
+                    <li><a href="perfil.html" aria-current="page">Perfil</a></li>
+                    <li><a class="boton" href="nueva-solicitud.html">Nueva solicitud</a></li>
+                    <li><a href="../visitante/index.html">Cerrar sesión</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido" class="pagina-usuario" tabindex="-1">
+        <div class="contenedor">
+            <div class="cabecera-pagina">
+                <div>
+                    <h1>Mi perfil</h1>
+                    <p class="texto-suave">Tus datos personales y la seguridad de tu cuenta.</p>
+                </div>
+            </div>
+
+            <div class="detalle">
+                <div>
+                    <section class="tarjeta" aria-labelledby="t-datos">
+                        <h2 id="t-datos">Datos personales</h2>
+
+                        <div class="alerta alerta-exito" id="exito-datos" role="status" hidden></div>
+                        <div class="alerta alerta-peligro resumen-errores" id="resumen-datos" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+
+                        <form id="form-datos" novalidate>
+                            <div class="campo">
+                                <label for="nombre">Nombre y apellido</label>
+                                <input type="text" id="nombre" name="nombre" autocomplete="name" required aria-describedby="error-nombre">
+                                <p class="error-campo" id="error-nombre"></p>
+                            </div>
+
+                            <div class="campo">
+                                <label for="email">Correo electrónico</label>
+                                <span class="ayuda" id="ayuda-email">Es tu usuario para iniciar sesión y no se puede cambiar.</span>
+                                <input type="email" id="email" name="email" readonly aria-describedby="ayuda-email">
+                            </div>
+
+                            <div class="campo">
+                                <label for="dni">DNI <span class="opcional">(opcional)</span></label>
+                                <span class="ayuda" id="ayuda-dni">Con o sin puntos. Solo lo ves vos y el equipo administrador.</span>
+                                <input type="text" id="dni" name="dni" inputmode="numeric" autocomplete="off" maxlength="12" aria-describedby="ayuda-dni error-dni">
+                                <p class="error-campo" id="error-dni"></p>
+                            </div>
+
+                            <button type="submit" class="boton">Guardar cambios</button>
+                        </form>
+                    </section>
+
+                    <section class="tarjeta" aria-labelledby="t-clave">
+                        <h2 id="t-clave">Cambiar contraseña</h2>
+
+                        <div class="alerta alerta-exito" id="exito-clave" role="status" hidden></div>
+                        <div class="alerta alerta-peligro resumen-errores" id="resumen-clave" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+
+                        <form id="form-clave" novalidate>
+                            <div class="campo">
+                                <label for="clave-actual">Contraseña actual</label>
+                                <div class="con-boton">
+                                    <input type="password" id="clave-actual" name="actual" autocomplete="current-password" required aria-describedby="error-clave-actual">
+                                    <button type="button" class="boton-texto" data-mostrar="clave-actual" aria-pressed="false">Mostrar<span class="visualmente-oculto"> contraseña actual</span></button>
+                                </div>
+                                <p class="error-campo" id="error-clave-actual"></p>
+                            </div>
+
+                            <div class="campo">
+                                <label for="clave-nueva">Contraseña nueva</label>
+                                <div class="con-boton">
+                                    <input type="password" id="clave-nueva" name="nueva" autocomplete="new-password" required aria-describedby="requisitos error-clave-nueva">
+                                    <button type="button" class="boton-texto" data-mostrar="clave-nueva" aria-pressed="false">Mostrar<span class="visualmente-oculto"> contraseña nueva</span></button>
+                                </div>
+                                <ul class="requisitos" id="requisitos">
+                                    <li data-regla="largo">Al menos 8 caracteres</li>
+                                    <li data-regla="mayuscula">Una letra mayúscula</li>
+                                    <li data-regla="minuscula">Una letra minúscula</li>
+                                    <li data-regla="numero">Un número</li>
+                                </ul>
+                                <p class="error-campo" id="error-clave-nueva"></p>
+                            </div>
+
+                            <div class="campo">
+                                <label for="clave-confirmacion">Repetí la contraseña nueva</label>
+                                <input type="password" id="clave-confirmacion" name="confirmacion" autocomplete="new-password" required aria-describedby="error-clave-confirmacion">
+                                <p class="error-campo" id="error-clave-confirmacion"></p>
+                            </div>
+
+                            <button type="submit" class="boton">Cambiar contraseña</button>
+                        </form>
+                    </section>
+                </div>
+
+                <div>
+                    <section class="tarjeta" aria-labelledby="t-cuenta">
+                        <h2 id="t-cuenta">Tu cuenta</h2>
+                        <p class="nota-privada" style="margin-bottom:.75rem">
+                            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.2 7V5a2.8 2.8 0 0 1 5.6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+                            <span>Tu contraseña se guarda cifrada. Nadie, ni el equipo, puede verla.</span>
+                        </p>
+                        <div class="acciones" style="margin-top:0"><a class="boton boton-secundario" href="../visitante/index.html">Cerrar sesión</a></div>
+                    </section>
+
+                    <section class="tarjeta llamado" aria-labelledby="t-voluntario">
+                        <h2 id="t-voluntario">Voluntariado</h2>
+                        <p>Todavía no sos voluntario/a. Completá tu ciudad, zona y teléfono para empezar a atender solicitudes.</p>
+                        <div class="acciones"><a class="boton" href="voluntariado.html">Quiero ser voluntario</a></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="pie">
+        <div class="contenedor">
+            <p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p>
+            <p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p>
+        </div>
+    </footer>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-usuario.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-usuario.js"></script>
+    <script src="assets/formularios.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const F = window.Formularios;
+            const { usuario } = window.DATOS_USUARIO;
+
+            const nombre = document.getElementById("nombre");
+            const dni = document.getElementById("dni");
+            nombre.value = usuario.nombre;
+            document.getElementById("email").value = usuario.email;
+            dni.value = usuario.dni || "";
+
+            function exito(id, texto) {
+                const caja = document.getElementById(id);
+                caja.innerHTML = A.iconos.ok + "<p>" + texto + "</p>";
+                caja.hidden = false;
+            }
+
+            // --- Datos personales ---
+            F.iniciar(document.getElementById("form-datos"), {
+                resumen: "resumen-datos",
+                validar() {
+                    const errores = [];
+                    const n = nombre.value.trim();
+                    if (!n) errores.push({ campo: nombre, mensaje: "Escribí tu nombre y apellido" });
+                    else if (n.length < 3) errores.push({ campo: nombre, mensaje: "El nombre y apellido es demasiado corto" });
+
+                    // Igual que la base: 6 a 9 dígitos. Aceptamos puntos y espacios.
+                    const d = dni.value.replace(/[.\s]/g, "");
+                    if (d && !/^\d{6,9}$/.test(d)) errores.push({ campo: dni, mensaje: "El DNI tiene que tener entre 6 y 9 números" });
+                    return errores;
+                },
+                alEnviar() {
+                    usuario.nombre = nombre.value.trim();
+                    usuario.dni = dni.value.replace(/[.\s]/g, "");
+                    exito("exito-datos", "Guardamos tus datos.");
+                }
+            });
+
+            // --- Cambio de contraseña ---
+            const actual = document.getElementById("clave-actual");
+            const nueva = document.getElementById("clave-nueva");
+            const confirmacion = document.getElementById("clave-confirmacion");
+
+            // Mismas reglas que el registro (a confirmar con la configuración de Identity).
+            const reglas = {
+                largo: (v) => v.length >= 8,
+                mayuscula: (v) => /[A-ZÁÉÍÓÚÑ]/.test(v),
+                minuscula: (v) => /[a-záéíóúñ]/.test(v),
+                numero: (v) => /\d/.test(v)
+            };
+            const items = document.querySelectorAll("#requisitos li");
+
+            function actualizarRequisitos() {
+                items.forEach((li) => {
+                    const cumple = reglas[li.dataset.regla](nueva.value);
+                    li.classList.toggle("cumple", cumple);
+                    let estado = li.querySelector(".visualmente-oculto");
+                    if (!estado) {
+                        estado = document.createElement("span");
+                        estado.className = "visualmente-oculto";
+                        li.append(estado);
+                    }
+                    estado.textContent = cumple ? " (cumplido)" : " (pendiente)";
+                });
+            }
+            nueva.addEventListener("input", actualizarRequisitos);
+            actualizarRequisitos();
+
+            F.iniciar(document.getElementById("form-clave"), {
+                resumen: "resumen-clave",
+                validar() {
+                    const errores = [];
+                    if (!actual.value) errores.push({ campo: actual, mensaje: "Escribí tu contraseña actual" });
+
+                    const p = nueva.value;
+                    if (!p) errores.push({ campo: nueva, mensaje: "Elegí una contraseña nueva" });
+                    else if (!Object.values(reglas).every((r) => r(p))) errores.push({ campo: nueva, mensaje: "La contraseña nueva no cumple todos los requisitos" });
+                    else if (p === actual.value) errores.push({ campo: nueva, mensaje: "La contraseña nueva tiene que ser distinta de la actual" });
+
+                    if (!confirmacion.value) errores.push({ campo: confirmacion, mensaje: "Repetí la contraseña nueva" });
+                    else if (p && confirmacion.value !== p) errores.push({ campo: confirmacion, mensaje: "Las contraseñas no coinciden" });
+                    return errores;
+                },
+                alEnviar() {
+                    document.getElementById("form-clave").reset();
+                    actualizarRequisitos();
+                    exito("exito-clave", "Cambiaste tu contraseña. En la aplicación real se cerrarían tus otras sesiones.");
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
