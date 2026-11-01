@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Panel de la organización · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-usuario.css">
+    <link rel="stylesheet" href="assets/estilos-org.css">
+</head>
+<body>
+    <main id="contenido" class="pagina-usuario" tabindex="-1">
+        <div class="contenedor">
+            <div class="cabecera-pagina">
+                <div>
+                    <h1 id="titulo-org">Organización</h1>
+                    <p class="texto-suave" id="subtitulo-org"></p>
+                </div>
+                <a class="boton" href="asignaciones.html">Ver asignaciones</a>
+            </div>
+
+            <div id="avisos"></div>
+
+            <div class="panel">
+                <div>
+                    <section aria-labelledby="titulo-activas">
+                        <div class="encabezado-seccion">
+                            <h2 id="titulo-activas">Asignaciones activas</h2>
+                            <a href="asignaciones.html">Ver todas</a>
+                        </div>
+                        <ul class="lista-solicitudes" id="lista-activas"></ul>
+                        <div class="tarjeta estado-vacio" id="vacio" hidden>
+                            <h3>No tienen asignaciones activas</h3>
+                            <p>Cuando alguien de la organización tome una solicitud, la van a ver acá para seguirla hasta el final.</p>
+                            <div class="acciones"><a class="boton" href="../visitante/mapa.html">Ver el mapa de centros</a></div>
+                        </div>
+                    </section>
+                </div>
+
+                <div>
+                    <section class="tarjeta" aria-labelledby="titulo-resumen-panel">
+                        <h2 id="titulo-resumen-panel">Resumen</h2>
+                        <dl class="resumen">
+                            <div><dt>Asignaciones activas</dt><dd id="n-activas">0</dd></div>
+                            <div><dt>Completadas</dt><dd id="n-completadas">0</dd></div>
+                            <div><dt>Centros aprobados</dt><dd id="n-centros">0</dd></div>
+                            <div><dt>Miembros activos</dt><dd id="n-miembros">0</dd></div>
+                        </dl>
+                    </section>
+
+                    <section class="tarjeta" aria-labelledby="titulo-centros-panel">
+                        <div class="encabezado-seccion">
+                            <h2 id="titulo-centros-panel">Centros</h2>
+                            <a href="centros.html">Administrar</a>
+                        </div>
+                        <ul class="lista-simple" id="lista-centros-panel" style="list-style:none;padding:0"></ul>
+                    </section>
+
+                    <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
+                        <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
+                        <p class="texto-suave">No esperen una respuesta de la app: llamen directamente.</p>
+                        <ul>
+                            <li><a href="tel:911">911 <span>Emergencias</span></a></li>
+                            <li><a href="tel:107">107 <span>SAME · Emergencias médicas</span></a></li>
+                        </ul>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-org.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-org.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const O = window.AyudaYaOrg;
+            const D = window.DATOS_ORG;
+            const org = D.organizacion;
+
+            document.getElementById("titulo-org").textContent = org.nombre;
+            document.getElementById("subtitulo-org").innerHTML =
+                A.escapar(A.tiposOrganizacion[org.tipo]) + " · " + A.escapar(org.ciudad_nombre) + " · " + O.insigniaVerificacion(org.estado);
+
+            const aviso = (clase, icono, html) => '<div class="alerta alerta-' + clase + '">' + icono + "<p>" + html + "</p></div>";
+            const avisos = [];
+            if (org.estado !== "activa") {
+                avisos.push(aviso("advertencia", A.iconos.alerta, "<strong>La organización no está activa.</strong> Mientras tanto no puede tomar solicitudes."));
+            }
+            const pendientes = D.centros.filter((c) => c.estado_verificacion === "pendiente");
+            const rechazados = D.centros.filter((c) => c.estado_verificacion === "rechazado");
+            if (pendientes.length) {
+                avisos.push(aviso("info", A.iconos.info, "<strong>" + O.plural(pendientes.length, "centro espera", "centros esperan") + " aprobación.</strong> Hasta que un administrador lo apruebe, no aparece en el mapa público."));
+            }
+            if (rechazados.length) {
+                avisos.push(aviso("peligro", A.iconos.alerta, "<strong>" + O.plural(rechazados.length, "centro fue rechazado", "centros fueron rechazados") + ".</strong> Revisen el motivo en <a href=\"centros.html\">Centros</a>."));
+            }
+            document.getElementById("avisos").innerHTML = avisos.join("");
+
+            const porFecha = (a, b) => new Date(b.asignada_at) - new Date(a.asignada_at);
+            const activas = D.asignaciones.filter(O.esActiva).sort(porFecha);
+
+            document.getElementById("n-activas").textContent = activas.length;
+            document.getElementById("n-completadas").textContent = D.asignaciones.filter((a) => a.estado === "completada").length;
+            document.getElementById("n-centros").textContent = D.centros.filter((c) => c.estado_verificacion === "aprobado").length;
+            document.getElementById("n-miembros").textContent = D.miembros.filter((m) => m.activo).length;
+
+            document.getElementById("lista-activas").innerHTML = activas.slice(0, 3).map((a) => "<li>" + O.tarjetaAsignacion(a) + "</li>").join("");
+            document.getElementById("vacio").hidden = activas.length > 0;
+
+            document.getElementById("lista-centros-panel").innerHTML = D.centros.map((c) =>
+                '<li style="margin-bottom:.75rem"><a href="recursos.html?id=' + c.id + '"><strong>' + A.escapar(c.nombre) + "</strong></a><br>" +
+                O.insigniaVerificacion(c.estado_verificacion) + "</li>"
+            ).join("");
+        })();
+    </script>
+</body>
+</html>

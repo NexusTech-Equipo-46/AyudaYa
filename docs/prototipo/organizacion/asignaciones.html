@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Asignaciones · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-usuario.css">
+    <link rel="stylesheet" href="assets/estilos-org.css">
+</head>
+<body>
+    <main id="contenido" class="pagina-usuario" tabindex="-1">
+        <div class="contenedor">
+            <div class="cabecera-pagina">
+                <div>
+                    <h1>Asignaciones</h1>
+                    <p class="texto-suave">Los recursos de solicitudes que la organización se comprometió a cubrir.</p>
+                </div>
+            </div>
+
+            <div class="filtro-estado" role="group" aria-label="Filtrar por estado" style="margin-bottom:1rem">
+                <button type="button" aria-pressed="true" data-filtro="activas">Activas</button>
+                <button type="button" aria-pressed="false" data-filtro="cerradas">Cerradas</button>
+                <button type="button" aria-pressed="false" data-filtro="todas">Todas</button>
+            </div>
+
+            <p id="contador" role="status" class="texto-suave"></p>
+            <ul class="lista-solicitudes" id="lista"></ul>
+            <div class="tarjeta estado-vacio" id="vacio" hidden>
+                <h2>No hay asignaciones para mostrar</h2>
+                <p>Probá con otro filtro, o buscá solicitudes pendientes en la zona.</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-org.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-org.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const O = window.AyudaYaOrg;
+            const D = window.DATOS_ORG;
+            const lista = document.getElementById("lista");
+            const filtros = document.querySelectorAll("[data-filtro]");
+
+            function dibujar(filtro) {
+                const orden = (a, b) => new Date(b.asignada_at) - new Date(a.asignada_at);
+                const items = D.asignaciones
+                    .filter((a) => filtro === "todas" || (filtro === "activas") === O.esActiva(a))
+                    .sort(orden);
+                lista.innerHTML = items.map((a) => "<li>" + O.tarjetaAsignacion(a) + "</li>").join("");
+                document.getElementById("vacio").hidden = items.length > 0;
+                document.getElementById("contador").textContent = O.plural(items.length, "asignación", "asignaciones");
+            }
+
+            filtros.forEach((b) => b.addEventListener("click", () => {
+                filtros.forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+                dibujar(b.dataset.filtro);
+            }));
+
+            dibujar("activas");
+        })();
+    </script>
+</body>
+</html>

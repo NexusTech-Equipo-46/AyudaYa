@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Detalle de asignación · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-usuario.css">
+    <link rel="stylesheet" href="assets/estilos-org.css">
+</head>
+<body>
+    <main id="contenido" tabindex="-1">
+        <div class="contenedor" id="detalle-asignacion"></div>
+    </main>
+
+    <dialog id="dialogo-liberar" aria-labelledby="titulo-liberar">
+        <form id="form-liberar" novalidate>
+            <h2 id="titulo-liberar">Liberar asignación</h2>
+            <p>Si la liberan, el recurso vuelve a quedar pendiente para que otra persona u organización lo tome. Esto no se puede deshacer.</p>
+            <div class="campo">
+                <label for="motivo">Motivo para liberarla</label>
+                <textarea id="motivo" name="motivo" rows="3" maxlength="300" required aria-describedby="error-motivo"></textarea>
+                <p class="error-campo" id="error-motivo"></p>
+            </div>
+            <div class="acciones">
+                <button type="submit" class="boton boton-peligro">Sí, liberar asignación</button>
+                <button type="button" class="boton boton-secundario" id="cerrar-dialogo">No, volver</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-org.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-org.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const O = window.AyudaYaOrg;
+            const contenedor = document.getElementById("detalle-asignacion");
+            const dialogo = document.getElementById("dialogo-liberar");
+            const motivo = document.getElementById("motivo");
+
+            const id = new URLSearchParams(location.search).get("id");
+            const a = window.DATOS_ORG.todas.find((x) => x.id === id);
+
+            if (!a) {
+                document.title = "Asignación no encontrada · AyudaYa";
+                contenedor.innerHTML =
+                    '<div class="no-encontrado"><h1>No encontramos esa asignación</h1>' +
+                    "<p>Puede que el enlace esté incompleto o que no sea de esta organización.</p>" +
+                    '<a class="boton" href="asignaciones.html">Ver asignaciones</a></div>';
+                return;
+            }
+
+            const recurso = A.nombreRecurso(a.tipo_recurso);
+            document.title = recurso + " · Solicitud #" + a.numero + " · AyudaYa";
+
+            function aviso(clase, icono, html) {
+                return '<div class="alerta alerta-' + clase + '">' + icono + "<p>" + html + "</p></div>";
+            }
+
+            function avisosDe() {
+                const e = O.estadosAsignacion[a.estado];
+                const out = [];
+                if (a.estado === "completada") out.push(aviso("exito", A.iconos.ok, "<strong>Completada.</strong> " + e.descripcion));
+                else if (a.estado === "cancelada") out.push(aviso("peligro", A.iconos.alerta, "<strong>Cancelada.</strong> " + A.escapar(a.motivo)));
+                else if (a.estado === "liberada") out.push(aviso("advertencia", A.iconos.alerta, "<strong>Liberada.</strong> Motivo: " + A.escapar(a.motivo)));
+                else out.push(aviso("info", A.iconos.info, "<strong>" + e.texto + ".</strong> " + e.descripcion));
+                if (a.urgencia === "critica" && O.esActiva(a)) {
+                    out.push(aviso("advertencia", A.iconos.alerta, "<strong>Urgencia crítica.</strong> Si hay riesgo de vida, llamen al <a href=\"tel:911\">911</a>."));
+                }
+                return out.join("");
+            }
+
+            function bloqueContacto() {
+                if (!O.esActiva(a) || !a.contacto) {
+                    return '<section class="tarjeta" aria-labelledby="t-contacto"><h2 id="t-contacto">Datos de contacto</h2>' +
+                        '<p class="nota-privada">' + O.iconos.candado + "<span>Los datos de contacto se ven solo mientras la asignación está activa.</span></p></section>";
+                }
+                return '<section class="tarjeta cuadro-privado" aria-labelledby="t-contacto"><h2 id="t-contacto">Datos de contacto</h2>' +
+                    '<p class="nota-privada">' + O.iconos.candado + "<span>Son privados. Usenlos solo para coordinar esta atención.</span></p>" +
+                    '<dl class="datos-contacto">' +
+                        "<div><dt>Nombre</dt><dd>" + A.escapar(a.solicitante) + "</dd></div>" +
+                        "<div><dt>Dirección</dt><dd>" + A.escapar(a.contacto.direccion) + "</dd></div>" +
+                        '<div><dt>Teléfono</dt><dd><a href="tel:' + a.contacto.telefono.replace(/\s/g, "") + '">' + A.escapar(a.contacto.telefono) + "</a></dd></div>" +
+                    "</dl></section>";
+            }
+
+            function acciones() {
+                if (a.estado === "completada") {
+                    return '<p class="texto-suave">Terminaron la atención. Ahora la persona que pidió ayuda tiene que confirmar la recepción. Hasta entonces, solo un administrador puede cancelarla.</p>';
+                }
+                if (!O.esActiva(a)) {
+                    return '<p class="texto-suave">Esta asignación está cerrada y no se puede modificar.</p>';
+                }
+                const avanzar = a.estado === "asignada"
+                    ? '<button type="button" class="boton" id="avanzar">Empezar la atención</button>'
+                    : '<button type="button" class="boton" id="avanzar">Marcar como completada</button>';
+                return '<div class="pasos-atencion">' + avanzar +
+                    '<button type="button" class="boton boton-peligro" id="liberar">Liberar asignación</button></div>' +
+                    '<p class="texto-suave" style="margin-top:.75rem">Liberar exige un motivo y deja el recurso otra vez pendiente.</p>';
+            }
+
+            function historial() {
+                return a.historial.slice().reverse().map((h) =>
+                    "<li>" + O.insigniaAsignacion(h.estado_nuevo) +
+                    '<span class="cuando">' + A.escapar(h.actor) + " · <time datetime=\"" + h.creado_at + '" title="' + A.fechaCompleta(h.creado_at) + '">' + A.haceCuanto(h.creado_at) + "</time></span>" +
+                    (h.motivo ? '<p class="motivo">' + A.escapar(h.motivo) + "</p>" : "") + "</li>"
+                ).join("");
+            }
+
+            function render(foco) {
+                contenedor.innerHTML =
+                    '<nav class="migas" aria-label="Estás en"><ol>' +
+                        '<li><a href="panel.html">Panel</a></li>' +
+                        '<li><a href="asignaciones.html">Asignaciones</a></li>' +
+                        '<li><a href="asignacion.html?id=' + a.id + '" aria-current="page">' + A.escapar(recurso) + " · #" + a.numero + "</a></li>" +
+                    "</ol></nav>" +
+
+                    '<div class="detalle-encabezado"><div>' +
+                        '<h1 id="titulo-asignacion">' + A.escapar(recurso) + " · Solicitud #" + a.numero + "</h1>" +
+                        '<p class="meta">' + A.escapar(a.zona_nombre) + " · " + O.plural(a.personas, "persona", "personas") + "</p>" +
+                        '<p class="meta">Asignada ' + A.fechaCompleta(a.asignada_at) + " por " + A.escapar(a.asignada_por) + "</p>" +
+                    "</div>" +
+                    '<div class="insignias">' + O.insigniaAsignacion(a.estado) + O.insigniaUrgencia(a.urgencia) + "</div></div>" +
+
+                    '<div class="detalle"><div>' +
+                        avisosDe() +
+                        '<section class="tarjeta" aria-labelledby="t-pedido"><h2 id="t-pedido">Lo que se pidió</h2>' +
+                            '<dl class="datos-contacto">' +
+                                "<div><dt>Recurso</dt><dd>" + A.escapar(recurso) + "</dd></div>" +
+                                "<div><dt>Personas</dt><dd>" + a.personas + "</dd></div>" +
+                                "<div><dt>Detalle</dt><dd>" + (a.detalle ? A.escapar(a.detalle) : '<span class="texto-suave">Sin detalle</span>') + "</dd></div>" +
+                                (a.descripcion ? "<div><dt>Situación</dt><dd>" + A.escapar(a.descripcion) + "</dd></div>" : "") +
+                            "</dl></section>" +
+                        '<section class="tarjeta" aria-labelledby="t-historial"><h2 id="t-historial">Historial</h2><ol class="cronologia">' + historial() + "</ol></section>" +
+                    "</div><div>" +
+                        bloqueContacto() +
+                        '<section class="tarjeta" aria-labelledby="t-acciones"><h2 id="t-acciones">Acciones</h2><div id="acciones">' + acciones() + "</div>" +
+                            '<p class="texto-suave" id="nota-estado" role="status" style="margin:.75rem 0 0"></p></section>' +
+                        '<aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia"><h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>' +
+                            '<ul><li><a href="tel:911">911 <span>Emergencias</span></a></li><li><a href="tel:107">107 <span>SAME</span></a></li></ul></aside>' +
+                    "</div></div>";
+
+                const avanzar = document.getElementById("avanzar");
+                if (avanzar) avanzar.addEventListener("click", () => cambiarEstado(a.estado === "asignada" ? "en_atencion" : "completada"));
+                const liberar = document.getElementById("liberar");
+                if (liberar) liberar.addEventListener("click", () => {
+                    motivo.value = "";
+                    motivo.removeAttribute("aria-invalid");
+                    document.getElementById("error-motivo").textContent = "";
+                    dialogo.showModal();
+                    motivo.focus();
+                });
+                if (foco) {
+                    const t = document.getElementById("titulo-asignacion");
+                    t.setAttribute("tabindex", "-1");
+                    t.focus();
+                }
+            }
+
+            // Prototipo: el cambio vive en memoria y se pierde al recargar.
+            function cambiarEstado(nuevo, texto) {
+                a.estado = nuevo;
+                a.historial.push({ estado_nuevo: nuevo, actor: O.usuario.nombre, motivo: texto || null, creado_at: new Date().toISOString() });
+                if (nuevo === "liberada") a.motivo = texto;
+                render(true);
+                document.getElementById("nota-estado").textContent = "Prototipo: el cambio no se guarda al recargar.";
+            }
+
+            document.getElementById("cerrar-dialogo").addEventListener("click", () => dialogo.close());
+
+            document.getElementById("form-liberar").addEventListener("submit", (e) => {
+                e.preventDefault();
+                const texto = motivo.value.trim();
+                if (!texto) {
+                    motivo.setAttribute("aria-invalid", "true");
+                    document.getElementById("error-motivo").textContent = "Contanos por qué liberan la asignación";
+                    motivo.focus();
+                    return;
+                }
+                dialogo.close();
+                cambiarEstado("liberada", texto);
+            });
+
+            motivo.addEventListener("input", () => {
+                if (motivo.value.trim()) {
+                    motivo.removeAttribute("aria-invalid");
+                    document.getElementById("error-motivo").textContent = "";
+                }
+            });
+
+            render(false);
+        })();
+    </script>
+</body>
+</html>

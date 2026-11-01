@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Recursos del centro · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-usuario.css">
+    <link rel="stylesheet" href="assets/estilos-org.css">
+</head>
+<body>
+    <main id="contenido" tabindex="-1">
+        <div class="contenedor" id="recursos-centro"></div>
+    </main>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-org.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-org.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const O = window.AyudaYaOrg;
+            const contenedor = document.getElementById("recursos-centro");
+
+            const id = new URLSearchParams(location.search).get("id") || "a1f3";
+            const c = window.DATOS_ORG.centros.find((x) => x.id === id);
+
+            if (!c) {
+                document.title = "Centro no encontrado · AyudaYa";
+                contenedor.innerHTML =
+                    '<div class="no-encontrado"><h1>No encontramos ese centro</h1>' +
+                    "<p>Puede que el enlace esté incompleto o que no sea de esta organización.</p>" +
+                    '<a class="boton" href="centros.html">Ver centros</a></div>';
+                return;
+            }
+
+            document.title = "Recursos de " + c.nombre + " · AyudaYa";
+
+            // Valores de centro_recurso.nivel. "no_ofrece" equivale a no tener fila.
+            const opciones = ["alta", "media", "baja", "sin_stock", "no_ofrece"];
+
+            function fila(t) {
+                const actual = c.recursos[t.codigo] || "no_ofrece";
+                return "<tr><th scope=\"row\"><label for=\"nivel-" + t.codigo + "\">" + A.escapar(t.nombre) + "</label></th>" +
+                    '<td class="actual">' + A.insigniaNivel(actual) + "</td>" +
+                    '<td><select id="nivel-' + t.codigo + '" data-recurso="' + t.codigo + '">' +
+                        opciones.map((o) => '<option value="' + o + '"' + (o === actual ? " selected" : "") + ">" + A.niveles[o].texto + "</option>").join("") +
+                    "</select></td></tr>";
+            }
+
+            const aprobado = c.estado_verificacion === "aprobado";
+
+            contenedor.innerHTML =
+                '<nav class="migas" aria-label="Estás en"><ol>' +
+                    '<li><a href="panel.html">Panel</a></li><li><a href="centros.html">Centros</a></li>' +
+                    '<li><a href="recursos.html?id=' + c.id + '" aria-current="page">Recursos</a></li></ol></nav>' +
+                '<div class="detalle-encabezado"><div><h1>Recursos de ' + A.escapar(c.nombre) + "</h1>" +
+                    '<p class="meta">' + A.escapar(c.zona_nombre) + " · " + A.escapar(c.direccion) + "</p>" +
+                    '<p class="meta">Última actualización <time id="ultima" datetime="' + c.recursos_actualizado_at + '">' + A.fechaCompleta(c.recursos_actualizado_at) + "</time></p></div>" +
+                    '<div class="insignias">' + O.insigniaVerificacion(c.estado_verificacion) + "</div></div>" +
+
+                (aprobado ? "" : '<div class="alerta alerta-info">' + A.iconos.info + "<p>Pueden cargar los recursos ahora. Se van a ver en el mapa cuando un administrador apruebe el centro.</p></div>") +
+
+                '<div class="detalle"><div>' +
+                    '<section class="tarjeta" aria-labelledby="t-niveles"><h2 id="t-niveles">Disponibilidad por recurso</h2>' +
+                        '<p class="texto-suave">No se carga una cantidad: se elige un nivel. Quienes miran el mapa también ven cuándo se actualizó.</p>' +
+                        '<form id="form-recursos"><div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="t-niveles">' +
+                        '<table class="tabla-recursos tabla-edicion"><thead><tr>' +
+                            '<th scope="col">Recurso</th><th scope="col">Ahora</th><th scope="col">Cambiar a</th></tr></thead><tbody>' +
+                            window.DATOS.tiposRecurso.map(fila).join("") + "</tbody></table></div>" +
+                        '<div class="barra-guardado"><button type="submit" class="boton">Guardar cambios</button>' +
+                            '<p class="texto-suave" id="nota-guardado" role="status"></p></div></form></section>' +
+                "</div><div>" +
+                    '<section class="tarjeta" aria-labelledby="t-niveles-ref"><h2 id="t-niveles-ref">Qué significa cada nivel</h2>' +
+                        '<ul class="referencias">' + opciones.map((o) =>
+                            "<li>" + A.insigniaNivel(o) + "<span>" + A.escapar(A.niveles[o].descripcion) + "</span></li>").join("") + "</ul></section>" +
+                    '<section class="tarjeta llamado" aria-labelledby="t-consejo"><h2 id="t-consejo">Mantengan la información al día</h2>' +
+                        "<p>Si un recurso se agotó, cámbienlo a «Sin stock» en lugar de dejarlo en «Alta». Así nadie se acerca por algo que no hay.</p></section>" +
+                "</div></div>";
+
+            document.getElementById("form-recursos").addEventListener("submit", (e) => {
+                e.preventDefault();
+                window.DATOS.tiposRecurso.forEach((t) => {
+                    const valor = document.getElementById("nivel-" + t.codigo).value;
+                    if (valor === "no_ofrece") delete c.recursos[t.codigo];
+                    else c.recursos[t.codigo] = valor;
+                });
+                c.recursos_actualizado_at = new Date().toISOString();
+                document.querySelectorAll("[data-recurso]").forEach((s) => {
+                    s.closest("tr").querySelector(".actual").innerHTML = A.insigniaNivel(s.value);
+                });
+                const ultima = document.getElementById("ultima");
+                ultima.dateTime = c.recursos_actualizado_at;
+                ultima.textContent = A.fechaCompleta(c.recursos_actualizado_at);
+                document.getElementById("nota-guardado").textContent = "Guardado. Prototipo: no se conserva al recargar.";
+            });
+        })();
+    </script>
+</body>
+</html>

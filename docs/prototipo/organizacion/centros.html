@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Centros · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-usuario.css">
+    <link rel="stylesheet" href="assets/estilos-org.css">
+</head>
+<body>
+    <main id="contenido" class="pagina-usuario" tabindex="-1">
+        <div class="contenedor">
+            <div class="cabecera-pagina">
+                <div>
+                    <h1>Centros</h1>
+                    <p class="texto-suave">Los lugares donde la organización ofrece o recibe ayuda. Un administrador tiene que aprobar cada centro antes de que aparezca en el mapa.</p>
+                </div>
+                <button type="button" class="boton" id="abrir-nuevo">Nuevo centro</button>
+            </div>
+
+            <p id="aviso-alta" role="status"></p>
+            <ul class="grilla-org" id="lista-centros"></ul>
+        </div>
+    </main>
+
+    <dialog id="dialogo-centro" aria-labelledby="titulo-nuevo">
+        <form id="form-centro" novalidate>
+            <h2 id="titulo-nuevo">Nuevo centro</h2>
+            <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+
+            <div class="campo">
+                <label for="nombre">Nombre del centro</label>
+                <input type="text" id="nombre" name="nombre" maxlength="100" autocomplete="off" aria-describedby="error-nombre">
+                <p class="error-campo" id="error-nombre"></p>
+            </div>
+            <div class="campo">
+                <label for="tipo">Tipo de centro</label>
+                <select id="tipo" name="tipo" aria-describedby="error-tipo"></select>
+                <p class="error-campo" id="error-tipo"></p>
+            </div>
+            <div class="campo">
+                <label for="zona">Zona</label>
+                <select id="zona" name="zona" aria-describedby="error-zona"></select>
+                <p class="error-campo" id="error-zona"></p>
+            </div>
+            <div class="campo">
+                <label for="direccion">Dirección</label>
+                <input type="text" id="direccion" name="direccion" maxlength="200" aria-describedby="error-direccion">
+                <p class="error-campo" id="error-direccion"></p>
+            </div>
+            <div class="campo">
+                <label for="telefono">Teléfono de contacto</label>
+                <input type="tel" id="telefono" name="telefono" maxlength="30" aria-describedby="error-telefono">
+                <p class="error-campo" id="error-telefono"></p>
+            </div>
+            <fieldset class="grupo" id="grupo-horario" aria-describedby="ayuda-horario">
+                <legend>Horario de atención <span class="opcional">(opcional)</span></legend>
+                <span class="ayuda" id="ayuda-horario">Si no lo completan, el centro figura con «Horario no informado».</span>
+                <label class="check"><input type="checkbox" id="todo-el-dia"> Atención las 24 horas, todos los días</label>
+                <div id="horario-turno">
+                    <div class="dias-semana" role="group" aria-label="Días de atención" style="margin-top:.75rem"></div>
+                    <p class="error-campo" id="error-dia-1"></p>
+                    <div class="horas">
+                        <div class="campo">
+                            <label for="abre">Abre</label>
+                            <input type="time" id="abre" name="abre" aria-describedby="error-abre">
+                            <p class="error-campo" id="error-abre"></p>
+                        </div>
+                        <div class="campo">
+                            <label for="cierra">Cierra</label>
+                            <input type="time" id="cierra" name="cierra" aria-describedby="error-cierra">
+                            <p class="error-campo" id="error-cierra"></p>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+            <div class="campo">
+                <label for="descripcion">Descripción <span class="opcional">(opcional)</span></label>
+                <textarea id="descripcion" name="descripcion" rows="3" maxlength="300"></textarea>
+            </div>
+
+            <div class="acciones">
+                <button type="submit" class="boton">Enviar para aprobación</button>
+                <button type="button" class="boton boton-secundario" id="cerrar-dialogo">Cancelar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-org.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-org.js"></script>
+    <script src="assets/formularios.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const A = window.AyudaYa;
+            const O = window.AyudaYaOrg;
+            const D = window.DATOS_ORG;
+            const dialogo = document.getElementById("dialogo-centro");
+            const form = document.getElementById("form-centro");
+            const campo = (id) => document.getElementById(id);
+
+            function tarjeta(c) {
+                const tipo = window.DATOS.tiposCentro.find((t) => t.codigo === c.tipo_centro_codigo).nombre;
+                const motivo = c.motivo_estado
+                    ? '<div class="alerta alerta-peligro">' + A.iconos.alerta + "<p><strong>Motivo:</strong> " + A.escapar(c.motivo_estado) + "</p></div>" : "";
+                const pendiente = c.estado_verificacion === "pendiente"
+                    ? '<div class="alerta alerta-info">' + A.iconos.info + "<p>Un administrador lo está revisando. Todavía no aparece en el mapa.</p></div>" : "";
+                const aprobado = c.estado_verificacion === "aprobado";
+                return '<li><article class="tarjeta centro-org" aria-labelledby="titulo-' + c.id + '">' +
+                    '<h3 id="titulo-' + c.id + '">' + A.escapar(c.nombre) + "</h3>" +
+                    '<p class="meta">' + A.escapar(tipo) + " · " + A.escapar(c.zona_nombre) + "</p>" +
+                    '<p class="meta">' + A.escapar(c.direccion) + "</p>" +
+                    '<p class="meta"><strong>Horario:</strong> ' + A.escapar(O.textoHorario(c.horarios)) + "</p>" +
+                    '<div class="insignias">' + O.insigniaVerificacion(c.estado_verificacion) + (aprobado ? A.insigniaEstado(c.estado_operativo) : "") + "</div>" +
+                    motivo + pendiente +
+                    '<div class="acciones"><a class="boton boton-secundario" href="recursos.html?id=' + c.id + '">Recursos<span class="visualmente-oculto"> de ' + A.escapar(c.nombre) + "</span></a>" +
+                    (aprobado ? '<a class="boton boton-secundario" href="../visitante/centro.html?id=' + c.id + '">Ver como visitante<span class="visualmente-oculto">: ' + A.escapar(c.nombre) + "</span></a>" : "") +
+                    "</div></article></li>";
+            }
+
+            function dibujar() {
+                campo("lista-centros").innerHTML = D.centros.map(tarjeta).join("");
+            }
+
+            campo("tipo").innerHTML = '<option value="">Elegí un tipo</option>' +
+                window.DATOS.tiposCentro.map((t) => '<option value="' + t.codigo + '">' + t.nombre + "</option>").join("");
+            campo("zona").innerHTML = '<option value="">Elegí una zona</option>' +
+                window.DATOS.zonas.map((z) => '<option value="' + z.id + '">' + z.nombre + "</option>").join("");
+
+            const nombresDias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+            document.querySelector(".dias-semana").innerHTML = nombresDias.map((n, i) =>
+                '<label class="opcion"><input type="checkbox" id="dia-' + (i + 1) + '" name="dia" value="' + (i + 1) + '"' + (i === 0 ? ' aria-describedby="error-dia-1"' : "") + "> " + n + "</label>").join("");
+
+            const diasMarcados = () => Array.from(document.querySelectorAll("input[name=dia]:checked")).map((i) => Number(i.value));
+
+            // Con 24 horas se deshabilitan días y horas (todo_el_dia no admite abre ni cierra).
+            campo("todo-el-dia").addEventListener("change", (e) => {
+                campo("horario-turno").hidden = e.target.checked;
+            });
+
+            // Reglas de la base: nombre único dentro de la organización (sin distinguir mayúsculas).
+            function validar() {
+                const errores = [];
+                const nombre = campo("nombre").value.trim();
+                if (!nombre) errores.push({ campo: campo("nombre"), mensaje: "Ingresá el nombre del centro" });
+                else if (D.centros.some((c) => c.nombre.toLowerCase() === nombre.toLowerCase())) {
+                    errores.push({ campo: campo("nombre"), mensaje: "Ya tienen un centro con ese nombre" });
+                }
+                if (!campo("tipo").value) errores.push({ campo: campo("tipo"), mensaje: "Elegí el tipo de centro" });
+                if (!campo("zona").value) errores.push({ campo: campo("zona"), mensaje: "Elegí la zona" });
+                if (!campo("direccion").value.trim()) errores.push({ campo: campo("direccion"), mensaje: "Ingresá la dirección" });
+                if (!campo("telefono").value.trim()) errores.push({ campo: campo("telefono"), mensaje: "Ingresá un teléfono de contacto" });
+                // centro_horario: abre < cierra, y un turno necesita al menos un día.
+                if (!campo("todo-el-dia").checked) {
+                    const dias = diasMarcados();
+                    const abre = campo("abre").value, cierra = campo("cierra").value;
+                    if (dias.length || abre || cierra) {
+                        if (!dias.length) errores.push({ campo: campo("dia-1"), mensaje: "Marcá los días de atención" });
+                        if (!abre) errores.push({ campo: campo("abre"), mensaje: "Ingresá la hora de apertura" });
+                        if (!cierra) errores.push({ campo: campo("cierra"), mensaje: "Ingresá la hora de cierre" });
+                        if (abre && cierra && abre >= cierra) errores.push({ campo: campo("cierra"), mensaje: "La hora de cierre tiene que ser posterior a la de apertura" });
+                    }
+                }
+                return errores;
+            }
+
+            function horariosDelForm() {
+                if (campo("todo-el-dia").checked) {
+                    return [1, 2, 3, 4, 5, 6, 7].map((d) => ({ dia_semana: d, abre: null, cierra: null, todo_el_dia: true, notas: null }));
+                }
+                return diasMarcados().map((d) => ({ dia_semana: d, abre: campo("abre").value, cierra: campo("cierra").value, todo_el_dia: false, notas: null }));
+            }
+
+            Formularios.iniciar(form, {
+                resumen: "resumen-errores",
+                validar,
+                alEnviar() {
+                    const zona = window.DATOS.zonas.find((z) => z.id === campo("zona").value);
+                    D.centros.push({
+                        id: "n" + Date.now(), nombre: campo("nombre").value.trim(), tipo_centro_codigo: campo("tipo").value,
+                        zona_id: zona.id, zona_nombre: zona.nombre,
+                        direccion: campo("direccion").value.trim(), telefono_contacto: campo("telefono").value.trim(),
+                        estado_verificacion: "pendiente", estado_operativo: "operativo", motivo_estado: null,
+                        descripcion: campo("descripcion").value.trim() || null,
+                        horarios: horariosDelForm(),
+                        recursos_actualizado_at: new Date().toISOString(), recursos: {}
+                    });
+                    dialogo.close();
+                    form.reset();
+                    campo("horario-turno").hidden = false;
+                    dibujar();
+                    const aviso = campo("aviso-alta");
+                    aviso.className = "alerta alerta-exito";
+                    aviso.innerHTML = A.iconos.ok + "<p><strong>Centro enviado.</strong> Queda pendiente hasta que un administrador lo apruebe. Prototipo: no se guarda al recargar.</p>";
+                }
+            });
+
+            campo("abrir-nuevo").addEventListener("click", () => { dialogo.showModal(); campo("nombre").focus(); });
+            campo("cerrar-dialogo").addEventListener("click", () => dialogo.close());
+
+            dibujar();
+        })();
+    </script>
+</body>
+</html>
