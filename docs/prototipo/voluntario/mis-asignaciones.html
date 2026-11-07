@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mis asignaciones · AyudaYa</title>
+    <link rel="stylesheet" href="assets/estilos.css">
+    <link rel="stylesheet" href="assets/estilos-voluntario.css">
+</head>
+<body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">Prototipo navegable · Zona voluntario · Datos ficticios</div>
+
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" href="panel.html" aria-label="AyudaYa, ir a mi panel de voluntario">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal">
+                <ul>
+                    <li><a href="panel.html">Panel</a></li>
+                    <li><a href="mis-asignaciones.html" aria-current="page">Mis asignaciones</a></li>
+                    <li><a href="../visitante/mapa.html">Mapa de centros</a></li>
+                    <li><a href="../usuario/panel.html">Mi cuenta</a></li>
+                    <li><a href="../visitante/index.html">Cerrar sesión</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido" class="pagina-voluntario" tabindex="-1">
+        <div class="contenedor">
+            <div class="cabecera-pagina">
+                <div>
+                    <h1>Mis asignaciones</h1>
+                    <p class="texto-suave">Todo lo que tomaste, con lo que tenés que hacer en cada caso.</p>
+                </div>
+                <a class="boton" href="panel.html#titulo-disponibles">Tomar otra solicitud</a>
+            </div>
+
+            <div class="barra-resultados">
+                <p id="cantidad" role="status" aria-live="polite"></p>
+                <div class="filtro-estado" role="group" aria-label="Filtrar por estado">
+                    <button type="button" data-filtro="todas" aria-pressed="true">Todas</button>
+                    <button type="button" data-filtro="activas" aria-pressed="false">Activas</button>
+                    <button type="button" data-filtro="terminadas" aria-pressed="false">Completadas</button>
+                    <button type="button" data-filtro="sin_completar" aria-pressed="false">Sin completar</button>
+                </div>
+            </div>
+
+            <h2 class="visualmente-oculto">Lista de asignaciones</h2>
+            <ul class="lista-tarjetas" id="lista"></ul>
+
+            <div class="tarjeta estado-vacio" id="vacio" hidden>
+                <h3 id="vacio-titulo">No hay asignaciones</h3>
+                <p id="vacio-texto"></p>
+                <div class="acciones" id="vacio-acciones"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="pie">
+        <div class="contenedor">
+            <p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p>
+            <p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p>
+        </div>
+    </footer>
+
+    <script src="assets/datos.js"></script>
+    <script src="assets/datos-voluntario.js"></script>
+    <script src="assets/comun.js"></script>
+    <script src="assets/comun-voluntario.js"></script>
+    <script>
+        (function () {
+            "use strict";
+            const AV = window.AyudaYaVoluntario;
+            const { estado } = window.DATOS_VOLUNTARIO;
+
+            const lista = document.getElementById("lista");
+            const cantidad = document.getElementById("cantidad");
+            const vacio = document.getElementById("vacio");
+            const botones = document.querySelectorAll(".filtro-estado button");
+
+            // Completadas = completadas (con o sin confirmar). Sin completar = canceladas o liberadas.
+            const filtros = {
+                todas: () => true,
+                activas: (a) => AV.esActiva(a),
+                terminadas: (a) => a.estado === "completada",
+                sin_completar: (a) => a.estado === "cancelada" || a.estado === "liberada"
+            };
+            const sufijo = { todas: "", activas: " activas", terminadas: " completadas", sin_completar: " sin completar" };
+
+            const inicial = new URLSearchParams(location.search).get("estado");
+            let actual = filtros[inicial] ? inicial : "todas";
+
+            // Primero lo que hay que hacer (críticas antes), después lo que espera confirmación, después lo cerrado.
+            const peso = (a) => AV.esActiva(a) ? 0 : (AV.esPorConfirmar(a) ? 1 : 2);
+            const critica = (a) => (AV.esActiva(a) && a.solicitud.urgencia === "critica" ? 1 : 0);
+            const ordenar = (a, b) =>
+                peso(a) - peso(b) ||
+                critica(b) - critica(a) ||
+                new Date(b.asignada_at) - new Date(a.asignada_at);
+
+            function render() {
+                const encontradas = estado.asignaciones.filter(filtros[actual]).sort(ordenar);
+
+                botones.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filtro === actual)));
+                lista.innerHTML = encontradas.map((a) => "<li>" + AV.tarjetaAsignacion(a) + "</li>").join("");
+                cantidad.textContent = encontradas.length === 1
+                    ? "1 asignación" + sufijo[actual]
+                    : encontradas.length + " asignaciones" + sufijo[actual];
+
+                vacio.hidden = encontradas.length > 0;
+                if (!encontradas.length) {
+                    const ninguna = !estado.asignaciones.length;
+                    document.getElementById("vacio-titulo").textContent = ninguna ? "Todavía no tomaste ninguna solicitud" : "No hay asignaciones" + sufijo[actual];
+                    document.getElementById("vacio-texto").textContent = ninguna
+                        ? "Mirá las solicitudes disponibles en tu zona y tomá la que puedas atender."
+                        : "Probá con otro filtro.";
+                    document.getElementById("vacio-acciones").innerHTML = ninguna
+                        ? '<a class="boton" href="panel.html#titulo-disponibles">Ver solicitudes disponibles</a>'
+                        : "";
+                }
+            }
+
+            botones.forEach((b) => b.addEventListener("click", () => { actual = b.dataset.filtro; render(); }));
+            render();
+        })();
+    </script>
+</body>
+</html>

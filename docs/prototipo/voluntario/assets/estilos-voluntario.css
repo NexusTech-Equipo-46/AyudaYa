@@ -1,0 +1,160 @@
+/* AyudaYa - Prototipo zona Voluntario
+   Se carga DESPUÉS de estilos.css y reutiliza sus variables, así que la paleta
+   y los contrastes (>= 4.5:1 texto, >= 3:1 bordes de controles) son los mismos.
+   Los componentes compartidos con la zona Usuario (tarjetas, insignias, historial,
+   diálogo) se repiten acá a propósito: cada carpeta funciona sola. */
+
+/* --- Controles que estilos.css todavía no cubría --- */
+
+textarea {
+    width: 100%;
+    min-height: 7rem;
+    padding: .55rem .8rem;
+    border: 2px solid var(--borde-control);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+    resize: vertical;
+}
+textarea:focus-visible { outline-offset: 0; border-color: var(--foco); }
+textarea[aria-invalid="true"] { border-color: var(--peligro); border-width: 3px; }
+
+.boton-peligro { background: var(--peligro); border-color: var(--peligro); }
+.boton-peligro:hover { background: #991B1B; border-color: #991B1B; }
+
+.boton[disabled], .boton[aria-disabled="true"] {
+    background: var(--neutro-claro); border-color: var(--borde-control); color: var(--neutro-oscuro);
+    cursor: not-allowed;
+}
+
+/* --- Estructura de las páginas --- */
+
+.pagina-voluntario { padding: 0 0 1rem; }
+
+.cabecera-pagina {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+.cabecera-pagina h1 { margin-bottom: .25rem; }
+.cabecera-pagina p { margin: 0; }
+
+.panel { display: grid; grid-template-columns: 3fr 2fr; gap: 1.25rem; align-items: start; }
+.panel > div { display: grid; gap: 1.25rem; }
+.panel h2 { font-size: 1.3rem; }
+
+@media (max-width: 900px) {
+    .panel { grid-template-columns: 1fr; }
+}
+
+.insignias { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+/* --- Estados de la asignación: siempre ícono + texto, nunca solo color --- */
+
+.asig-asignada { background: var(--principal-claro); color: var(--principal-oscuro); border-color: var(--principal-oscuro); }
+.asig-en_atencion { background: var(--principal); color: #fff; border-color: var(--principal-oscuro); }
+.asig-completada { background: var(--exito-claro); color: var(--exito); border-color: var(--exito); }
+.asig-confirmada { background: var(--exito); color: #fff; border-color: var(--exito); }
+.asig-cancelada { background: var(--superficie); color: var(--neutro-oscuro); border-color: var(--neutro-oscuro); border-style: dashed; }
+.asig-liberada { background: var(--neutro-claro); color: var(--neutro-oscuro); border-color: var(--neutro-oscuro); }
+
+.urgencia-critica { background: var(--peligro-claro); color: var(--peligro); border-color: var(--peligro); }
+.urgencia-normal { background: var(--neutro-claro); color: var(--neutro-oscuro); border-color: var(--neutro-claro); font-weight: 500; }
+
+.estado-recurso-tomado { background: var(--neutro-claro); color: var(--neutro-oscuro); border-color: var(--neutro-claro); font-weight: 500; }
+
+/* --- Tarjetas de asignación y de solicitud disponible --- */
+
+.lista-tarjetas { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
+
+.asignacion, .disponible { display: flex; flex-direction: column; gap: .6rem; }
+.asignacion .cabeza, .disponible .cabeza { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: .5rem 1rem; }
+.asignacion h3, .disponible h3 { margin: 0; font-size: 1.15rem; }
+.asignacion h3 a, .disponible h3 a { color: var(--texto); }
+.asignacion h3 a:hover { color: var(--principal-oscuro); }
+.asignacion .meta, .disponible .meta { margin: 0; color: var(--texto-suave); font-size: .95rem; }
+.asignacion .siguiente { margin: 0; font-weight: 500; }
+.asignacion .descripcion, .disponible .descripcion { margin: 0; color: var(--texto-suave); }
+.asignacion .pie-asignacion {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .25rem .75rem;
+    border-top: 1px solid var(--borde); padding-top: .5rem;
+    font-size: .9rem; color: var(--texto-suave);
+}
+.asignacion .pie-asignacion a { font-weight: 600; }
+.asignacion.necesita-accion { border-left: 6px solid var(--principal); }
+.asignacion.es-critica { border-left: 6px solid var(--peligro); }
+
+.recursos-tomar { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.recursos-tomar li {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .4rem .75rem;
+    padding: .5rem .75rem; background: var(--fondo); border: 1px solid var(--borde); border-radius: var(--radio);
+}
+.recursos-tomar .que { display: grid; }
+.recursos-tomar .que span { color: var(--texto-suave); font-size: .9rem; }
+
+.filtro-zona { margin: 0 0 .75rem; }
+
+/* --- Resumen del panel --- */
+
+.resumen { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+.resumen div { background: var(--fondo); border: 1px solid var(--borde); border-radius: var(--radio); padding: .75rem 1rem; }
+.resumen dt { font-size: .9rem; color: var(--texto-suave); font-weight: 600; }
+.resumen dd { margin: 0; font-size: 1.9rem; font-weight: 800; line-height: 1.2; }
+
+.estado-vacio { text-align: center; padding: 2rem 1rem; }
+.estado-vacio .acciones { justify-content: center; }
+
+.datos-voluntario { margin: 0; display: grid; gap: .6rem; }
+.datos-voluntario dt { font-weight: 600; font-size: .9rem; color: var(--texto-suave); }
+.datos-voluntario dd { margin: 0; }
+
+/* --- Filtro por estado (Mis asignaciones) --- */
+
+.filtro-estado { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--principal); border-radius: var(--radio); overflow: hidden; }
+.filtro-estado button {
+    min-height: 44px; padding: 0 1.1rem;
+    border: 0; background: var(--superficie); color: var(--principal-oscuro);
+    font: inherit; font-weight: 600; cursor: pointer;
+}
+.filtro-estado button[aria-pressed="true"] { background: var(--principal); color: #fff; }
+
+/* --- Detalle de asignación --- */
+
+.tabla-scroll { overflow-x: auto; }
+.tabla-recursos td .detalle-recurso, .tabla-recursos th .detalle-recurso { display: block; color: var(--texto-suave); font-size: .9rem; font-weight: 400; }
+
+.nota-privada { display: flex; gap: .6rem; align-items: flex-start; color: var(--texto-suave); font-size: .92rem; margin: 0 0 1rem; }
+.nota-privada svg { width: 18px; height: 18px; flex: none; margin-top: .2rem; color: var(--principal-oscuro); }
+
+.contacto-oculto { background: var(--fondo); border: 1px dashed var(--borde-control); border-radius: var(--radio); padding: 1rem; color: var(--texto-suave); }
+.contacto-oculto p { margin: 0; }
+
+.acciones-asignacion { display: grid; gap: .75rem; }
+.acciones-asignacion .acciones { margin: 0; }
+.acciones-asignacion p { margin: 0; }
+
+.cronologia { list-style: none; margin: 0; padding: 0; }
+.cronologia li { position: relative; margin-left: .55rem; padding: 0 0 1.25rem 1.6rem; border-left: 2px solid var(--borde); }
+.cronologia li:last-child { padding-bottom: 0; border-left-color: transparent; }
+.cronologia li::before {
+    content: ""; position: absolute; left: -.6rem; top: .2rem;
+    width: 1rem; height: 1rem; border-radius: 50%;
+    background: var(--principal); border: 3px solid var(--superficie); box-shadow: 0 0 0 2px var(--principal);
+}
+.cronologia .cuando { display: block; font-size: .9rem; color: var(--texto-suave); margin-top: .2rem; }
+.cronologia .motivo { margin: .25rem 0 0; }
+
+dialog {
+    width: calc(100% - 32px); max-width: 500px;
+    border: 1px solid var(--borde); border-radius: var(--radio);
+    padding: 1.5rem; color: var(--texto); background: var(--superficie);
+    box-shadow: 0 8px 32px rgb(15 23 42 / .3);
+}
+dialog::backdrop { background: rgb(15 23 42 / .6); }
+dialog h2 { font-size: 1.3rem; }
+dialog .acciones { margin-top: .5rem; }
+
+@media (max-width: 600px) {
+    .resumen { grid-template-columns: 1fr; }
+}
