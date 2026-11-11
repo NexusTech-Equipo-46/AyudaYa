@@ -61,7 +61,7 @@ public sealed class CuentaController : Controller
             return RedirectToAction(nameof(Login));
         }
 
-        TempData["Mensaje"] = "Cuenta creada. Ya podés solicitar ayuda.";
+        TempData["Mensaje"] = "Cuenta creada. Para solicitar ayuda tenés que confirmar tu email.";
         return RedirectToAction(nameof(Perfil));
     }
 
