@@ -1,0 +1,18 @@
+@{
+    Layout = "_VisitanteLayout";
+    ViewData["Title"] = "Detalle de centro";
+    ViewData["DatosFicticios"] = true;
+    ViewData["UsaScriptsPrototipo"] = true;
+}
+@section Head {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@@1.9.4/dist/leaflet.css" crossorigin="">
+}
+<div class="contenedor">
+    <div id="detalle-centro"></div>
+</div>
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
+    <script src="~/js/demo/comun.js" asp-append-version="true"></script>
+    <script src="~/js/demo/centro.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,88 @@
+@{
+    Layout = "_OrganizacionLayout";
+    ViewData["Title"] = "Centros";
+    ViewData["CentrosActual"] = true;
+}
+
+        <div class="contenedor">
+            <div class="cabecera-pagina">
+                <div>
+                    <h1>Centros</h1>
+                    <p class="texto-suave">Los lugares donde la organización ofrece o recibe ayuda. Un administrador tiene que aprobar cada centro antes de que aparezca en el mapa.</p>
+                </div>
+                <button type="button" class="boton" id="abrir-nuevo">Nuevo centro</button>
+            </div>
+
+            <p id="aviso-alta" role="status"></p>
+            <ul class="grilla-org" id="lista-centros"></ul>
+        </div>
+    
+@section DespuesDelContenido {
+<dialog id="dialogo-centro" aria-labelledby="titulo-nuevo">
+        <form id="form-centro" novalidate>
+            <h2 id="titulo-nuevo">Nuevo centro</h2>
+            <p class="texto-suave" role="note">Demostración: usá datos ficticios. No se envía ni guarda ningún centro real.</p>
+            <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+
+            <div class="campo">
+                <label for="nombre">Nombre del centro</label>
+                <input type="text" id="nombre" name="nombre" maxlength="100" autocomplete="off" aria-describedby="error-nombre">
+                <p class="error-campo" id="error-nombre"></p>
+            </div>
+            <div class="campo">
+                <label for="tipo">Tipo de centro</label>
+                <select id="tipo" name="tipo" aria-describedby="error-tipo"></select>
+                <p class="error-campo" id="error-tipo"></p>
+            </div>
+            <div class="campo">
+                <label for="zona">Zona</label>
+                <select id="zona" name="zona" aria-describedby="error-zona"></select>
+                <p class="error-campo" id="error-zona"></p>
+            </div>
+            <div class="campo">
+                <label for="direccion">Dirección</label>
+                <input type="text" id="direccion" name="direccion" maxlength="200" aria-describedby="error-direccion">
+                <p class="error-campo" id="error-direccion"></p>
+            </div>
+            <div class="campo">
+                <label for="telefono">Teléfono de contacto</label>
+                <input type="tel" id="telefono" name="telefono" maxlength="30" aria-describedby="error-telefono">
+                <p class="error-campo" id="error-telefono"></p>
+            </div>
+            <fieldset class="grupo" id="grupo-horario" aria-describedby="ayuda-horario">
+                <legend>Horario de atención <span class="opcional">(opcional)</span></legend>
+                <span class="ayuda" id="ayuda-horario">Si no lo completan, el centro figura con «Horario no informado».</span>
+                <label class="check"><input type="checkbox" id="todo-el-dia"> Atención las 24 horas, todos los días</label>
+                <div id="horario-turno">
+                    <div class="dias-semana" role="group" aria-label="Días de atención" style="margin-top:.75rem"></div>
+                    <p class="error-campo" id="error-dia-1"></p>
+                    <div class="horas">
+                        <div class="campo">
+                            <label for="abre">Abre</label>
+                            <input type="time" id="abre" name="abre" aria-describedby="error-abre">
+                            <p class="error-campo" id="error-abre"></p>
+                        </div>
+                        <div class="campo">
+                            <label for="cierra">Cierra</label>
+                            <input type="time" id="cierra" name="cierra" aria-describedby="error-cierra">
+                            <p class="error-campo" id="error-cierra"></p>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+            <div class="campo">
+                <label for="descripcion">Descripción <span class="opcional">(opcional)</span></label>
+                <textarea id="descripcion" name="descripcion" rows="3" maxlength="300"></textarea>
+            </div>
+
+            <div class="acciones">
+                <button type="submit" class="boton">Enviar para aprobación</button>
+                <button type="button" class="boton boton-secundario" id="cerrar-dialogo">Cancelar</button>
+            </div>
+        </form>
+    </dialog>
+}
+@section Scripts {
+    <script src="~/js/demo/formularios.js" asp-append-version="true"></script>
+    <script src="~/js/demo/centros-org.js" asp-append-version="true"></script>
+}

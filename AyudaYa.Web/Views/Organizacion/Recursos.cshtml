@@ -1,0 +1,12 @@
+@model string
+@{
+    Layout = "_OrganizacionLayout";
+    ViewData["Title"] = "Recursos del centro";
+    ViewData["CentrosActual"] = true;
+    ViewData["DetalleRecursos"] = true;
+}
+<div class="contenedor" id="recursos-centro" data-id-centro="@Model"></div>
+
+@section Scripts {
+    <script src="~/js/demo/recursos-org.js" asp-append-version="true"></script>
+}

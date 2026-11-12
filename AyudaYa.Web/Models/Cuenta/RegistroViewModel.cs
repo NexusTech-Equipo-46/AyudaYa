@@ -4,6 +4,7 @@ namespace AyudaYa.Web.Models.Cuenta;
 
 public sealed class RegistroViewModel
 {
+    private string? _dni;
     [Required(ErrorMessage = "El nombre es obligatorio.")]
     [StringLength(150)]
     [Display(Name = "Nombre y apellido")]
@@ -28,5 +29,11 @@ public sealed class RegistroViewModel
 
     [RegularExpression(@"^[0-9]{6,9}$", ErrorMessage = "El DNI debe tener entre 6 y 9 dígitos.")]
     [Display(Name = "DNI (opcional)")]
-    public string? Dni { get; set; }
+    public string? Dni
+    {
+        get => _dni;
+        set => _dni = string.IsNullOrWhiteSpace(value)
+            ? null
+            : new string(value.Where(c => c != '.' && !char.IsWhiteSpace(c)).ToArray());
+    }
 }

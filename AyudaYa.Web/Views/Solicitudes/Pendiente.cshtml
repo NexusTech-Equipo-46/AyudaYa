@@ -1,0 +1,53 @@
+@{
+    Layout = "_UsuarioLayout";
+    ViewData["Title"] = "Solicitud pendiente";
+    ViewData["DatosFicticios"] = true;
+}
+<div class="contenedor">
+    <div class="formulario-solicitud" style="margin-top:1.5rem">
+        <div class="alerta alerta-exito" style="margin-bottom:1.5rem">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 12.5l3.3 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div>
+                <h1 id="titulo-pendiente" style="font-size:1.75rem">Solicitud pendiente · Demostración</h1>
+                <p>Esta es una simulación: <strong>no se envió ni se guardó ningún pedido de ayuda real</strong> y no se enviarán avisos.</p>
+            </div>
+        </div>
+
+        <section class="tarjeta" aria-labelledby="t-resumen" style="margin-bottom:1.25rem">
+            <div class="cabeza" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem 1rem;align-items:flex-start">
+                <h2 id="t-resumen" style="font-size:1.25rem">Lo que pediste</h2>
+                <div class="insignias" id="insignias"></div>
+            </div>
+            <p class="texto-suave" id="meta"></p>
+            <ul class="lista-recursos" id="recursos" aria-label="Recursos pedidos"></ul>
+        </section>
+
+        <section class="tarjeta" aria-labelledby="t-proximo" style="margin-bottom:1.25rem">
+            <h2 id="t-proximo" style="font-size:1.25rem">Qué pasa ahora</h2>
+            <ol class="cronologia">
+                <li><strong>Recibida</strong><span class="visualmente-oculto"> (paso cumplido)</span><span class="cuando">Así se mostraría un pedido cargado.</span></li>
+                <li class="paso-actual"><strong>Pendiente</strong><span class="visualmente-oculto"> (paso actual)</span><span class="cuando">Esperando que alguien la tome. Mientras tanto podés editarla o cancelarla.</span></li>
+                <li class="paso-futuro"><strong>Asignada</strong><span class="cuando">Alguien la tomó y se comunica con vos por teléfono.</span></li>
+                <li class="paso-futuro"><strong>En atención</strong><span class="cuando">Te están asistiendo.</span></li>
+                <li class="paso-futuro"><strong>Resuelta</strong><span class="cuando">Se resolvió lo que pediste.</span></li>
+            </ol>
+        </section>
+
+        <div class="alerta alerta-info" style="margin-bottom:1.5rem">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1.3" fill="currentColor"/></svg>
+            <p>Si tu situación empeora o hay riesgo de vida, no esperes: llamá al <a href="tel:911">911</a> o al <a href="tel:107">107</a>.</p>
+        </div>
+
+        <div class="acciones" style="margin-top:0">
+            <a class="boton" id="ver-detalle" asp-controller="Solicitudes" asp-action="Detalle" asp-route-id="s-1004">Ver detalle de ejemplo</a>
+            <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Volver al panel</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
+    <script src="~/js/demo/datos-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/comun-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/pendiente.js" asp-append-version="true"></script>
+}

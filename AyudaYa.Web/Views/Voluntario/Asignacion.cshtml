@@ -1,0 +1,39 @@
+@model string
+@{
+    Layout = "_VoluntarioLayout";
+    ViewData["Title"] = "Detalle de asignación";
+}
+<div class="contenedor" id="detalle-asignacion" data-id-asignacion="@Model"></div>
+
+@section DespuesDelContenido {
+    <dialog id="dialogo-completar" aria-labelledby="titulo-completar">
+        <form id="form-completar" method="dialog">
+            <h2 id="titulo-completar">Marcar como completada</h2>
+            <p>En el prototipo, <strong id="nombre-completar">quien pidió ayuda</strong> confirmaría la recepción.</p>
+            <p class="texto-suave">Esta es una simulación: no se enviarán avisos ni se modificará ninguna asignación real.</p>
+            <div class="acciones">
+                <button type="submit" class="boton" value="si">Sí, está completada</button>
+                <button type="button" class="boton boton-secundario" data-cerrar>Todavía no</button>
+            </div>
+        </form>
+    </dialog>
+    <dialog id="dialogo-liberar" aria-labelledby="titulo-liberar">
+        <form id="form-liberar" novalidate>
+            <h2 id="titulo-liberar">Liberar asignación</h2>
+            <p>La solicitud vuelve a estar disponible para otras personas y vos dejás de ver los datos de contacto. Esto no se puede deshacer.</p>
+            <p class="texto-suave">Esta acción solo se simula y no modifica asignaciones reales.</p>
+            <div class="campo">
+                <label for="motivo">¿Por qué la liberás?</label>
+                <textarea id="motivo" name="motivo" rows="3" maxlength="300" required aria-describedby="error-motivo"></textarea>
+                <p class="error-campo" id="error-motivo"></p>
+            </div>
+            <div class="acciones">
+                <button type="submit" class="boton boton-peligro">Sí, liberar asignación</button>
+                <button type="button" class="boton boton-secundario" data-cerrar>No, volver</button>
+            </div>
+        </form>
+    </dialog>
+}
+@section Scripts {
+    <script src="~/js/demo/asignacion-voluntario.js" asp-append-version="true"></script>
+}

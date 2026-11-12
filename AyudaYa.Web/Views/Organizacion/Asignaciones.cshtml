@@ -1,0 +1,30 @@
+@{
+    Layout = "_OrganizacionLayout";
+    ViewData["Title"] = "Asignaciones";
+    ViewData["ListaAsignaciones"] = true;
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Asignaciones</h1>
+            <p class="texto-suave">Los recursos de solicitudes que la organización se comprometió a cubrir.</p>
+        </div>
+    </div>
+
+    <div class="filtro-estado" role="group" aria-label="Filtrar por estado" style="margin-bottom:1rem">
+        <button type="button" aria-pressed="true" data-filtro="activas">Activas</button>
+        <button type="button" aria-pressed="false" data-filtro="cerradas">Cerradas</button>
+        <button type="button" aria-pressed="false" data-filtro="todas">Todas</button>
+    </div>
+
+    <p id="contador" role="status" class="texto-suave"></p>
+    <ul class="lista-solicitudes" id="lista"></ul>
+    <div class="tarjeta estado-vacio" id="vacio" hidden>
+        <h2>No hay asignaciones para mostrar</h2>
+        <p>Probá con otro filtro, o buscá solicitudes pendientes en la zona.</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/demo/asignaciones.js" asp-append-version="true"></script>
+}

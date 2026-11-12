@@ -1,33 +1,91 @@
-@model AyudaYa.Web.Models.Cuenta.PerfilViewModel
+@model PerfilViewModel
 @{
+    Layout = "_UsuarioLayout";
     ViewData["Title"] = "Mi perfil";
+    ViewData["PerfilActual"] = true;
+    var errores = ViewData.ModelState.Where(e => e.Value is not null)
+        .SelectMany(e => e.Value!.Errors.Select(error => (Campo: e.Key, Mensaje: error.ErrorMessage))).ToList();
+    var erroresDatos = errores.Where(e => e.Campo.StartsWith("Datos", StringComparison.Ordinal)).ToList();
+    var erroresClave = errores.Where(e => e.Campo.StartsWith("Clave", StringComparison.Ordinal)).ToList();
+    var ids = new Dictionary<string, string> {
+        ["Datos.NombreCompleto"] = "nombre", ["Datos.Dni"] = "dni",
+        ["Clave.Actual"] = "clave-actual", ["Clave.Nueva"] = "clave-nueva", ["Clave.Confirmacion"] = "clave-confirmacion"
+    };
+    string? ErrorDe(string campo) => ViewData.ModelState.TryGetValue(campo, out var estado) ? estado.Errors.FirstOrDefault()?.ErrorMessage : null;
+    var errorNombre = ErrorDe("Datos.NombreCompleto");
+    var errorDni = ErrorDe("Datos.Dni");
+    var errorActual = ErrorDe("Clave.Actual");
+    var errorNueva = ErrorDe("Clave.Nueva");
+    var errorConfirmacion = ErrorDe("Clave.Confirmacion");
 }
-
-<h1>Mi perfil</h1>
-
-@if (TempData["Mensaje"] is string mensaje)
-{
-    <div class="alert alert-success">@mensaje</div>
+<div class="contenedor">
+    <div class="cabecera-pagina"><div><h1>Mi perfil</h1><p class="texto-suave">Tus datos personales y la seguridad de tu cuenta.</p></div></div>
+    @if (TempData["Mensaje"] is string mensaje)
+    {
+        <div class="alerta alerta-info" role="status" style="margin-bottom:1.25rem"><p>@mensaje</p></div>
+    }
+    <div class="detalle">
+        <div>
+            <section class="tarjeta" aria-labelledby="t-datos">
+                <h2 id="t-datos">Datos personales</h2>
+                @if (TempData["PerfilExito"] is string exitoDatos)
+                {
+                    <div class="alerta alerta-exito" id="exito-datos" role="status"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 12.5l3.3 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><p>@exitoDatos</p></div>
+                }
+                <div class="alerta alerta-peligro resumen-errores" id="resumen-datos" tabindex="-1" aria-labelledby="titulo-resumen-datos" @(erroresDatos.Count == 0 ? "hidden" : null)>
+                    @if (erroresDatos.Count > 0)
+                    {
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5L22.5 21h-21z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 9v5" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="17.5" r="1.3" fill="currentColor"/></svg>
+                        <div><h2 id="titulo-resumen-datos">@(erroresDatos.Count == 1 ? "Hay 1 dato para corregir" : $"Hay {erroresDatos.Count} datos para corregir")</h2><ul>
+                            @foreach (var error in erroresDatos) { <li>@if (ids.TryGetValue(error.Campo, out var idCampo)) { <a href="#@idCampo">@error.Mensaje</a> } else { @error.Mensaje }</li> }
+                        </ul></div>
+                    }
+                </div>
+                <form id="form-datos" asp-action="ActualizarPerfil" method="post" novalidate>
+                    <div class="campo"><label for="nombre">Nombre y apellido</label><input asp-for="Datos.NombreCompleto" type="text" id="nombre" autocomplete="name" required aria-describedby="error-nombre" aria-invalid="@(errorNombre is null ? null : "true")"><p class="error-campo" id="error-nombre">@errorNombre</p></div>
+                    <div class="campo"><label for="email">Correo electrónico</label><span class="ayuda" id="ayuda-email">Es tu usuario para iniciar sesión y no se puede cambiar.</span><input type="email" id="email" value="@Model.Email" readonly aria-describedby="ayuda-email"></div>
+                    <div class="campo"><label for="dni">DNI <span class="opcional">(opcional)</span></label><span class="ayuda" id="ayuda-dni">Con o sin puntos. Solo lo ves vos y el equipo administrador.</span><input asp-for="Datos.Dni" type="text" id="dni" inputmode="numeric" autocomplete="off" maxlength="12" aria-describedby="ayuda-dni error-dni" aria-invalid="@(errorDni is null ? null : "true")"><p class="error-campo" id="error-dni">@errorDni</p></div>
+                    <button type="submit" class="boton">Guardar cambios</button>
+                </form>
+            </section>
+            <section class="tarjeta" aria-labelledby="t-clave">
+                <h2 id="t-clave">Cambiar contraseña</h2>
+                @if (TempData["ClaveExito"] is string exitoClave)
+                {
+                    <div class="alerta alerta-exito" id="exito-clave" role="status"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 12.5l3.3 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><p>@exitoClave</p></div>
+                }
+                <div class="alerta alerta-peligro resumen-errores" id="resumen-clave" tabindex="-1" aria-labelledby="titulo-resumen-clave" @(erroresClave.Count == 0 ? "hidden" : null)>
+                    @if (erroresClave.Count > 0)
+                    {
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5L22.5 21h-21z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 9v5" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="17.5" r="1.3" fill="currentColor"/></svg>
+                        <div><h2 id="titulo-resumen-clave">@(erroresClave.Count == 1 ? "Hay 1 dato para corregir" : $"Hay {erroresClave.Count} datos para corregir")</h2><ul>
+                            @foreach (var error in erroresClave) { <li>@if (ids.TryGetValue(error.Campo, out var idCampo)) { <a href="#@idCampo">@error.Mensaje</a> } else { @error.Mensaje }</li> }
+                        </ul></div>
+                    }
+                </div>
+                <form id="form-clave" asp-action="CambiarClave" method="post" novalidate>
+                    <div class="campo"><label for="clave-actual">Contraseña actual</label><div class="con-boton"><input asp-for="Clave.Actual" type="password" id="clave-actual" autocomplete="current-password" required aria-describedby="error-clave-actual" aria-invalid="@(errorActual is null ? null : "true")"><button type="button" class="boton-texto" data-mostrar="clave-actual" aria-pressed="false">Mostrar<span class="visualmente-oculto"> contraseña actual</span></button></div><p class="error-campo" id="error-clave-actual">@errorActual</p></div>
+                    <div class="campo"><label for="clave-nueva">Contraseña nueva</label><div class="con-boton"><input asp-for="Clave.Nueva" type="password" id="clave-nueva" autocomplete="new-password" required aria-describedby="requisitos error-clave-nueva" aria-invalid="@(errorNueva is null ? null : "true")"><button type="button" class="boton-texto" data-mostrar="clave-nueva" aria-pressed="false">Mostrar<span class="visualmente-oculto"> contraseña nueva</span></button></div>
+                        <ul class="requisitos" id="requisitos"><li data-regla="largo">Al menos 8 caracteres</li><li data-regla="mayuscula">Una letra mayúscula</li><li data-regla="minuscula">Una letra minúscula</li><li data-regla="numero">Un número</li></ul><p class="error-campo" id="error-clave-nueva">@errorNueva</p></div>
+                    <div class="campo"><label for="clave-confirmacion">Repetí la contraseña nueva</label><input asp-for="Clave.Confirmacion" type="password" id="clave-confirmacion" autocomplete="new-password" required aria-describedby="error-clave-confirmacion" aria-invalid="@(errorConfirmacion is null ? null : "true")"><p class="error-campo" id="error-clave-confirmacion">@errorConfirmacion</p></div>
+                    <button type="submit" class="boton">Cambiar contraseña</button>
+                </form>
+            </section>
+        </div>
+        <div>
+            <section class="tarjeta" aria-labelledby="t-cuenta">
+                <h2 id="t-cuenta">Tu cuenta</h2>
+                <p class="nota-privada" style="margin-bottom:.75rem"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.2 7V5a2.8 2.8 0 0 1 5.6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Tu contraseña se guarda protegida. Nadie, ni el equipo, puede verla.</span></p>
+                <div class="acciones" style="margin-top:0"><form asp-action="Logout" method="post"><button type="submit" class="boton boton-secundario">Cerrar sesión</button></form></div>
+            </section>
+            <section class="tarjeta llamado" aria-labelledby="t-voluntario">
+                <h2 id="t-voluntario">Voluntariado</h2>
+                @if (Model.EsVoluntario) { <p>Ya estás registrado/a como voluntario/a.</p><div class="acciones"><a class="boton" asp-controller="Voluntariado" asp-action="Index">Ver demostración</a></div> }
+                else { <p>Todavía no sos voluntario/a. Completá tu ciudad, zona y teléfono para empezar a atender solicitudes.</p><div class="acciones"><a class="boton" asp-controller="Voluntariado" asp-action="Index">Quiero ser voluntario</a></div><p class="texto-suave aviso-proximamente">La pantalla es una demostración; la inscripción real todavía no está disponible.</p> }
+            </section>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/perfil.js" asp-append-version="true"></script>
 }
-
-<dl class="row">
-    <dt class="col-sm-3">Nombre</dt>
-    <dd class="col-sm-9">@Model.NombreCompleto</dd>
-
-    <dt class="col-sm-3">Email</dt>
-    <dd class="col-sm-9">@Model.Email</dd>
-
-    <dt class="col-sm-3">Roles</dt>
-    <dd class="col-sm-9">@string.Join(", ", Model.Roles)</dd>
-
-    <dt class="col-sm-3">Estado</dt>
-    <dd class="col-sm-9">
-        <span class="badge @(Model.Activo ? "bg-success" : "bg-secondary")">
-            @(Model.Activo ? "Activo" : "Inactivo")
-        </span>
-    </dd>
-</dl>
-
-<form asp-action="Logout" method="post">
-    <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
-</form>

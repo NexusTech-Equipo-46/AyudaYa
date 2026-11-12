@@ -1,0 +1,36 @@
+@{
+    Layout = "_UsuarioLayout";
+    ViewData["Title"] = "Mis solicitudes";
+    ViewData["SolicitudActual"] = true;
+    ViewData["DatosFicticios"] = true;
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Mis solicitudes</h1>
+            <p class="texto-suave">Todos tus pedidos de ayuda, del más reciente al más antiguo.</p>
+        </div>
+        <a class="boton" asp-controller="Solicitudes" asp-action="Nueva">Pedir ayuda</a>
+    </div>
+    <div class="barra-resultados">
+        <p id="cantidad" role="status" aria-live="polite"></p>
+        <div class="filtro-estado" role="group" aria-label="Filtrar por estado">
+            <button type="button" data-filtro="todas" aria-pressed="true">Todas</button>
+            <button type="button" data-filtro="abiertas" aria-pressed="false">Abiertas</button>
+            <button type="button" data-filtro="cerradas" aria-pressed="false">Cerradas</button>
+        </div>
+    </div>
+    <h2 class="visualmente-oculto">Lista de solicitudes</h2>
+    <ul class="lista-solicitudes" id="lista"></ul>
+    <div class="tarjeta estado-vacio" id="vacio" hidden>
+        <h3 id="vacio-titulo">No tenés solicitudes</h3>
+        <p id="vacio-texto"></p>
+        <div class="acciones" id="vacio-acciones"></div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
+    <script src="~/js/demo/datos-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/comun-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/mis-solicitudes.js" asp-append-version="true"></script>
+}

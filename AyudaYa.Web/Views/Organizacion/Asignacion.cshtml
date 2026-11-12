@@ -1,0 +1,28 @@
+@model string
+@{
+    Layout = "_OrganizacionLayout";
+    ViewData["Title"] = "Detalle de asignación";
+}
+<div class="contenedor" id="detalle-asignacion" data-id-asignacion="@Model"></div>
+
+@section DespuesDelContenido {
+    <dialog id="dialogo-liberar" aria-labelledby="titulo-liberar">
+        <form id="form-liberar" novalidate>
+            <h2 id="titulo-liberar">Liberar asignación</h2>
+            <p>Si la liberan, el recurso vuelve a quedar pendiente para que otra persona u organización lo tome. Esto no se puede deshacer.</p>
+            <p class="texto-suave">En esta demostración la liberación solo se simula.</p>
+            <div class="campo">
+                <label for="motivo">Motivo para liberarla</label>
+                <textarea id="motivo" name="motivo" rows="3" maxlength="300" required aria-describedby="error-motivo"></textarea>
+                <p class="error-campo" id="error-motivo"></p>
+            </div>
+            <div class="acciones">
+                <button type="submit" class="boton boton-peligro">Sí, liberar asignación</button>
+                <button type="button" class="boton boton-secundario" id="cerrar-dialogo">No, volver</button>
+            </div>
+        </form>
+    </dialog>
+}
+@section Scripts {
+    <script src="~/js/demo/asignacion.js" asp-append-version="true"></script>
+}

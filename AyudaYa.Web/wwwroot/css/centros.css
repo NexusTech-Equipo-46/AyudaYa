@@ -1,0 +1,66 @@
+/* Estilos de centros basados en la paleta y el prototipo de visitante. */
+.centros-pagina {
+    --centros-principal: #0f766e;
+    --centros-principal-oscuro: #115e59;
+    --centros-principal-claro: #ccfbf1;
+    --centros-texto: #0f172a;
+    --centros-texto-suave: #475569;
+    --centros-borde: #cbd5e1;
+    --centros-borde-control: #64748b;
+    color: var(--centros-texto);
+    max-width: 1200px;
+    margin: 1.5rem auto 3rem;
+}
+.centros-pagina *, .centros-pagina *::before, .centros-pagina *::after { box-sizing: border-box; }
+.centros-pagina [hidden] { display: none !important; }
+.centros-pagina :focus-visible { outline: 3px solid var(--centros-texto); outline-offset: 2px; }
+.centros-encabezado { margin-bottom: 1.5rem; }
+.centros-encabezado h1 { font-size: clamp(1.75rem, 1.2rem + 2vw, 2.5rem); font-weight: 700; line-height: 1.25; }
+.centros-encabezado p { color: var(--centros-texto-suave); max-width: 48rem; margin-bottom: .5rem; }
+.centros-filtros {
+    display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 1rem; padding: 1.25rem;
+    background: #fff; border: 1px solid var(--centros-borde); border-radius: 10px;
+}
+.centros-campo label { display: block; font-weight: 600; margin-bottom: .35rem; }
+.centros-campo input, .centros-campo select {
+    width: 100%; min-height: 44px; padding: .55rem .7rem; color: var(--centros-texto);
+    background: #fff; border: 1px solid var(--centros-borde-control); border-radius: 6px;
+}
+.centros-acciones-filtros { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+.centros-boton-secundario {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+    padding: .5rem 1rem; border: 2px solid var(--centros-principal); border-radius: 6px;
+    color: var(--centros-principal-oscuro); background: #fff; font-weight: 600;
+    text-decoration: none; cursor: pointer;
+}
+.centros-boton-secundario:hover { color: var(--centros-texto); background: var(--centros-principal-claro); }
+.centros-cantidad { font-weight: 600; margin: 1.25rem 0 .75rem; }
+.centros-resultados, .centros-detalle { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.centros-detalle { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.centros-lista { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; }
+.centros-lista li, .centros-tarjeta, .centros-vacio, .centros-mapa-panel {
+    background: #fff; border: 1px solid var(--centros-borde); border-radius: 10px; padding: 1rem;
+    box-shadow: 0 1px 2px rgb(15 23 42 / .06), 0 4px 12px rgb(15 23 42 / .06);
+}
+.centros-lista a, .centros-migas a { color: var(--centros-principal-oscuro); font-weight: 700; }
+.centros-lista p { color: var(--centros-texto-suave); margin: .35rem 0 0; }
+.centros-mapa-panel h2, .centros-tarjeta h2, .centros-vacio h2 { font-size: 1.15rem; font-weight: 700; }
+.centros-pagina #mapa { min-height: 400px; border: 1px solid var(--centros-borde); border-radius: 6px; background: #e2e8f0; }
+.centros-detalle-principal { display: grid; gap: 1rem; }
+.centros-migas { margin-bottom: .75rem; color: var(--centros-texto-suave); }
+.centros-estado { display: inline-block; background: #f1f5f9; color: #334155; border: 1px solid #64748b; border-radius: 999px; padding: .15rem .6rem; font-size: .9rem; }
+.centros-datos-lista { list-style: none; margin: 0; padding: 0; }
+.centros-datos-lista li { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem 0; border-top: 1px solid var(--centros-borde); }
+.centros-contacto dt { font-size: .9rem; color: var(--centros-texto-suave); }
+.centros-contacto dd { overflow-wrap: anywhere; margin-bottom: 1rem; }
+@media (max-width: 800px) {
+    .centros-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .centros-campo-busqueda { grid-column: 1 / -1; }
+    .centros-resultados, .centros-detalle { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+    .centros-filtros { grid-template-columns: 1fr; }
+    .centros-campo-busqueda { grid-column: auto; }
+    .centros-acciones-filtros { justify-content: stretch; }
+    .centros-acciones-filtros button { width: 100%; }
+}
