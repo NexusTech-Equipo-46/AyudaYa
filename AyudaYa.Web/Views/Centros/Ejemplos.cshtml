@@ -1,0 +1,52 @@
+@{
+    Layout = "_VisitanteLayout";
+    ViewData["Title"] = "Mapa de centros";
+    ViewData["DatosFicticios"] = true;
+    ViewData["UsaScriptsPrototipo"] = true;
+    ViewData["MapaActual"] = true;
+}
+@section Head {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@@1.9.4/dist/leaflet.css" crossorigin="">
+}
+<div class="pagina-mapa">
+    <div class="contenedor">
+        <h1>Centros de ayuda en <span id="nombre-ciudad">Tigre</span></h1>
+        <p class="introduccion texto-suave">Solo se muestran centros verificados de organizaciones activas. La disponibilidad la cargan los propios centros: si se actualizó hace mucho, llamá antes de ir.</p>
+        <details class="panel-filtros" id="panel-filtros" open>
+            <summary>Filtros <span id="filtros-activos"></span></summary>
+            <form class="filtros" id="filtros" role="search" aria-label="Filtrar centros">
+                <div class="campo campo-busqueda"><label for="f-buscar">Buscar por nombre o dirección</label><input type="search" id="f-buscar" name="q" autocomplete="off"></div>
+                <div class="campo"><label for="f-zona">Zona</label><select id="f-zona" name="zona"><option value="">Todas las zonas</option></select></div>
+                <div class="campo"><label for="f-tipo">Tipo de centro</label><select id="f-tipo" name="tipo"><option value="">Todos los tipos</option></select></div>
+                <div class="campo"><label for="f-recurso">Recurso que necesitás</label><select id="f-recurso" name="recurso" aria-describedby="ayuda-recurso"><option value="">Cualquier recurso</option></select></div>
+                <div class="filtros-extra">
+                    <label class="check"><input type="checkbox" id="f-abiertos" name="abiertos" value="1"> Ocultar centros cerrados temporalmente</label>
+                    <span id="ayuda-recurso" class="texto-suave">Con un recurso elegido, solo aparecen los centros que lo tienen disponible.</span>
+                    <button type="reset" class="boton-texto">Limpiar filtros</button>
+                </div>
+            </form>
+        </details>
+        <div class="barra-resultados">
+            <p id="cantidad" role="status" aria-live="polite"></p>
+            <div class="selector-vista" role="group" aria-label="Forma de ver los resultados"><button type="button" data-vista="lista" aria-pressed="true">Lista</button><button type="button" data-vista="mapa" aria-pressed="false">Mapa</button></div>
+        </div>
+        <div class="resultados" id="resultados" data-vista="lista">
+            <div>
+                <h2 class="visualmente-oculto">Lista de centros</h2>
+                <ul class="lista-centros" id="lista-centros"></ul>
+                <div class="tarjeta sin-resultados" id="sin-resultados" hidden><h3>No hay centros con esos filtros</h3><p>Probá con otra zona o quitá algún filtro.</p><button type="button" class="boton boton-secundario" id="limpiar-vacio">Limpiar filtros</button></div>
+            </div>
+            <section class="zona-mapa" aria-labelledby="titulo-mapa">
+                <h2 id="titulo-mapa" class="visualmente-oculto">Mapa de centros</h2>
+                <div id="mapa"></div>
+                <p class="nota-mapa" id="nota-mapa">Con teclado: <kbd>Tab</kbd> recorre los marcadores y <kbd>Enter</kbd> abre la información del centro. La lista muestra lo mismo que el mapa.</p>
+            </section>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
+    <script src="~/js/demo/comun.js" asp-append-version="true"></script>
+    <script src="~/js/demo/mapa.js" asp-append-version="true"></script>
+}

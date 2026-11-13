@@ -1,0 +1,36 @@
+@{
+    Layout = "_VoluntarioLayout";
+    ViewData["Title"] = "Mis asignaciones";
+    ViewData["ListaAsignacionesVoluntario"] = true;
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Mis asignaciones</h1>
+            <p class="texto-suave">Todo lo que tomaste, con lo que tenés que hacer en cada caso.</p>
+        </div>
+        <a class="boton" asp-controller="Voluntario" asp-action="Panel" asp-fragment="titulo-disponibles">Tomar otra solicitud</a>
+    </div>
+
+    <div class="barra-resultados">
+        <p id="cantidad" role="status" aria-live="polite"></p>
+        <div class="filtro-estado" role="group" aria-label="Filtrar por estado">
+            <button type="button" data-filtro="todas" aria-pressed="true">Todas</button>
+            <button type="button" data-filtro="activas" aria-pressed="false">Activas</button>
+            <button type="button" data-filtro="terminadas" aria-pressed="false">Completadas</button>
+            <button type="button" data-filtro="sin_completar" aria-pressed="false">Sin completar</button>
+        </div>
+    </div>
+
+    <h2 class="visualmente-oculto">Lista de asignaciones</h2>
+    <ul class="lista-tarjetas" id="lista"></ul>
+    <div class="tarjeta estado-vacio" id="vacio" hidden>
+        <h3 id="vacio-titulo">No hay asignaciones</h3>
+        <p id="vacio-texto"></p>
+        <div class="acciones" id="vacio-acciones"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/demo/mis-asignaciones-voluntario.js" asp-append-version="true"></script>
+}

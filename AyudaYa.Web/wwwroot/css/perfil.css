@@ -1,0 +1,20 @@
+.nav-principal .cerrar-sesion-nav {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 .85rem;
+    border: 0;
+    border-radius: var(--radio);
+    background: transparent;
+    color: var(--texto);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+}
+.nav-principal .cerrar-sesion-nav:hover { background: var(--fondo); }
+.nav-principal [aria-disabled="true"], .llamado .boton:disabled,
+.cabecera-pagina .boton:disabled, .estado-vacio .boton:disabled { opacity: .65; cursor: not-allowed; }
+.aviso-proximamente { margin: .75rem 0 0; font-size: .9rem; }
+@media (max-width: 760px) {
+    .nav-principal .cerrar-sesion-nav { width: 100%; }
+}

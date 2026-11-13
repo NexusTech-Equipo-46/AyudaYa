@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewData["Title"] · AyudaYa</title>
+    <link rel="stylesheet" href="~/css/inicio.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/usuario.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true">
+    <script>document.documentElement.classList.add("js");</script>
+</head>
+<body data-url-panel="@Url.Action("Index", "Panel")" data-url-solicitudes="@Url.Action("Index", "Solicitudes")" data-url-detalle-solicitud="@Url.Action("Detalle", "Solicitudes")" data-url-nueva-solicitud="@Url.Action("Nueva", "Solicitudes")" data-url-pendiente="@Url.Action("Pendiente", "Solicitudes")" data-url-inicio="@Url.Action("Index", "Home")" data-url-centros="@Url.Action("Index", "Centros")" data-url-volver="@Url.Action("Index", "Panel")" data-texto-volver="Volver al panel">
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">@(ViewData["DatosFicticios"] is true ? "Prototipo navegable · Zona usuario autenticado · Datos ficticios" : "AyudaYa · Zona usuario autenticado")</div>
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" asp-controller="Panel" asp-action="Index" aria-label="AyudaYa, ir a mi panel">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal">
+                <ul>
+                    <li><a asp-controller="Panel" asp-action="Index" aria-current="@(ViewData["PanelActual"] is true ? "page" : null)">Panel</a></li>
+                    <li><a asp-controller="Solicitudes" asp-action="Index" aria-current="@(ViewData["SolicitudActual"] is true ? "page" : null)" title="Ver solicitudes ficticias">Mis solicitudes</a></li>
+                    <li><a asp-controller="Centros" asp-action="Index">Mapa de centros</a></li>
+                    <li><a asp-controller="Cuenta" asp-action="Perfil" aria-current="@(ViewData["PerfilActual"] is true ? "page" : null)">Perfil</a></li>
+                    <li><a class="boton" asp-controller="Solicitudes" asp-action="Nueva" aria-current="@(ViewData["NuevaSolicitudActual"] is true ? "page" : null)">Nueva solicitud</a></li>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <li><form asp-controller="Cuenta" asp-action="Logout" method="post"><button type="submit" class="cerrar-sesion-nav">Cerrar sesión</button></form></li>
+                    }
+                    else
+                    {
+                        <li><a asp-controller="Cuenta" asp-action="Login">Iniciar sesión</a></li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main id="contenido" class="@(ViewData["DetalleSolicitud"] is true ? null : "pagina-usuario")" tabindex="-1">@RenderBody()</main>
+    @await RenderSectionAsync("DespuesDelContenido", required: false)
+    <footer class="pie"><div class="contenedor"><p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p><p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p></div></footer>
+    <script src="~/js/demo/comun.js" asp-append-version="true"></script>
+    <script src="~/js/demo/formularios.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

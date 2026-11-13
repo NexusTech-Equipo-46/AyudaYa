@@ -1,0 +1,62 @@
+@{
+    Layout = "_UsuarioLayout";
+    ViewData["Title"] = "Quiero ser voluntario";
+    ViewData["DatosFicticios"] = true;
+}
+<div class="contenedor">
+    <nav class="migas" aria-label="Estás en">
+        <ol>
+            <li><a asp-controller="Panel" asp-action="Index">Panel</a></li>
+            <li><a asp-controller="Voluntariado" asp-action="Index" aria-current="page">Quiero ser voluntario</a></li>
+        </ol>
+    </nav>
+    <div class="formulario-solicitud" id="contenedor-voluntariado">
+        <h1>Quiero ser voluntario</h1>
+        <p class="texto-suave">Sumate para atender pedidos de ayuda de tu zona. Podés dejar de ser voluntario/a cuando quieras.</p>
+        <section class="tarjeta" aria-labelledby="t-como" style="margin-bottom:1.25rem">
+            <h2 id="t-como" style="font-size:1.25rem">Cómo funciona</h2>
+            <ul class="lista-simple">
+                <li>Ves las solicitudes abiertas de tu ciudad y zona.</li>
+                <li>Vos elegís cuáles tomar: nadie te asigna sin que lo aceptes.</li>
+                <li>Al tomar una solicitud, ves la dirección y el teléfono de quien pidió ayuda para poder asistirlo.</li>
+            </ul>
+        </section>
+        <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+        <form id="form-voluntario" novalidate>
+            <section class="tarjeta" aria-labelledby="t-datos" style="margin-bottom:1.25rem">
+                <h2 id="t-datos" style="font-size:1.25rem">Dónde podés ayudar</h2>
+                <div class="campo">
+                    <label for="ciudad">Ciudad</label>
+                    <select id="ciudad" name="ciudad" required aria-describedby="error-ciudad"><option value="">Elegí una ciudad</option></select>
+                    <p class="error-campo" id="error-ciudad"></p>
+                </div>
+                <div class="campo">
+                    <label for="zona">Zona <span class="opcional">(opcional)</span></label>
+                    <span class="ayuda" id="ayuda-zona">Si no elegís, ves las solicitudes de toda la ciudad.</span>
+                    <select id="zona" name="zona" aria-describedby="ayuda-zona"><option value="">Toda la ciudad</option></select>
+                </div>
+                <div class="campo">
+                    <label for="telefono">Teléfono de contacto</label>
+                    <span class="ayuda" id="ayuda-telefono">Lo ven las personas a las que asistas y el equipo administrador. Con característica.</span>
+                    <input type="tel" id="telefono" name="telefono" autocomplete="tel" inputmode="tel" maxlength="20" required aria-describedby="ayuda-telefono error-telefono">
+                    <p class="error-campo" id="error-telefono"></p>
+                </div>
+                <div class="campo">
+                    <label class="check"><input type="checkbox" id="acepto" name="acepto" required aria-describedby="error-acepto"> Acepto que compartan mi nombre y teléfono con quien yo asista.</label>
+                    <p class="error-campo" id="error-acepto"></p>
+                </div>
+            </section>
+            <div class="acciones" style="margin-top:0">
+                <button type="button" id="enviar-voluntario" class="boton">Sumarme como voluntario</button>
+                <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+        <noscript><p>Activá JavaScript para probar la demostración.</p></noscript>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
+    <script src="~/js/demo/datos-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/comun-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/voluntariado.js" asp-append-version="true"></script>
+}

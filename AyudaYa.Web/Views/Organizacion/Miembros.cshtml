@@ -1,0 +1,88 @@
+@{
+    Layout = "_OrganizacionLayout";
+    ViewData["Title"] = "Miembros";
+    ViewData["MiembrosActual"] = true;
+}
+
+        <div class="contenedor">
+            <div class="cabecera-pagina">
+                <div>
+                    <h1>Miembros</h1>
+                    <p class="texto-suave">Quiénes pueden actuar en nombre de la organización. Las bajas no borran a nadie: quedan con motivo y fecha.</p>
+                </div>
+            </div>
+
+            <div id="aviso" role="status"></div>
+
+            <div class="panel">
+                <div>
+                    <section class="tarjeta" aria-labelledby="t-miembros">
+                        <h2 id="t-miembros">Equipo</h2>
+                        <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="t-miembros">
+                            <table class="tabla-recursos">
+                                <thead><tr>
+                                    <th scope="col">Persona</th><th scope="col">Rol</th><th scope="col">Estado</th><th scope="col">Acción</th>
+                                </tr></thead>
+                                <tbody id="filas"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <div>
+                    <section class="tarjeta" aria-labelledby="t-sumar">
+                        <h2 id="t-sumar">Sumar a alguien</h2>
+                        <p class="texto-suave">La persona tiene que tener una cuenta en AyudaYa.</p>
+                        <p class="texto-suave" role="note">Demostración: usá datos ficticios. Los cambios no afectan cuentas reales.</p>
+                        <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" hidden></div>
+                        <form id="form-sumar" novalidate>
+                            <div class="campo">
+                                <label for="email">Correo electrónico</label>
+                                <input type="email" id="email" name="email" autocomplete="off" aria-describedby="error-email">
+                                <p class="error-campo" id="error-email"></p>
+                            </div>
+                            <div class="campo">
+                                <label for="rol">Rol</label>
+                                <select id="rol" name="rol">
+                                    <option value="miembro">Miembro</option>
+                                    <option value="responsable">Responsable</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="boton">Agregar</button>
+                        </form>
+                    </section>
+
+                    <section class="tarjeta llamado" aria-labelledby="t-reglas">
+                        <h2 id="t-reglas">Reglas</h2>
+                        <ul class="lista-simple">
+                            <li>Una organización comunitaria siempre necesita al menos un responsable activo.</li>
+                            <li>Una persona solo puede ser responsable activa de una organización.</li>
+                            <li>Todo cambio queda con motivo y fecha.</li>
+                        </ul>
+                    </section>
+                </div>
+            </div>
+        </div>
+    
+@section DespuesDelContenido {
+<dialog id="dialogo-baja" aria-labelledby="titulo-baja">
+        <form id="form-baja" novalidate>
+            <h2 id="titulo-baja">Dar de baja</h2>
+            <p id="texto-baja"></p>
+            <p class="texto-suave">Esta baja solo se simula y no afecta cuentas reales.</p>
+            <div class="campo">
+                <label for="motivo">Motivo de la baja</label>
+                <textarea id="motivo" name="motivo" rows="3" maxlength="300" required aria-describedby="error-motivo"></textarea>
+                <p class="error-campo" id="error-motivo"></p>
+            </div>
+            <div class="acciones">
+                <button type="submit" class="boton boton-peligro">Sí, dar de baja</button>
+                <button type="button" class="boton boton-secundario" id="cerrar-dialogo">No, volver</button>
+            </div>
+        </form>
+    </dialog>
+}
+@section Scripts {
+    <script src="~/js/demo/formularios.js" asp-append-version="true"></script>
+    <script src="~/js/demo/miembros-org.js" asp-append-version="true"></script>
+}

@@ -79,6 +79,7 @@ public static class DependencyInjection
 
         services.AddScoped<UsuarioAppService>();
         services.AddScoped<SolicitudAppService>();
+        services.AddScoped<CentrosPublicosAppService>();
         services.AddAuthorization();
 
         return services;

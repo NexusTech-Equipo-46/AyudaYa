@@ -1,55 +1,89 @@
 @model AyudaYa.Web.Models.Cuenta.RegistroViewModel
 @{
+    Layout = "_VisitanteLayout";
     ViewData["Title"] = "Crear cuenta";
+    ViewData["RegistroActual"] = true;
+    ViewData["UsaScriptsPrototipo"] = true;
+    var errores = ViewData.ModelState
+        .Where(entrada => entrada.Value is not null)
+        .SelectMany(entrada => entrada.Value!.Errors.Select(error => (Campo: entrada.Key, Mensaje: error.ErrorMessage)))
+        .ToList();
+    var ids = new Dictionary<string, string> {
+        [nameof(Model.NombreCompleto)] = "nombre", [nameof(Model.Email)] = "email",
+        [nameof(Model.Dni)] = "dni", [nameof(Model.Password)] = "contrasena", [nameof(Model.ConfirmarPassword)] = "confirmacion"
+    };
+    string? ErrorDe(string campo) => ViewData.ModelState.TryGetValue(campo, out var estado) ? estado.Errors.FirstOrDefault()?.ErrorMessage : null;
+    var errorNombre = ErrorDe(nameof(Model.NombreCompleto));
+    var errorEmail = ErrorDe(nameof(Model.Email));
+    var errorDni = ErrorDe(nameof(Model.Dni));
+    var errorPassword = ErrorDe(nameof(Model.Password));
+    var errorConfirmacion = ErrorDe(nameof(Model.ConfirmarPassword));
 }
-
-<h1>Crear cuenta</h1>
-<p class="text-muted">La cuenta se usa para publicar y gestionar solicitudes de ayuda.</p>
-
-<div class="row">
-    <div class="col-md-6 col-lg-5">
-        <form asp-action="Registro" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <div class="mb-3">
-                <label asp-for="NombreCompleto" class="form-label"></label>
-                <input asp-for="NombreCompleto" class="form-control" autocomplete="name" />
-                <span asp-validation-for="NombreCompleto" class="text-danger"></span>
+<div class="pagina-cuenta">
+    <div class="contenedor">
+        <div class="tarjeta" id="tarjeta-registro">
+            <h1>Crear cuenta</h1>
+            <p class="texto-suave">Con una sola cuenta podés pedir ayuda, sumarte como voluntario o representar a una organización. Eso lo elegís después, desde tu panel.</p>
+            <div class="alerta alerta-info" id="aviso-destino" hidden></div>
+            <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" @(errores.Count == 0 ? "hidden" : null)>
+                @if (errores.Count > 0)
+                {
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5L22.5 21h-21z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.3" fill="currentColor"/></svg>
+                    <div><h2 id="titulo-resumen">@(errores.Count == 1 ? "Hay 1 dato para corregir" : $"Hay {errores.Count} datos para corregir")</h2>
+                        <ul>
+                            @foreach (var error in errores)
+                            {
+                                <li>@if (ids.TryGetValue(error.Campo, out var idCampo)) { <a href="#@idCampo">@error.Mensaje</a> } else { @error.Mensaje }</li>
+                            }
+                        </ul>
+                    </div>
+                }
             </div>
-
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label"></label>
-                <input asp-for="Email" class="form-control" autocomplete="email" />
-                <span asp-validation-for="Email" class="text-danger"></span>
-                <div class="form-text">Se guarda en minúsculas y no distingue mayúsculas.</div>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label"></label>
-                <input asp-for="Password" class="form-control" autocomplete="new-password" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-                <div class="form-text">Mínimo 8 caracteres, con mayúscula, minúscula y número.</div>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="ConfirmarPassword" class="form-label"></label>
-                <input asp-for="ConfirmarPassword" class="form-control" autocomplete="new-password" />
-                <span asp-validation-for="ConfirmarPassword" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Dni" class="form-label"></label>
-                <input asp-for="Dni" class="form-control" inputmode="numeric" />
-                <span asp-validation-for="Dni" class="text-danger"></span>
-                <div class="form-text">Opcional. Se guarda en una tabla privada.</div>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Crear cuenta</button>
-            <a asp-action="Login" class="btn btn-link">Ya tengo cuenta</a>
-        </form>
+            <form id="form-registro" asp-action="Registro" method="post" novalidate>
+                <div class="campo">
+                    <label for="nombre">Nombre y apellido</label>
+                    <input asp-for="NombreCompleto" type="text" id="nombre" autocomplete="name" required aria-describedby="error-nombre" aria-invalid="@(errorNombre is null ? null : "true")">
+                    <p class="error-campo" id="error-nombre">@errorNombre</p>
+                </div>
+                <div class="campo">
+                    <label for="email">Correo electrónico</label>
+                    <span class="ayuda" id="ayuda-email">Lo vas a usar para iniciar sesión.</span>
+                    <input asp-for="Email" type="email" id="email" autocomplete="email" inputmode="email" required aria-describedby="ayuda-email error-email" aria-invalid="@(errorEmail is null ? null : "true")">
+                    <p class="error-campo" id="error-email">@errorEmail</p>
+                </div>
+                <div class="campo">
+                    <label for="dni">DNI <span class="opcional">(opcional)</span></label>
+                    <span class="ayuda" id="ayuda-dni">Con o sin puntos. Nunca se muestra en público.</span>
+                    <input asp-for="Dni" type="text" id="dni" inputmode="numeric" autocomplete="off" maxlength="12" aria-describedby="ayuda-dni error-dni" aria-invalid="@(errorDni is null ? null : "true")">
+                    <p class="error-campo" id="error-dni">@errorDni</p>
+                </div>
+                <div class="campo">
+                    <label for="contrasena">Contraseña</label>
+                    <div class="con-boton">
+                        <input asp-for="Password" type="password" id="contrasena" autocomplete="new-password" required aria-describedby="requisitos error-contrasena" aria-invalid="@(errorPassword is null ? null : "true")">
+                        <button type="button" class="boton-texto" data-mostrar="contrasena" aria-pressed="false">Mostrar<span class="visualmente-oculto"> contraseña</span></button>
+                    </div>
+                    <ul class="requisitos" id="requisitos">
+                        <li data-regla="largo">Al menos 8 caracteres</li>
+                        <li data-regla="mayuscula">Una letra mayúscula</li>
+                        <li data-regla="minuscula">Una letra minúscula</li>
+                        <li data-regla="numero">Un número</li>
+                    </ul>
+                    <p class="error-campo" id="error-contrasena">@errorPassword</p>
+                </div>
+                <div class="campo">
+                    <label for="confirmacion">Repetí la contraseña</label>
+                    <input asp-for="ConfirmarPassword" type="password" id="confirmacion" autocomplete="new-password" required aria-describedby="error-confirmacion" aria-invalid="@(errorConfirmacion is null ? null : "true")">
+                    <p class="error-campo" id="error-confirmacion">@errorConfirmacion</p>
+                </div>
+                <button type="submit" class="boton">Crear cuenta</button>
+            </form>
+            <p class="alternativa">¿Ya tenés cuenta? <a asp-action="Login" id="enlace-login">Iniciá sesión</a></p>
+        </div>
     </div>
 </div>
-
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/demo/comun.js" asp-append-version="true"></script>
+    <script src="~/js/demo/formularios.js" asp-append-version="true"></script>
+    <script src="~/js/registro.js" asp-append-version="true"></script>
 }

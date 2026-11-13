@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using AyudaYa.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace AyudaYa.Negocio.Servicios;
 
@@ -14,7 +15,9 @@ public sealed record PerfilUsuarioDto(
     string NombreCompleto,
     string Email,
     IReadOnlyList<string> Roles,
-    bool Activo);
+    bool Activo,
+    string? Dni,
+    bool EsVoluntario);
 
 /// <summary>
 /// Punto único para crear, autenticar, desactivar y reactivar usuarios.
@@ -187,11 +190,73 @@ public sealed class UsuarioAppService
         }
 
         var roles = await _userManager.GetRolesAsync(user);
+        var dni = await _db.UsuarioDatosPrivados.AsNoTracking()
+            .Where(datos => datos.UsuarioId == user.Id)
+            .Select(datos => datos.Dni)
+            .SingleOrDefaultAsync();
+        var esVoluntario = await _db.Voluntario.AsNoTracking()
+            .AnyAsync(voluntario => voluntario.UsuarioId == user.Id && voluntario.Activo);
         return new PerfilUsuarioDto(
             user.NombreCompleto,
             user.Email ?? string.Empty,
             roles.ToList(),
-            user.Activo);
+            user.Activo,
+            dni,
+            esVoluntario);
+    }
+
+    /// <summary>Actualiza únicamente los datos del usuario autenticado.</summary>
+    public async Task<IdentityResult> ActualizarPerfilAsync(
+        ClaimsPrincipal principal, string nombreCompleto, string? dni,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.GetUserAsync(principal);
+        if (user is null || !user.Activo)
+            return IdentityResult.Failed(new IdentityError { Code = "UsuarioInvalido", Description = "La cuenta no está disponible." });
+
+        nombreCompleto = (nombreCompleto ?? "").Trim();
+        if (nombreCompleto.Length is < 3 or > 150)
+            return IdentityResult.Failed(new IdentityError { Code = "NombreInvalido", Description = "El nombre debe tener entre 3 y 150 caracteres." });
+
+        dni = string.IsNullOrWhiteSpace(dni) ? null : new string(dni.Where(c => c != '.' && !char.IsWhiteSpace(c)).ToArray());
+        if (dni == "") dni = null;
+        if (dni is not null && !DniValido.IsMatch(dni))
+            return IdentityResult.Failed(new IdentityError { Code = "DniInvalido", Description = "El DNI debe tener entre 6 y 9 dígitos." });
+        if (dni is not null && await _db.UsuarioDatosPrivados.AnyAsync(datos => datos.UsuarioId != user.Id && datos.Dni == dni, cancellationToken))
+            return IdentityResult.Failed(new IdentityError { Code = "DniDuplicado", Description = "Ya existe un usuario con ese DNI." });
+
+        var datosPrivados = await _db.UsuarioDatosPrivados.SingleOrDefaultAsync(datos => datos.UsuarioId == user.Id, cancellationToken);
+        if (datosPrivados is null)
+        {
+            datosPrivados = new UsuarioDatosPrivados { UsuarioId = user.Id };
+            _db.UsuarioDatosPrivados.Add(datosPrivados);
+        }
+        datosPrivados.Dni = dni;
+        user.NombreCompleto = nombreCompleto;
+        try
+        {
+            // Identity y los datos privados comparten contexto y SaveChanges.
+            return await _userManager.UpdateAsync(user);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_usuario_datos_privados_dni" })
+        {
+            return IdentityResult.Failed(new IdentityError { Code = "DniDuplicado", Description = "Ya existe un usuario con ese DNI." });
+        }
+    }
+
+    /// <summary>Cambia la clave comprobando la actual y renueva la sesión activa.</summary>
+    public async Task<IdentityResult> CambiarPasswordAsync(
+        ClaimsPrincipal principal, string actual, string nueva)
+    {
+        var user = await _userManager.GetUserAsync(principal);
+        if (user is null || !user.Activo)
+            return IdentityResult.Failed(new IdentityError { Code = "UsuarioInvalido", Description = "La cuenta no está disponible." });
+        if (actual == nueva)
+            return IdentityResult.Failed(new IdentityError { Code = "PasswordIgual", Description = "La contraseña nueva tiene que ser distinta de la actual." });
+
+        var resultado = await _userManager.ChangePasswordAsync(user, actual, nueva);
+        if (resultado.Succeeded) await _signInManager.RefreshSignInAsync(user);
+        return resultado;
     }
 
     /// <summary>

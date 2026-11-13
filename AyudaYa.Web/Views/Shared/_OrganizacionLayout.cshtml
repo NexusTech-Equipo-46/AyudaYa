@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewData["Title"] · AyudaYa</title>
+    <link rel="stylesheet" href="~/css/inicio.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/usuario.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/organizacion.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/perfil.css" asp-append-version="true">
+    <script>document.documentElement.classList.add("js");</script>
+</head>
+<body data-url-panel-org="@Url.Action("Panel", "Organizacion")" data-url-asignacion="@Url.Action("Asignacion", "Organizacion")" data-url-asignaciones="@Url.Action("Asignaciones", "Organizacion")" data-url-centros-org="@Url.Action("Centros", "Organizacion")" data-url-recursos-org="@Url.Action("Recursos", "Organizacion")" data-url-centro-ejemplo="@Url.Action("Ejemplo", "Centros")">
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <div class="aviso-prototipo" role="note">Prototipo navegable · Zona responsable de organización · Datos ficticios</div>
+    <header class="encabezado">
+        <div class="contenedor">
+            <a class="marca" asp-controller="Organizacion" asp-action="Panel" aria-label="AyudaYa, ir al panel de la organización">
+                <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2C12.3 2 6 8.1 6 15.7 6 26 20 38 20 38s14-12 14-22.3C34 8.1 27.7 2 20 2z" fill="#0F766E"/><path d="M20 23.5s-6.5-4-6.5-8.3a3.6 3.6 0 0 1 6.5-2.1 3.6 3.6 0 0 1 6.5 2.1c0 4.3-6.5 8.3-6.5 8.3z" fill="#fff"/></svg>
+                <span class="marca-texto">Ayuda<em>Ya</em></span>
+            </a>
+            <button type="button" class="boton-menu" aria-expanded="false" aria-controls="nav-principal">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Menú
+            </button>
+            <nav id="nav-principal" class="nav-principal" aria-label="Principal"><ul>
+                <li><a asp-controller="Organizacion" asp-action="Panel" aria-current="@(ViewData["PanelOrgActual"] is true ? "page" : null)">Panel</a></li>
+                <li><a asp-controller="Organizacion" asp-action="Asignaciones" aria-current="@(ViewData["CentrosActual"] is true || ViewData["MiembrosActual"] is true || ViewData["PanelOrgActual"] is true ? null : "page")">Asignaciones</a></li>
+                <li><a asp-controller="Organizacion" asp-action="Centros" aria-current="@(ViewData["CentrosActual"] is true ? "page" : null)">Centros</a></li>
+                <li><a asp-controller="Organizacion" asp-action="Miembros" aria-current="@(ViewData["MiembrosActual"] is true ? "page" : null)">Miembros</a></li>
+                <li><a asp-controller="Panel" asp-action="Index">Mi cuenta</a></li>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <li><form asp-controller="Cuenta" asp-action="Logout" method="post"><button type="submit" class="cerrar-sesion-nav">Cerrar sesión</button></form></li>
+                }
+                else
+                {
+                    <li><a asp-controller="Cuenta" asp-action="Login">Iniciar sesión</a></li>
+                }
+            </ul></nav>
+        </div>
+    </header>
+    <main id="contenido" class="@(ViewData["ListaAsignaciones"] is true || (ViewData["CentrosActual"] is true && ViewData["DetalleRecursos"] is not true) || ViewData["MiembrosActual"] is true || ViewData["PanelOrgActual"] is true ? "pagina-usuario" : null)" tabindex="-1">@RenderBody()</main>
+    @await RenderSectionAsync("DespuesDelContenido", required: false)
+    <footer class="pie"><div class="contenedor"><p>AyudaYa · TFI UTN FRGP 2026 · Equipo 46 NexusTech</p><p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p></div></footer>
+    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
+    <script src="~/js/demo/datos-org.js" asp-append-version="true"></script>
+    <script src="~/js/demo/comun.js" asp-append-version="true"></script>
+    <script src="~/js/demo/comun-org.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

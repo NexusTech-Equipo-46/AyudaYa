@@ -1,0 +1,61 @@
+@{
+    Layout = "_UsuarioLayout";
+    ViewData["Title"] = "Mi panel";
+    ViewData["PanelActual"] = true;
+    ViewData["DatosFicticios"] = true;
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1 id="saludo">Hola</h1>
+            <p class="texto-suave">Desde acá seguís tus pedidos de ayuda y tu participación como voluntario.</p>
+        </div>
+        <a class="boton" asp-controller="Solicitudes" asp-action="Nueva">Pedir ayuda</a>
+    </div>
+
+    <div class="panel">
+        <div>
+            <section aria-labelledby="titulo-abiertas">
+                <div class="encabezado-seccion">
+                    <h2 id="titulo-abiertas">Solicitudes abiertas</h2>
+                    <a asp-controller="Solicitudes" asp-action="Index">Ver todas mis solicitudes</a>
+                </div>
+                <ul class="lista-solicitudes" id="lista-abiertas"></ul>
+                <div class="tarjeta estado-vacio" id="vacio" hidden>
+                    <h3>No tenés solicitudes abiertas</h3>
+                    <p>Si necesitás agua, alimentos, abrigo u otra ayuda, cargá un pedido y alguien de tu zona lo va a tomar.</p>
+                    <div class="acciones"><a class="boton" asp-controller="Solicitudes" asp-action="Nueva">Pedir ayuda</a></div>
+                </div>
+            </section>
+        </div>
+        <div>
+            <section class="tarjeta" aria-labelledby="titulo-resumen-panel">
+                <h2 id="titulo-resumen-panel">Tu actividad</h2>
+                <dl class="resumen">
+                    <div><dt>Abiertas</dt><dd id="n-abiertas">0</dd></div>
+                    <div><dt>Resueltas</dt><dd id="n-resueltas">0</dd></div>
+                </dl>
+            </section>
+            <section class="tarjeta llamado" aria-labelledby="titulo-voluntario">
+                <h2 id="titulo-voluntario">Voluntariado</h2>
+                <p>Todavía no sos voluntario/a. Sumate para atender solicitudes de tu zona: vos elegís cuáles tomar.</p>
+                <div class="acciones"><a class="boton boton-secundario" asp-controller="Voluntariado" asp-action="Index">Quiero ser voluntario</a></div>
+            </section>
+            <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
+                <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
+                <p class="texto-suave">No esperes una respuesta de la app: llamá directamente.</p>
+                <ul>
+                    <li><a href="tel:911">911 <span>Emergencias</span></a></li>
+                    <li><a href="tel:107">107 <span>SAME · Emergencias médicas</span></a></li>
+                </ul>
+            </aside>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
+    <script src="~/js/demo/datos-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/comun-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/panel.js" asp-append-version="true"></script>
+}

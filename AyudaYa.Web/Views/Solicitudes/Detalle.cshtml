@@ -1,0 +1,33 @@
+@model string
+@{
+    Layout = "_UsuarioLayout";
+    ViewData["Title"] = "Detalle de solicitud";
+    ViewData["SolicitudActual"] = true;
+    ViewData["DetalleSolicitud"] = true;
+    ViewData["DatosFicticios"] = true;
+}
+<div class="contenedor" id="detalle-solicitud" data-id-solicitud="@Model"></div>
+@section DespuesDelContenido {
+    <dialog id="dialogo-cancelar" aria-labelledby="titulo-cancelar">
+        <form id="form-cancelar" novalidate>
+            <h2 id="titulo-cancelar">Cancelar solicitud</h2>
+            <p>Si cancelás, quienes la tenían asignada dejan de atenderla. Esto no se puede deshacer.</p>
+            <p class="texto-suave">En esta demostración la cancelación solo se simula.</p>
+            <div class="campo">
+                <label for="motivo">Motivo de la cancelación</label>
+                <textarea id="motivo" name="motivo" rows="3" maxlength="300" required aria-describedby="error-motivo"></textarea>
+                <p class="error-campo" id="error-motivo"></p>
+            </div>
+            <div class="acciones">
+                <button type="submit" class="boton boton-peligro">Sí, cancelar solicitud</button>
+                <button type="button" class="boton boton-secundario" id="cerrar-dialogo">No, volver</button>
+            </div>
+        </form>
+    </dialog>
+}
+@section Scripts {
+    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
+    <script src="~/js/demo/datos-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/comun-usuario.js" asp-append-version="true"></script>
+    <script src="~/js/demo/solicitud.js" asp-append-version="true"></script>
+}

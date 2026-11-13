@@ -1,0 +1,83 @@
+/* AyudaYa - Prototipo zona Responsable de organización
+   Se carga DESPUÉS de estilos.css y estilos-usuario.css y reutiliza sus
+   variables: no se agregan colores nuevos, así que los contrastes
+   (>= 4.5:1 texto, >= 3:1 bordes de controles) son los mismos. */
+
+/* --- Estados de asignación: siempre ícono + texto --- */
+
+.asig-asignada { background: var(--neutro-claro); color: var(--neutro-oscuro); border-color: var(--neutro-oscuro); }
+.asig-en_atencion { background: var(--principal-claro); color: var(--principal-oscuro); border-color: var(--principal-oscuro); }
+.asig-completada { background: var(--exito-claro); color: var(--exito); border-color: var(--exito); }
+.asig-cancelada { background: var(--superficie); color: var(--neutro-oscuro); border-color: var(--neutro-oscuro); border-style: dashed; }
+.asig-liberada { background: var(--advertencia-claro); color: var(--advertencia); border-color: var(--advertencia); border-style: dashed; }
+
+/* --- Verificación de organización y centros --- */
+
+.ver-aprobado { background: var(--exito-claro); color: var(--exito); border-color: var(--exito); }
+.ver-pendiente { background: var(--advertencia-claro); color: var(--advertencia); border-color: var(--advertencia); }
+.ver-rechazado { background: var(--peligro-claro); color: var(--peligro); border-color: var(--peligro); }
+
+/* --- Avisos al inicio de la página --- */
+
+.pagina-usuario .alerta { margin-bottom: .75rem; }
+.pagina-usuario .alerta:empty { display: none; }
+#avisos, #aviso, #aviso-alta { margin-bottom: 1.25rem; }
+#avisos:empty, #aviso:empty, #aviso-alta:empty { display: none; }
+
+/* --- Centros --- */
+
+.grilla-org { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.centro-org { display: flex; flex-direction: column; gap: .6rem; height: 100%; }
+.centro-org h3 { margin: 0; font-size: 1.15rem; }
+.centro-org .meta { margin: 0; color: var(--texto-suave); font-size: .95rem; }
+.centro-org .insignias { margin: 0; }
+.centro-org .alerta { margin: 0; padding: .6rem .8rem; font-size: .95rem; }
+.centro-org .alerta p { margin: 0; }
+.centro-org .acciones { margin: auto 0 0; padding-top: .5rem; }
+.centro-org .boton { min-height: 44px; }
+
+/* --- Horario del centro (formulario) --- */
+
+input[type="time"] {
+    width: 100%; min-height: 48px; padding: .55rem .8rem;
+    border: 2px solid var(--borde-control); border-radius: var(--radio);
+    background: var(--superficie); color: var(--texto); font: inherit;
+}
+input[type="time"]:focus-visible { outline-offset: 0; border-color: var(--foco); }
+input[type="time"][aria-invalid="true"] { border-color: var(--peligro); border-width: 3px; }
+input[type="time"]:disabled, fieldset:disabled { opacity: .55; }
+.dias-semana { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+.dias-semana .opcion { padding: .5rem .9rem; align-items: center; }
+.horas { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+
+/* --- Recursos del centro --- */
+
+.tabla-edicion select { width: auto; min-width: 11rem; }
+.tabla-edicion td, .tabla-edicion th { vertical-align: middle; }
+.tabla-edicion .actual { white-space: nowrap; }
+.barra-guardado { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; margin-top: 1rem; }
+.barra-guardado p { margin: 0; }
+
+/* --- Miembros --- */
+
+.fila-baja td, .fila-baja th { color: var(--texto-suave); }
+.tabla-recursos td .boton { min-height: 44px; padding: .3rem 1rem; }
+
+/* --- Asignaciones --- */
+
+.pasos-atencion { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0; }
+.pasos-atencion .boton { margin: 0; }
+.dialogo-campo-ultimo { margin-bottom: 1rem; }
+
+.cuadro-privado { border-left: 6px solid var(--principal); }
+
+@media (max-width: 600px) {
+    .horas { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+    .tabla-edicion select { width: 100%; min-width: 0; }
+}
+
+/* Nombre y correo en la misma celda de encabezado de fila. */
+.tabla-recursos th .detalle-recurso { display: block; font-weight: 400; color: var(--texto-suave); font-size: .9rem; }

@@ -1,0 +1,63 @@
+@{
+    Layout = "_OrganizacionLayout";
+    ViewData["Title"] = "Panel de la organización";
+    ViewData["PanelOrgActual"] = true;
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1 id="titulo-org">Organización</h1>
+            <p class="texto-suave" id="subtitulo-org"></p>
+        </div>
+        <a class="boton" asp-controller="Organizacion" asp-action="Asignaciones">Ver asignaciones</a>
+    </div>
+
+    <div id="avisos"></div>
+
+    <div class="panel">
+        <div>
+            <section aria-labelledby="titulo-activas">
+                <div class="encabezado-seccion">
+                    <h2 id="titulo-activas">Asignaciones activas</h2>
+                    <a asp-controller="Organizacion" asp-action="Asignaciones">Ver todas</a>
+                </div>
+                <ul class="lista-solicitudes" id="lista-activas"></ul>
+                <div class="tarjeta estado-vacio" id="vacio" hidden>
+                    <h3>No tienen asignaciones activas</h3>
+                    <p>Cuando alguien de la organización tome una solicitud, la van a ver acá para seguirla hasta el final.</p>
+                    <div class="acciones"><a class="boton" asp-controller="Centros" asp-action="Index">Ver el mapa de centros</a></div>
+                </div>
+            </section>
+        </div>
+        <div>
+            <section class="tarjeta" aria-labelledby="titulo-resumen-panel">
+                <h2 id="titulo-resumen-panel">Resumen</h2>
+                <dl class="resumen">
+                    <div><dt>Asignaciones activas</dt><dd id="n-activas">0</dd></div>
+                    <div><dt>Completadas</dt><dd id="n-completadas">0</dd></div>
+                    <div><dt>Centros aprobados</dt><dd id="n-centros">0</dd></div>
+                    <div><dt>Miembros activos</dt><dd id="n-miembros">0</dd></div>
+                </dl>
+            </section>
+            <section class="tarjeta" aria-labelledby="titulo-centros-panel">
+                <div class="encabezado-seccion">
+                    <h2 id="titulo-centros-panel">Centros</h2>
+                    <a asp-controller="Organizacion" asp-action="Centros">Administrar</a>
+                </div>
+                <ul class="lista-simple" id="lista-centros-panel" style="list-style:none;padding:0"></ul>
+            </section>
+            <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
+                <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
+                <p class="texto-suave">No esperen una respuesta de la app: llamen directamente.</p>
+                <ul>
+                    <li><a href="tel:911">911 <span>Emergencias</span></a></li>
+                    <li><a href="tel:107">107 <span>SAME · Emergencias médicas</span></a></li>
+                </ul>
+            </aside>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/demo/panel-org.js" asp-append-version="true"></script>
+}

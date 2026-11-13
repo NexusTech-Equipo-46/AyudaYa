@@ -1,0 +1,60 @@
+@model List<AyudaYa.Negocio.Servicios.CentroPublicoDto>
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Centros de asistencia";
+}
+
+<link rel="stylesheet" href="~/css/centros.css" asp-append-version="true" />
+
+<div class="centros-pagina">
+    <header class="centros-encabezado">
+        <h1>Centros de asistencia</h1>
+        <p>Buscá un centro por nombre, dirección, zona, tipo o recurso.</p>
+        <p>La disponibilidad la informan los centros. Si los datos no son recientes, llamá antes de ir.</p>
+    </header>
+
+    <section class="centros-filtros" aria-label="Filtros de búsqueda">
+        <div class="centros-campo centros-campo-busqueda">
+            <label for="buscar">Buscar por nombre o dirección</label>
+            <input id="buscar" type="search" autocomplete="off" />
+        </div>
+        <div class="centros-campo">
+            <label for="zona">Zona</label>
+            <select id="zona"><option value="">Todas las zonas</option></select>
+        </div>
+        <div class="centros-campo">
+            <label for="tipo">Tipo de centro</label>
+            <select id="tipo"><option value="">Todos los tipos</option></select>
+        </div>
+        <div class="centros-campo">
+            <label for="recurso">Recurso que necesitás</label>
+            <select id="recurso"><option value="">Todos los recursos</option></select>
+        </div>
+        <div class="centros-acciones-filtros">
+            <button type="button" id="limpiar-filtros" class="centros-boton-secundario">Limpiar filtros</button>
+        </div>
+    </section>
+
+    <p id="cantidad" class="centros-cantidad" role="status" aria-live="polite"></p>
+    <div class="centros-resultados">
+        <section aria-label="Lista de centros">
+            <ul id="lista-centros" class="centros-lista"></ul>
+            <div id="sin-resultados" class="centros-vacio" hidden>
+                <h2>No hay centros que coincidan con la búsqueda</h2>
+                <p>Probá con otra zona o quitá algún filtro.</p>
+            </div>
+        </section>
+        <section class="centros-mapa-panel" aria-label="Mapa de centros de asistencia">
+            <h2>Mapa de centros</h2>
+            <div id="mapa"></div>
+        </section>
+    </div>
+</div>
+
+<!-- El codificador predeterminado escapa los caracteres HTML sensibles. -->
+<script id="datos-centros" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model))</script>
+
+@section Scripts {
+    <script src="~/js/centros-mapa.js" asp-append-version="true"></script>
+}
