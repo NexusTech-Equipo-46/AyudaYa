@@ -16,7 +16,7 @@
         else
         {
             <li><a asp-controller="Panel" asp-action="Index" aria-current="@Actual("Panel")">Panel</a></li>
-            <li><a asp-controller="Solicitudes" asp-action="Index" aria-current="@Actual("Solicitudes")">Mis solicitudes</a></li>
+            <li><a asp-controller="Solicitudes" asp-action="Index" aria-current="@(ViewContext.RouteData.Values["action"]?.ToString() == "Nueva" ? null : Actual("Solicitudes"))">Mis solicitudes</a></li>
             @if (Model.EsVoluntario)
             {
                 <li><a asp-controller="Voluntario" asp-action="Panel" aria-current="@Actual("Voluntario", "Voluntariado")">Voluntariado</a></li>

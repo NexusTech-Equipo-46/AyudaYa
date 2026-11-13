@@ -834,20 +834,13 @@ public sealed class SolicitudAppService
                 "Solo el solicitante o un administrador pueden cancelar la solicitud."));
         }
 
+        // Los recursos ya resueltos (confirmados) se conservan tal como están:
+        // solo se cancelan las asignaciones de los recursos que siguen abiertos.
         var asignacionesActivas = solicitud.SolicitudRecurso
+            .Where(r => r.Estado is not ("resuelta" or "cancelada"))
             .SelectMany(r => r.Asignaciones)
             .Where(a => EstadosAsignacionActiva.Contains(a.Estado))
             .ToList();
-
-        var asignacionConfirmada = asignacionesActivas
-            .FirstOrDefault(a => a.Estado == "completada" && a.ConfirmadaPor is not null);
-
-        if (asignacionConfirmada is not null)
-        {
-            return ResultadoOperacion.Falla(Error(
-                "AsignacionConfirmada",
-                "No se puede cancelar la solicitud porque tiene una asignación completada y confirmada."));
-        }
 
         var ahora = DateTime.UtcNow;
         var estadoAnterior = solicitud.Estado;

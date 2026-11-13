@@ -158,8 +158,10 @@ img, svg { max-width: 100%; }
 .nav-principal a.boton[aria-current="page"] { text-decoration: none; }
 
 .boton-menu { display: none; }
+.nav-principal a, .nav-principal .cerrar-sesion-nav { white-space: nowrap; }
+.nav-principal ul { flex-wrap: wrap; justify-content: flex-end; }
 
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
     .js .boton-menu { display: inline-flex; }
     .js .nav-principal {
         display: none;

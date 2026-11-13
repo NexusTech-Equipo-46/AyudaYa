@@ -49,47 +49,67 @@ public sealed class InicializadorAppService
     }
 
     /// <summary>
-    /// Crea el administrador inicial si todavía no existe ninguno. Las
-    /// credenciales vienen de configuración (user-secrets o variables de
-    /// entorno), nunca del código.
+    /// Asegura el administrador configurado (Admin:Email / Admin:Password): si
+    /// la cuenta no existe la crea y, si existe, le da el rol. Las credenciales
+    /// vienen de configuración (user-secrets o variables de entorno), nunca del
+    /// código. Devuelve el id de un administrador activo (el configurado o, si
+    /// no hay configuración, cualquiera que ya exista).
     /// </summary>
     public async Task<Guid?> AsegurarAdministradorAsync(
         string? email, string? password, string? nombre, CancellationToken cancellationToken = default)
     {
         var existentes = await _userManager.GetUsersInRoleAsync(UsuarioAppService.RolAdministrador);
-        var existente = existentes.FirstOrDefault(u => u.Activo);
-        if (existente is not null)
+        var algunAdmin = existentes.FirstOrDefault(u => u.Activo);
+
+        if (string.IsNullOrWhiteSpace(email))
         {
-            return existente.Id;
+            if (algunAdmin is null)
+            {
+                _logger.LogWarning(
+                    "No hay administradores y no se configuró Admin:Email y Admin:Password. " +
+                    "Configuralos (user-secrets o variables de entorno) para crear el primero.");
+            }
+
+            return algunAdmin?.Id;
         }
 
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        var configurado = await _userManager.FindByEmailAsync(UsuarioAppService.NormalizarEmail(email));
+        if (configurado is null)
         {
-            _logger.LogWarning(
-                "No hay administradores y no se configuró Admin:Email y Admin:Password. " +
-                "Configuralos (user-secrets o variables de entorno) para crear el primero.");
-            return null;
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                _logger.LogWarning("Falta Admin:Password para crear al administrador {Email}.", email);
+                return algunAdmin?.Id;
+            }
+
+            var id = await CrearUsuarioAsync(
+                email, password, string.IsNullOrWhiteSpace(nombre) ? "Administración AyudaYa" : nombre,
+                confirmado: true, cancellationToken);
+            if (id is null)
+            {
+                _logger.LogError(
+                    "No se creó el administrador {Email}. La contraseña tiene que tener al menos 8 caracteres, " +
+                    "una mayúscula, una minúscula y un número.", email);
+                return algunAdmin?.Id;
+            }
+
+            configurado = await _userManager.FindByIdAsync(id.Value.ToString());
+            _logger.LogInformation("Administrador creado: {Email}", email);
         }
 
-        var id = await CrearUsuarioAsync(
-            email, password, string.IsNullOrWhiteSpace(nombre) ? "Administración AyudaYa" : nombre,
-            confirmado: true, cancellationToken);
-        if (id is null)
+        if (configurado is { Activo: true }
+            && !await _userManager.IsInRoleAsync(configurado, UsuarioAppService.RolAdministrador))
         {
-            return null;
+            var resultado = await _userManager.AddToRoleAsync(configurado, UsuarioAppService.RolAdministrador);
+            if (!resultado.Succeeded)
+            {
+                _logger.LogError("No se pudo asignar el rol Administrador: {Errores}",
+                    string.Join("; ", resultado.Errors.Select(e => e.Description)));
+                return algunAdmin?.Id;
+            }
         }
 
-        var usuario = await _userManager.FindByIdAsync(id.Value.ToString());
-        var resultado = await _userManager.AddToRoleAsync(usuario!, UsuarioAppService.RolAdministrador);
-        if (!resultado.Succeeded)
-        {
-            _logger.LogError("No se pudo asignar el rol Administrador: {Errores}",
-                string.Join("; ", resultado.Errors.Select(e => e.Description)));
-            return null;
-        }
-
-        _logger.LogInformation("Administrador inicial creado: {Email}", email);
-        return id;
+        return configurado is { Activo: true } ? configurado.Id : algunAdmin?.Id;
     }
 
     /// <summary>

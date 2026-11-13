@@ -33,8 +33,12 @@ public static class DependencyInjection
                 "Falta la cadena de conexión. Configurá ConnectionStrings:AyudaYa o AYUDAYA_CONN.");
         }
 
+        // Consultas con varias colecciones (Include) en consultas separadas: evita
+        // el producto cartesiano y la advertencia de rendimiento de EF Core.
         services.AddDbContext<AyudaYaDbContext>(options =>
-            options.UseNpgsql(connectionString));
+            options.UseNpgsql(
+                connectionString,
+                npgsql => npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
         services
             .AddIdentity<UsuarioIdentity, RolIdentity>(options =>
