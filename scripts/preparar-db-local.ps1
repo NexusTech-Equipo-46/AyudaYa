@@ -68,14 +68,20 @@ $env:PGCLIENTENCODING = 'UTF8'
 $env:PGCONNECT_TIMEOUT = '8'
 
 function Invoke-Psql([string]$db, [string]$sql) {
-    $salida = & $psql -h $Servidor -p $Puerto -U $UsuarioAdmin -d $db -v ON_ERROR_STOP=1 -q -t -A -c $sql 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "psql falló en '$db': $salida" }
+    $anterior = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { $salida = & $psql -h $Servidor -p $Puerto -U $UsuarioAdmin -d $db -v ON_ERROR_STOP=1 -q -t -A -c $sql 2>&1 }
+    finally { $ErrorActionPreference = $anterior }
+    if ($LASTEXITCODE -ne 0) { throw "psql falló en '$db': $($salida | Out-String)" }
     return ($salida | Out-String).Trim()
 }
 
 function Invoke-PsqlArchivo([string]$db, [string]$archivo) {
-    $salida = & $psql -h $Servidor -p $Puerto -U $UsuarioAdmin -d $db -v ON_ERROR_STOP=1 -q -f $archivo 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "No se pudo aplicar el esquema en '$db': $salida" }
+    $anterior = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { $salida = & $psql -h $Servidor -p $Puerto -U $UsuarioAdmin -d $db -v ON_ERROR_STOP=1 -q -f $archivo 2>&1 }
+    finally { $ErrorActionPreference = $anterior }
+    if ($LASTEXITCODE -ne 0) { throw "No se pudo aplicar el esquema en '$db': $($salida | Out-String)" }
 }
 
 Write-Host "Probando la conexión..." -ForegroundColor Cyan
@@ -92,8 +98,9 @@ function Asegurar-Base([string]$nombre, [bool]$reiniciar) {
         Write-Host "Creando la base '$nombre'..." -ForegroundColor Cyan
         $null = Invoke-Psql 'postgres' "CREATE DATABASE $nombre ENCODING 'UTF8' TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C'"
     }
-    $tabla = Invoke-Psql $nombre "SELECT to_regclass('public.""AspNetUsers""')"
-    if ([string]::IsNullOrWhiteSpace($tabla)) {
+    # Sin comillas dobles en el SQL: Windows PowerShell 5.1 las pierde al llamar a psql.
+    $tabla = Invoke-Psql $nombre "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'AspNetUsers'"
+    if ($tabla -eq '0') {
         Write-Host "Aplicando el esquema en '$nombre'..." -ForegroundColor Cyan
         Invoke-PsqlArchivo $nombre $esquema
     } else {
