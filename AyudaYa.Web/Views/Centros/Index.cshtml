@@ -1,60 +1,137 @@
-@model List<AyudaYa.Negocio.Servicios.CentroPublicoDto>
+@model MapaCentrosViewModel
 @using System.Text.Json
-
 @{
-    ViewData["Title"] = "Centros de asistencia";
+    ViewData["Title"] = "Mapa de centros";
+    var nombresRecursos = Model.TiposRecurso.ToDictionary(t => t.Codigo, t => t.Nombre);
+    var datosTarjeta = new ViewDataDictionary(ViewData) { ["BotonMapa"] = true, ["NombresRecursos"] = nombresRecursos };
+    var ciudades = Model.Centros.Select(c => c.Ciudad).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList();
 }
+@section Head {
+    <link rel="stylesheet" href="~/lib/leaflet/leaflet.css">
+}
+<div class="pagina-mapa">
+    <div class="contenedor">
+        <h1>Centros de ayuda@(ciudades.Count == 1 ? " en " + ciudades[0] : "")</h1>
+        <p class="introduccion texto-suave">Solo se muestran centros verificados de organizaciones activas. La disponibilidad la cargan los propios centros: si se actualizó hace mucho, llamá antes de ir.</p>
 
-<link rel="stylesheet" href="~/css/centros.css" asp-append-version="true" />
+        <details class="panel-filtros" id="panel-filtros" open>
+            <summary>Filtros <span id="filtros-activos"></span></summary>
+            <form class="filtros" id="filtros" role="search" aria-label="Filtrar centros">
+                <div class="campo campo-busqueda">
+                    <label for="f-buscar">Buscar por nombre o dirección</label>
+                    <input type="search" id="f-buscar" name="q" autocomplete="off">
+                </div>
+                <div class="campo">
+                    <label for="f-zona">Zona</label>
+                    <select id="f-zona" name="zona">
+                        <option value="">Todas las zonas</option>
+                        @foreach (var zona in Model.Zonas)
+                        {
+                            <option value="@zona.Id">@zona.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="f-tipo">Tipo de centro</label>
+                    <select id="f-tipo" name="tipo">
+                        <option value="">Todos los tipos</option>
+                        @foreach (var tipo in Model.TiposCentro)
+                        {
+                            <option value="@tipo.Codigo">@tipo.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="f-recurso">Recurso que necesitás</label>
+                    <select id="f-recurso" name="recurso" aria-describedby="ayuda-recurso">
+                        <option value="">Cualquier recurso</option>
+                        @foreach (var tipo in Model.TiposRecurso)
+                        {
+                            <option value="@tipo.Codigo" selected="@(tipo.Codigo == Model.RecursoInicial)">@tipo.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="filtros-extra">
+                    <label class="check"><input type="checkbox" id="f-abiertos" name="abiertos" value="1"> Ocultar centros cerrados temporalmente</label>
+                    @if (Model.Necesidades.Count > 0)
+                    {
+                        <label class="check"><input type="checkbox" id="f-necesidades" name="necesidades" value="1"> Mostrar zonas con pedidos de ayuda</label>
+                    }
+                    <span id="ayuda-recurso" class="texto-suave">Con un recurso elegido, solo aparecen los centros que lo tienen disponible.</span>
+                    <button type="reset" class="boton-texto">Limpiar filtros</button>
+                </div>
+            </form>
+        </details>
 
-<div class="centros-pagina">
-    <header class="centros-encabezado">
-        <h1>Centros de asistencia</h1>
-        <p>Buscá un centro por nombre, dirección, zona, tipo o recurso.</p>
-        <p>La disponibilidad la informan los centros. Si los datos no son recientes, llamá antes de ir.</p>
-    </header>
-
-    <section class="centros-filtros" aria-label="Filtros de búsqueda">
-        <div class="centros-campo centros-campo-busqueda">
-            <label for="buscar">Buscar por nombre o dirección</label>
-            <input id="buscar" type="search" autocomplete="off" />
-        </div>
-        <div class="centros-campo">
-            <label for="zona">Zona</label>
-            <select id="zona"><option value="">Todas las zonas</option></select>
-        </div>
-        <div class="centros-campo">
-            <label for="tipo">Tipo de centro</label>
-            <select id="tipo"><option value="">Todos los tipos</option></select>
-        </div>
-        <div class="centros-campo">
-            <label for="recurso">Recurso que necesitás</label>
-            <select id="recurso"><option value="">Todos los recursos</option></select>
-        </div>
-        <div class="centros-acciones-filtros">
-            <button type="button" id="limpiar-filtros" class="centros-boton-secundario">Limpiar filtros</button>
-        </div>
-    </section>
-
-    <p id="cantidad" class="centros-cantidad" role="status" aria-live="polite"></p>
-    <div class="centros-resultados">
-        <section aria-label="Lista de centros">
-            <ul id="lista-centros" class="centros-lista"></ul>
-            <div id="sin-resultados" class="centros-vacio" hidden>
-                <h2>No hay centros que coincidan con la búsqueda</h2>
-                <p>Probá con otra zona o quitá algún filtro.</p>
+        <div class="barra-resultados">
+            <p id="cantidad" role="status" aria-live="polite">@Formato.Plural(Model.Centros.Count, "centro", "centros")</p>
+            <div class="selector-vista" role="group" aria-label="Forma de ver los resultados">
+                <button type="button" data-vista="lista" aria-pressed="true">Lista</button>
+                <button type="button" data-vista="mapa" aria-pressed="false">Mapa</button>
             </div>
-        </section>
-        <section class="centros-mapa-panel" aria-label="Mapa de centros de asistencia">
-            <h2>Mapa de centros</h2>
-            <div id="mapa"></div>
-        </section>
+        </div>
+
+        <div class="resultados" id="resultados" data-vista="lista">
+            <div>
+                <h2 class="visualmente-oculto">Lista de centros</h2>
+                <ul class="lista-centros" id="lista-centros">
+                    @foreach (var centro in Model.Centros)
+                    {
+                        <li data-centro="@centro.Id"><partial name="_TarjetaCentro" model="centro" view-data="datosTarjeta" /></li>
+                    }
+                </ul>
+                <div class="tarjeta sin-resultados" id="sin-resultados" hidden>
+                    <h3>No hay centros con esos filtros</h3>
+                    <p>Probá con otra zona o quitá algún filtro.</p>
+                    <button type="button" class="boton boton-secundario" id="limpiar-vacio">Limpiar filtros</button>
+                </div>
+                @if (Model.Centros.Count == 0)
+                {
+                    <div class="tarjeta sin-resultados">
+                        <h3>Todavía no hay centros publicados</h3>
+                        <p>Cuando una organización cargue un centro y un administrador lo apruebe, va a aparecer acá.</p>
+                    </div>
+                }
+            </div>
+            <section class="zona-mapa" aria-labelledby="titulo-mapa">
+                <h2 id="titulo-mapa" class="visualmente-oculto">Mapa de centros</h2>
+                <div id="mapa"></div>
+                <p class="nota-mapa" id="nota-mapa">Con teclado: <kbd>Tab</kbd> recorre los marcadores y <kbd>Enter</kbd> abre la información del centro. La lista muestra lo mismo que el mapa.</p>
+            </section>
+        </div>
+
+        @if (Model.Necesidades.Count > 0)
+        {
+            <details class="tarjeta necesidades-zona">
+                <summary>Pedidos de ayuda abiertos por zona</summary>
+                <p class="texto-suave">Son cantidades aproximadas por zona: nunca se muestran direcciones ni ubicaciones exactas.</p>
+                <div class="tabla-scroll" tabindex="0" role="region" aria-label="Pedidos de ayuda abiertos por zona">
+                    <table class="tabla-recursos">
+                        <thead><tr><th scope="col">Zona</th><th scope="col">Pedidos abiertos</th><th scope="col">Personas</th><th scope="col">Recursos más pedidos</th></tr></thead>
+                        <tbody>
+                            @foreach (var n in Model.Necesidades.OrderByDescending(n => n.SolicitudesAbiertas))
+                            {
+                                <tr>
+                                    <th scope="row">@n.Zona</th>
+                                    <td>@n.SolicitudesAbiertas</td>
+                                    <td>@n.PersonasAfectadas</td>
+                                    <td>@string.Join(", ", n.Recursos.OrderByDescending(r => r.Personas).Take(3).Select(r => r.Nombre))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        }
     </div>
 </div>
 
-<!-- El codificador predeterminado escapa los caracteres HTML sensibles. -->
-<script id="datos-centros" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model))</script>
+@* Datos para el mapa. El serializador escapa los caracteres HTML, así que es seguro dentro del script. *@
+<script id="datos-centros" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.DatosCentros, new JsonSerializerOptions(JsonSerializerDefaults.Web)))</script>
+<script id="datos-necesidades" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.DatosNecesidades, new JsonSerializerOptions(JsonSerializerDefaults.Web)))</script>
 
 @section Scripts {
-    <script src="~/js/centros-mapa.js" asp-append-version="true"></script>
+    <script src="~/lib/leaflet/leaflet.js"></script>
+    <script src="~/js/mapa-comun.js" asp-append-version="true"></script>
+    <script src="~/js/mapa-centros.js" asp-append-version="true"></script>
 }

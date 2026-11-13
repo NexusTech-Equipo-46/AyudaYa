@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using AyudaYa.Negocio.Servicios;
 
 namespace AyudaYa.Web.Models.Cuenta;
 
@@ -8,6 +9,8 @@ public sealed class PerfilViewModel
     public IReadOnlyList<string> Roles { get; set; } = [];
     public bool Activo { get; set; }
     public bool EsVoluntario { get; set; }
+    public bool EmailConfirmado { get; set; }
+    public IReadOnlyList<MembresiaDto> Organizaciones { get; set; } = [];
     public DatosPerfilViewModel Datos { get; set; } = new();
     public CambiarClaveViewModel Clave { get; set; } = new();
 }

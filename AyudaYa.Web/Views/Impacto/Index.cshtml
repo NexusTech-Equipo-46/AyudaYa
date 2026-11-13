@@ -1,0 +1,75 @@
+@model ImpactoViewModel
+@{
+    ViewData["Title"] = "Impacto";
+    var impacto = Model.Impacto;
+    var maximo = Math.Max(1, impacto.PorRecurso.Select(r => r.Personas).DefaultIfEmpty(0).Max());
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Impacto de la red</h1>
+            <p class="texto-suave">Personas alcanzadas por cada recurso que se entregó y fue confirmado por quien lo recibió, en los últimos 12 meses.</p>
+        </div>
+        @if (Model.Ciudades.Count > 1)
+        {
+            <form method="get" class="filtro-ciudad">
+                <label for="ciudadId" class="visualmente-oculto">Ciudad</label>
+                <select id="ciudadId" name="ciudadId" data-autoenviar>
+                    <option value="">Todas las ciudades</option>
+                    @foreach (var ciudad in Model.Ciudades)
+                    {
+                        <option value="@ciudad.Id" selected="@(ciudad.Id == Model.CiudadId)">@ciudad.Nombre</option>
+                    }
+                </select>
+                <button type="submit" class="boton boton-secundario solo-sin-js">Aplicar</button>
+            </form>
+        }
+    </div>
+
+    <dl class="resumen" style="margin-bottom:1.25rem">
+        <div><dt>Personas alcanzadas</dt><dd>@Formato.Numero(impacto.TotalPersonas)</dd></div>
+        <div><dt>Recursos entregados</dt><dd>@Formato.Numero(impacto.TotalRecursosResueltos)</dd></div>
+    </dl>
+
+    <p class="texto-suave">Una misma persona puede contarse en más de un recurso (por ejemplo, si recibió alimentos y abrigo): la unidad de la métrica es la persona alcanzada por recurso.</p>
+
+    @if (impacto.PorRecurso.Count == 0)
+    {
+        <div class="tarjeta estado-vacio">
+            <h2>Todavía no hay entregas confirmadas</h2>
+            <p>Cuando las personas confirmen los recursos que recibieron, los números aparecen acá.</p>
+        </div>
+    }
+    else
+    {
+        <div class="detalle">
+            <section class="tarjeta" aria-labelledby="t-recurso">
+                <h2 id="t-recurso">Por recurso</h2>
+                <ul class="barras">
+                    @foreach (var recurso in impacto.PorRecurso)
+                    {
+                        <li>
+                            <span class="barra-nombre">@recurso.Nombre</span>
+                            <span class="barra-pista" aria-hidden="true"><span class="barra-relleno" style="width:@((int)Math.Round(recurso.Personas * 100.0 / maximo))%"></span></span>
+                            <span class="barra-valor">@Formato.Numero(recurso.Personas) <span class="texto-suave">personas</span></span>
+                        </li>
+                    }
+                </ul>
+            </section>
+            <section class="tarjeta" aria-labelledby="t-mes">
+                <h2 id="t-mes">Por mes</h2>
+                <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="t-mes">
+                    <table class="tabla-recursos">
+                        <thead><tr><th scope="col">Mes</th><th scope="col">Recursos</th><th scope="col">Personas</th></tr></thead>
+                        <tbody>
+                            @foreach (var mes in impacto.PorMes.OrderByDescending(m => m.Mes))
+                            {
+                                <tr><th scope="row">@Formato.Mes(mes.Mes)</th><td>@Formato.Numero(mes.RecursosResueltos)</td><td>@Formato.Numero(mes.Personas)</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    }
+</div>

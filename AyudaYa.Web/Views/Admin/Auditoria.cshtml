@@ -1,0 +1,58 @@
+@model AuditoriaViewModel
+@{
+    ViewData["Title"] = "Auditoría";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    ViewData["Seccion"] = "auditoria";
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Auditoría</h1>
+            <p class="texto-suave">Registro de las acciones de administración. No se puede editar ni borrar.</p>
+        </div>
+    </div>
+    <partial name="_SubnavAdmin" />
+
+    <form method="get" class="form-en-fila" style="margin-bottom:1rem">
+        <div class="campo">
+            <label for="entidad">Tipo de elemento</label>
+            <select id="entidad" name="entidad" data-autoenviar>
+                <option value="">Todos</option>
+                @foreach (var entidad in new[] { "ciudad", "zona", "organizacion", "centro", "usuario", "solicitud" })
+                {
+                    <option value="@entidad" selected="@(Model.Entidad == entidad)">@entidad</option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="boton boton-secundario solo-sin-js">Filtrar</button>
+    </form>
+
+    @if (Model.Eventos.Count == 0)
+    {
+        <div class="tarjeta estado-vacio"><h3>No hay eventos</h3></div>
+    }
+    else
+    {
+        <div class="tabla-scroll" tabindex="0" role="region" aria-label="Eventos de administración">
+            <table class="tabla-recursos">
+                <thead><tr><th scope="col">Cuándo</th><th scope="col">Quién</th><th scope="col">Elemento</th><th scope="col">Acción</th><th scope="col">Detalle</th></tr></thead>
+                <tbody>
+                    @foreach (var e in Model.Eventos)
+                    {
+                        <tr>
+                            <th scope="row"><time datetime="@e.Cuando.ToUniversalTime().ToString("O")">@Formato.FechaHora(e.Cuando)</time></th>
+                            <td>@e.Administrador</td>
+                            <td>@e.Entidad</td>
+                            <td>@e.Accion.Replace('_', ' ')</td>
+                            <td>@e.Detalle</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="acciones">
+            @if (Model.Pagina > 1) { <a class="boton boton-secundario" asp-action="Auditoria" asp-route-entidad="@Model.Entidad" asp-route-pagina="@(Model.Pagina - 1)">Anteriores</a> }
+            @if (Model.HayMas) { <a class="boton boton-secundario" asp-action="Auditoria" asp-route-entidad="@Model.Entidad" asp-route-pagina="@(Model.Pagina + 1)">Más antiguos</a> }
+        </div>
+    }
+</div>

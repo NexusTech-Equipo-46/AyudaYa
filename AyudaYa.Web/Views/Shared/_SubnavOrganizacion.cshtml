@@ -1,0 +1,42 @@
+@using AyudaYa.Web.Models.Organizacion
+@model ContextoOrganizacion
+@{
+    var seccion = ViewData["Seccion"] as string ?? string.Empty;
+    string? Actual(string nombre) => seccion == nombre ? "page" : null;
+}
+<div class="subnav-organizacion">
+    <div class="subnav-cabecera">
+        <p class="subnav-nombre"><strong>@Model.Nombre</strong> · @Textos.Rol(Model.Rol) · <partial name="_InsigniaVerificacion" model="Model.Estado" /></p>
+        @if (Model.Membresias.Count > 1)
+        {
+            <details class="selector-org">
+                <summary>Cambiar de organización</summary>
+                <ul>
+                    @foreach (var membresia in Model.Membresias.Where(m => m.OrganizacionId != Model.OrganizacionId))
+                    {
+                        <li><a asp-action="Panel" asp-route-org="@membresia.OrganizacionId">@membresia.OrganizacionNombre</a></li>
+                    }
+                </ul>
+            </details>
+        }
+    </div>
+    <nav aria-label="Secciones de la organización">
+        <ul>
+            <li><a asp-action="Panel" asp-route-org="@Model.OrganizacionId" aria-current="@Actual("panel")">Panel</a></li>
+            <li><a asp-action="Solicitudes" asp-route-org="@Model.OrganizacionId" aria-current="@Actual("solicitudes")">Solicitudes</a></li>
+            <li><a asp-action="Asignaciones" asp-route-org="@Model.OrganizacionId" aria-current="@Actual("asignaciones")">Asignaciones</a></li>
+            <li><a asp-action="Centros" asp-route-org="@Model.OrganizacionId" aria-current="@Actual("centros")">Centros</a></li>
+            <li><a asp-action="Miembros" asp-route-org="@Model.OrganizacionId" aria-current="@Actual("miembros")">Miembros</a></li>
+        </ul>
+    </nav>
+    @if (!Model.EstaActiva)
+    {
+        <div class="alerta alerta-advertencia" role="status">
+            @Iconos.AlertaPeligro
+            <p>
+                @if (Model.Estado == "pendiente") { <text><strong>La organización espera aprobación.</strong> Mientras tanto pueden cargar centros y recursos, pero no tomar solicitudes ni aparecer en el mapa.</text> }
+                else { <text><strong>La organización está @Textos.Verificacion(Model.Estado).ToLowerInvariant().</strong> No puede tomar solicitudes ni aparecer en el mapa.</text> }
+            </p>
+        </div>
+    }
+</div>

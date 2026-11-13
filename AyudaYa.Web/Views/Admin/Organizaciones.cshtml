@@ -1,0 +1,71 @@
+@model ListaAdminViewModel<OrganizacionAdminDto>
+@{
+    ViewData["Title"] = "Organizaciones";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    ViewData["Seccion"] = "organizaciones";
+    ViewData["Filtro"] = Model.Filtro == "todas" ? "" : Model.Filtro;
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Organizaciones</h1>
+            <p class="texto-suave">Aprobá o rechazá las organizaciones nuevas. Una organización suspendida deja de tomar solicitudes y de aparecer en el mapa.</p>
+        </div>
+    </div>
+    <partial name="_SubnavAdmin" />
+
+    <form method="get" class="filtro-estado" role="group" aria-label="Filtrar por estado" style="margin-bottom:1rem">
+        @foreach (var (valor, texto) in new[] { ("todas", "Todas"), ("pendiente", "Pendientes"), ("activa", "Activas"), ("rechazada", "Rechazadas"), ("suspendida", "Suspendidas") })
+        {
+            <button type="submit" name="estado" value="@valor" aria-pressed="@(Model.Filtro == valor ? "true" : "false")">@texto</button>
+        }
+    </form>
+    <p role="status" class="texto-suave">@Formato.Plural(Model.Elementos.Count, "organización", "organizaciones")</p>
+
+    @if (Model.Elementos.Count == 0)
+    {
+        <div class="tarjeta estado-vacio"><h3>No hay organizaciones con ese estado</h3></div>
+    }
+    else
+    {
+        <ul class="grilla-org">
+            @foreach (var o in Model.Elementos)
+            {
+                <li>
+                    <article class="tarjeta centro-org" aria-labelledby="org-@o.Id">
+                        <h3 id="org-@o.Id">@o.Nombre</h3>
+                        <p class="meta">@Textos.TipoOrganizacion(o.Tipo) · @o.CiudadNombre</p>
+                        <p class="meta">@o.EmailContacto · @o.TelefonoContacto</p>
+                        <p class="meta">Registrada por @o.RegistradaPorNombre (@o.RegistradaPorEmail) el @Formato.Fecha(o.CreadoAt) · @Formato.Plural(o.Centros, "centro", "centros")</p>
+                        @if (!string.IsNullOrWhiteSpace(o.Descripcion)) { <p>@o.Descripcion</p> }
+                        <div class="insignias"><partial name="_InsigniaVerificacion" model="o.Estado" /></div>
+                        @if (!string.IsNullOrWhiteSpace(o.MotivoEstado)) { <div class="alerta alerta-peligro">@Iconos.AlertaPeligro<p><strong>Motivo:</strong> @o.MotivoEstado</p></div> }
+                        <div class="acciones">
+                            @if (o.Estado is "pendiente" or "rechazada" or "suspendida")
+                            {
+                                <form asp-action="EstadoOrganizacion" method="post">
+                                    <input type="hidden" name="id" value="@o.Id" />
+                                    <input type="hidden" name="nuevoEstado" value="activa" />
+                                    <input type="hidden" name="filtro" value="@(Model.Filtro == "todas" ? "" : Model.Filtro)" />
+                                    <button type="submit" class="boton">@(o.Estado == "pendiente" ? "Aprobar" : "Reactivar")<span class="visualmente-oculto"> @o.Nombre</span></button>
+                                </form>
+                            }
+                            @if (o.Estado == "pendiente")
+                            {
+                                <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-motivo" data-valores='@System.Text.Json.JsonSerializer.Serialize(new { id = o.Id, nuevoEstado = "rechazada", titulo = "Rechazar organización", nombre = o.Nombre })'>Rechazar<span class="visualmente-oculto"> @o.Nombre</span></button>
+                            }
+                            @if (o.Estado == "activa")
+                            {
+                                <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-motivo" data-valores='@System.Text.Json.JsonSerializer.Serialize(new { id = o.Id, nuevoEstado = "suspendida", titulo = "Suspender organización", nombre = o.Nombre })'>Suspender<span class="visualmente-oculto"> @o.Nombre</span></button>
+                            }
+                        </div>
+                    </article>
+                </li>
+            }
+        </ul>
+    }
+</div>
+<partial name="_DialogoMotivo" model='("EstadoOrganizacion", "Admin")' view-data="ViewData" />
+@section Scripts {
+    <script src="~/js/dialogos.js" asp-append-version="true"></script>
+}

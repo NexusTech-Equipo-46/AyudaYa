@@ -1,86 +1,112 @@
+@model PanelVoluntarioViewModel
+@using AyudaYa.Web.Models.Voluntario
 @{
-    Layout = "_VoluntarioLayout";
     ViewData["Title"] = "Panel de voluntario";
-    ViewData["PanelVoluntarioActual"] = true;
+    ViewData["ClaseMain"] = "pagina-voluntario";
+    var v = Model.Voluntario;
+    var primerNombre = v.Nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? v.Nombre;
+    var datosTarjeta = new ViewDataDictionary(ViewData) { ["Controlador"] = "Voluntario", ["PuedeTomar"] = v.Activo };
 }
-
-        <div class="contenedor">
-            <div class="cabecera-pagina">
-                <div>
-                    <h1 id="saludo">Hola</h1>
-                    <p class="texto-suave" id="subtitulo"></p>
-                </div>
-                <button type="button" class="boton boton-secundario" id="boton-pausa" aria-pressed="false"></button>
-            </div>
-
-            <div class="alerta alerta-advertencia" id="aviso-pausa" hidden></div>
-
-            <div class="panel">
-                <div>
-                    <section aria-labelledby="titulo-activas">
-                        <div class="encabezado-seccion">
-                            <h2 id="titulo-activas">Para hacer ahora</h2>
-                            <a asp-controller="Voluntario" asp-action="MisAsignaciones">Ver todas mis asignaciones</a>
-                        </div>
-                        <ul class="lista-tarjetas" id="lista-activas"></ul>
-                        <div class="tarjeta estado-vacio" id="vacio-activas" hidden>
-                            <h3>No tenés asignaciones activas</h3>
-                            <p>Cuando tomes una solicitud de la lista de abajo, la vas a ver acá con lo que tenés que hacer.</p>
-                        </div>
-                    </section>
-
-                    <section aria-labelledby="titulo-disponibles">
-                        <h2 id="titulo-disponibles">Solicitudes disponibles</h2>
-                        <p class="texto-suave" id="texto-disponibles"></p>
-                        <p class="texto-suave" role="note">Demostración: las solicitudes y los cambios de disponibilidad son ficticios y no afectan pedidos reales.</p>
-
-                        <div class="alerta alerta-exito" id="aviso-tomada" role="status" tabindex="-1" hidden></div>
-
-                        <div class="filtro-zona">
-                            <label class="check"><input type="checkbox" id="ampliar"> <span id="texto-ampliar"></span></label>
-                        </div>
-
-                        <ul class="lista-tarjetas" id="lista-disponibles"></ul>
-                        <div class="tarjeta estado-vacio" id="vacio-disponibles" hidden>
-                            <h3>No hay solicitudes para tomar</h3>
-                            <p>Por ahora no hay pedidos pendientes en tu zona. Probá ampliar la búsqueda a toda la ciudad.</p>
-                        </div>
-                    </section>
-                </div>
-
-                <div>
-                    <section class="tarjeta" aria-labelledby="titulo-resumen-panel">
-                        <h2 id="titulo-resumen-panel">Tu actividad</h2>
-                        <dl class="resumen">
-                            <div><dt>Activas</dt><dd id="n-activas">0</dd></div>
-                            <div><dt>Por confirmar</dt><dd id="n-confirmar">0</dd></div>
-                            <div><dt>Terminadas</dt><dd id="n-terminadas">0</dd></div>
-                        </dl>
-                    </section>
-
-                    <section class="tarjeta" aria-labelledby="titulo-datos">
-                        <h2 id="titulo-datos">Tus datos de voluntario</h2>
-                        <dl class="datos-voluntario">
-                            <div><dt>Ciudad</dt><dd id="d-ciudad"></dd></div>
-                            <div><dt>Zona</dt><dd id="d-zona"></dd></div>
-                            <div><dt>Teléfono</dt><dd id="d-telefono"></dd></div>
-                            <div><dt>Disponibilidad</dt><dd id="d-estado"></dd></div>
-                        </dl>
-                        <p style="margin:1rem 0 0"><a asp-controller="Voluntariado" asp-action="Index">Editar mis datos de voluntario</a></p>
-                    </section>
-
-                    <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
-                        <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
-                        <p class="texto-suave">Si en una atención hay peligro, no esperes: llamá directamente.</p>
-                        <ul>
-                            <li><a href="tel:911">911 <span>Emergencias</span></a></li>
-                            <li><a href="tel:107">107 <span>SAME · Emergencias médicas</span></a></li>
-                        </ul>
-                    </aside>
-                </div>
-            </div>
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Hola, @primerNombre</h1>
+            <p class="texto-suave">Voluntario/a en @(v.ZonaNombre is null ? v.CiudadNombre : $"{v.ZonaNombre}, {v.CiudadNombre}")</p>
         </div>
-    
-@section Scripts {
-    <script src="~/js/demo/panel-voluntario.js" asp-append-version="true"></script>
-}
+        <form asp-action="Pausa" method="post">
+            <input type="hidden" name="activo" value="@(!v.Activo ? "true" : "false")" />
+            <button type="submit" class="boton boton-secundario" aria-pressed="@(!v.Activo ? "true" : "false")">@(v.Activo ? "Pausar mi voluntariado" : "Volver a estar disponible")</button>
+        </form>
+    </div>
+
+    @if (!v.Activo)
+    {
+        <div class="alerta alerta-advertencia" style="margin-bottom:1.25rem">@Iconos.AlertaPeligro<p><strong>Estás en pausa.</strong> No podés tomar solicitudes nuevas. Tus asignaciones activas siguen vigentes.</p></div>
+    }
+
+    <div class="panel">
+        <div>
+            <section aria-labelledby="titulo-activas">
+                <div class="encabezado-seccion">
+                    <h2 id="titulo-activas">Para hacer ahora</h2>
+                    <a asp-action="MisAsignaciones">Ver todas mis asignaciones</a>
+                </div>
+                @if (Model.Activas.Count > 0)
+                {
+                    <ul class="lista-tarjetas">
+                        @foreach (var asignacion in Model.Activas)
+                        {
+                            <li><partial name="_TarjetaAsignacion" model="asignacion" view-data="datosTarjeta" /></li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="tarjeta estado-vacio">
+                        <h3>No tenés asignaciones activas</h3>
+                        <p>Cuando tomes una solicitud de la lista de abajo, la vas a ver acá con lo que tenés que hacer.</p>
+                    </div>
+                }
+            </section>
+
+            <section aria-labelledby="titulo-disponibles" id="disponibles">
+                <h2 id="titulo-disponibles">Solicitudes disponibles</h2>
+                <p class="texto-suave">@(Model.Ampliar ? "Pedidos pendientes en toda la ciudad." : $"Pedidos pendientes en {v.ZonaNombre}.") Los críticos van primero. No incluyen la dirección: la ves cuando tomás el recurso.</p>
+                @if (v.ZonaId is not null)
+                {
+                    <form method="get" class="filtro-zona">
+                        <label class="check"><input type="checkbox" name="ampliar" value="true" checked="@Model.Ampliar" data-autoenviar> Ver también otras zonas de @v.CiudadNombre</label>
+                        <button type="submit" class="boton boton-secundario solo-sin-js">Aplicar</button>
+                    </form>
+                }
+                @if (Model.Disponibles.Count > 0)
+                {
+                    <ul class="lista-tarjetas">
+                        @foreach (var solicitud in Model.Disponibles)
+                        {
+                            <li><partial name="_TarjetaDisponible" model="solicitud" view-data="datosTarjeta" /></li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="tarjeta estado-vacio">
+                        <h3>No hay solicitudes para tomar</h3>
+                        <p>@(v.Activo ? "Por ahora no hay pedidos pendientes" + (Model.Ampliar ? " en tu ciudad." : " en tu zona. Probá ampliar la búsqueda a toda la ciudad.") : "Estás en pausa: volvé a estar disponible para ver pedidos.")</p>
+                    </div>
+                }
+            </section>
+        </div>
+
+        <div>
+            <section class="tarjeta" aria-labelledby="titulo-resumen-panel">
+                <h2 id="titulo-resumen-panel">Tu actividad</h2>
+                <dl class="resumen resumen-3">
+                    <div><dt>Activas</dt><dd>@Model.CantidadActivas</dd></div>
+                    <div><dt>Por confirmar</dt><dd>@Model.CantidadPorConfirmar</dd></div>
+                    <div><dt>Terminadas</dt><dd>@Model.CantidadConfirmadas</dd></div>
+                </dl>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="titulo-datos">
+                <h2 id="titulo-datos">Tus datos de voluntario</h2>
+                <dl class="datos-voluntario">
+                    <div><dt>Ciudad</dt><dd>@v.CiudadNombre</dd></div>
+                    <div><dt>Zona</dt><dd>@(v.ZonaNombre ?? "Toda la ciudad")</dd></div>
+                    <div><dt>Teléfono</dt><dd>@v.Telefono</dd></div>
+                    <div><dt>Disponibilidad</dt><dd>@(v.Activo ? "Disponible" : "En pausa")</dd></div>
+                </dl>
+                <p style="margin:1rem 0 0"><a asp-controller="Voluntariado" asp-action="Index">Editar mis datos de voluntario</a></p>
+            </section>
+
+            <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
+                <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
+                <p class="texto-suave">Si en una atención hay peligro, no esperes: llamá directamente.</p>
+                <ul>
+                    <li><a href="tel:911">911 <span>Emergencias</span></a></li>
+                    <li><a href="tel:107">107 <span>SAME · Emergencias médicas</span></a></li>
+                </ul>
+            </aside>
+        </div>
+    </div>
+</div>

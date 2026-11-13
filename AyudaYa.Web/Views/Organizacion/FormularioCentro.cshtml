@@ -1,0 +1,147 @@
+@model CentroFormularioViewModel
+@using AyudaYa.Web.Models.Organizacion
+@{
+    ViewData["Title"] = Model.EsEdicion ? "Editar centro" : "Nuevo centro";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    var contexto = Model.Contexto!;
+}
+@section Head {
+    <link rel="stylesheet" href="~/lib/leaflet/leaflet.css">
+}
+<div class="contenedor">
+    <nav class="migas" aria-label="Estás en">
+        <ol>
+            <li><a asp-action="Panel" asp-route-org="@contexto.OrganizacionId">Panel</a></li>
+            <li><a asp-action="Centros" asp-route-org="@contexto.OrganizacionId">Centros</a></li>
+            <li><a href="#" aria-current="page">@ViewData["Title"]</a></li>
+        </ol>
+    </nav>
+    <div class="formulario-solicitud">
+        <h1>@ViewData["Title"]</h1>
+        @if (Model.EsEdicion && Model.EstadoVerificacion == "aprobado")
+        {
+            <div class="alerta alerta-advertencia" style="margin-bottom:1.25rem">
+                @Iconos.AlertaPeligro
+                <p>Si cambian el nombre, el tipo, la zona, la dirección o el punto en el mapa, el centro vuelve a quedar <strong>pendiente de aprobación</strong> y deja de verse en el mapa hasta que un administrador lo revise. El resto de los datos se actualiza al instante.</p>
+            </div>
+        }
+        <partial name="_ResumenErrores" />
+
+        <form method="post" novalidate asp-action="@(Model.EsEdicion ? "EditarCentro" : "NuevoCentro")" asp-route-id="@Model.Id" asp-route-org="@(Model.EsEdicion ? null : contexto.OrganizacionId)">
+            <section class="tarjeta" aria-labelledby="t-datos">
+                <h2 id="t-datos">Datos del centro</h2>
+                <div class="campo">
+                    <label asp-for="Nombre">Nombre del centro</label>
+                    <input asp-for="Nombre" type="text" maxlength="100" autocomplete="off" required />
+                    <span asp-validation-for="Nombre" class="error-campo"></span>
+                </div>
+                <div class="campo">
+                    <label asp-for="TipoCentroId">Tipo de centro</label>
+                    <select asp-for="TipoCentroId" required>
+                        <option value="">Elegí un tipo</option>
+                        @foreach (var tipo in Model.TiposCentro)
+                        {
+                            <option value="@tipo.Id" selected="@(tipo.Id == Model.TipoCentroId)">@tipo.Nombre</option>
+                        }
+                    </select>
+                    <span asp-validation-for="TipoCentroId" class="error-campo"></span>
+                </div>
+                <div class="campo">
+                    <label asp-for="ZonaId">Zona</label>
+                    <select asp-for="ZonaId" required>
+                        <option value="">Elegí una zona</option>
+                        @foreach (var zona in Model.Zonas)
+                        {
+                            <option value="@zona.Id" data-lat="@(zona.LatitudCentro is double la ? Formato.Decimal(la) : "")" data-lon="@(zona.LongitudCentro is double lo ? Formato.Decimal(lo) : "")" selected="@(zona.Id == Model.ZonaId)">@zona.Nombre</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ZonaId" class="error-campo"></span>
+                </div>
+                <div class="campo">
+                    <label asp-for="Direccion">Dirección</label>
+                    <input asp-for="Direccion" type="text" maxlength="200" required />
+                    <span asp-validation-for="Direccion" class="error-campo"></span>
+                </div>
+                <div class="campo">
+                    <label asp-for="Telefono">Teléfono de contacto</label>
+                    <input asp-for="Telefono" type="tel" maxlength="20" inputmode="tel" required />
+                    <span asp-validation-for="Telefono" class="error-campo"></span>
+                </div>
+                <div class="campo">
+                    <label asp-for="Email">Correo del centro <span class="opcional">(opcional)</span></label>
+                    <input asp-for="Email" type="email" autocomplete="off" />
+                    <span asp-validation-for="Email" class="error-campo"></span>
+                </div>
+                <div class="campo">
+                    <label asp-for="Descripcion">Descripción <span class="opcional">(opcional)</span></label>
+                    <textarea asp-for="Descripcion" rows="3" maxlength="300"></textarea>
+                    <span asp-validation-for="Descripcion" class="error-campo"></span>
+                </div>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-ubicacion">
+                <h2 id="t-ubicacion">Ubicación en el mapa <span class="opcional">(opcional)</span></h2>
+                <fieldset class="grupo selector-ubicacion" aria-describedby="ayuda-ubicacion">
+                    <legend class="visualmente-oculto">Ubicación en el mapa</legend>
+                    <span class="ayuda" id="ayuda-ubicacion">Sin ubicación el centro aparece en la lista pero no en el mapa. Tocá el mapa o arrastrá el marcador.</span>
+                    <div id="selector-mapa" class="selector-mapa" role="application" aria-label="Mapa para elegir la ubicación del centro"></div>
+                    <div class="acciones" style="margin-top:.5rem">
+                        <button type="button" class="boton boton-secundario" id="usar-mi-ubicacion" hidden>Usar mi ubicación</button>
+                    </div>
+                    <div class="coordenadas">
+                        <div class="campo">
+                            <label asp-for="Latitud">Latitud</label>
+                            <input asp-for="Latitud" type="number" step="any" inputmode="decimal" />
+                            <span asp-validation-for="Latitud" class="error-campo"></span>
+                        </div>
+                        <div class="campo">
+                            <label asp-for="Longitud">Longitud</label>
+                            <input asp-for="Longitud" type="number" step="any" inputmode="decimal" />
+                            <span asp-validation-for="Longitud" class="error-campo"></span>
+                        </div>
+                    </div>
+                </fieldset>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-horario">
+                <h2 id="t-horario">Horario de atención <span class="opcional">(opcional)</span></h2>
+                <fieldset class="grupo" id="grupo-horario" aria-describedby="ayuda-horario">
+                    <legend class="visualmente-oculto">Horario de atención</legend>
+                    <span class="ayuda" id="ayuda-horario">Si no lo completan, el centro figura con «Horario no informado».</span>
+                    <label class="check"><input asp-for="TodoElDia" type="checkbox" id="TodoElDia"> Atención las 24 horas, todos los días</label>
+                    <div id="horario-turno">
+                        <div class="dias-semana" role="group" aria-label="Días de atención" style="margin-top:.75rem">
+                            @for (var dia = 1; dia <= 7; dia++)
+                            {
+                                <label class="opcion"><input type="checkbox" name="Dias" value="@dia" checked="@Model.Dias.Contains(dia)"> @Formato.NombreDia(dia)</label>
+                            }
+                        </div>
+                        <div class="horas">
+                            <div class="campo">
+                                <label asp-for="Abre">Abre</label>
+                                <input asp-for="Abre" type="time" />
+                                <span asp-validation-for="Abre" class="error-campo"></span>
+                            </div>
+                            <div class="campo">
+                                <label asp-for="Cierra">Cierra</label>
+                                <input asp-for="Cierra" type="time" />
+                                <span asp-validation-for="Cierra" class="error-campo"></span>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </section>
+
+            <div class="acciones">
+                <button type="submit" class="boton">@(Model.EsEdicion ? "Guardar cambios" : "Enviar para aprobación")</button>
+                <a class="boton boton-secundario" asp-action="Centros" asp-route-org="@contexto.OrganizacionId">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/lib/leaflet/leaflet.js"></script>
+    <script src="~/js/mapa-comun.js" asp-append-version="true"></script>
+    <script src="~/js/selector-ubicacion.js" asp-append-version="true"></script>
+    <script src="~/js/centro-formulario.js" asp-append-version="true"></script>
+}

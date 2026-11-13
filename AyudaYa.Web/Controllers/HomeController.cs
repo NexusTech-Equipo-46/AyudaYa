@@ -1,11 +1,13 @@
 using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using AyudaYa.Web.Models;
 using AyudaYa.Negocio.Servicios;
+using AyudaYa.Web.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AyudaYa.Web.Controllers;
 
-public class HomeController : Controller
+[AllowAnonymous]
+public sealed class HomeController : Controller
 {
     private readonly CentrosPublicosAppService _centros;
     private readonly ILogger<HomeController> _logger;
@@ -37,14 +39,17 @@ public class HomeController : Controller
         }
     }
 
-    public IActionResult Privacy()
-    {
-        return View();
-    }
+    public IActionResult Privacy() => View();
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
+    public IActionResult Error(int? codigo)
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        var estado = codigo is >= 400 and < 600 ? codigo.Value : 500;
+        Response.StatusCode = estado;
+        return View(new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+            Codigo = estado
+        });
     }
 }

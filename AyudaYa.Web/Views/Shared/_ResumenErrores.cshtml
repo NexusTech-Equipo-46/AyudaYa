@@ -1,0 +1,23 @@
+@* Resumen de errores de validación del servidor. Cada enlace lleva al campo (id = nombre del campo). *@
+@{
+    var errores = ViewData.ModelState
+        .Where(e => e.Value is { Errors.Count: > 0 })
+        .SelectMany(e => e.Value!.Errors.Select(error => (Campo: e.Key, Mensaje: error.ErrorMessage)))
+        .Where(e => !string.IsNullOrWhiteSpace(e.Mensaje))
+        .ToList();
+}
+@if (errores.Count > 0)
+{
+    <div class="alerta alerta-peligro resumen-errores" role="alert" tabindex="-1" aria-labelledby="titulo-resumen" id="resumen-errores">
+        @Iconos.AlertaPeligro
+        <div>
+            <h2 id="titulo-resumen">@(errores.Count == 1 ? "Hay 1 dato para corregir" : $"Hay {errores.Count} datos para corregir")</h2>
+            <ul>
+                @foreach (var error in errores)
+                {
+                    <li>@if (!string.IsNullOrEmpty(error.Campo)) { <a href="#@error.Campo.Replace('.', '_').Replace('[', '_').Replace(']', '_')">@error.Mensaje</a> } else { @error.Mensaje }</li>
+                }
+            </ul>
+        </div>
+    </div>
+}

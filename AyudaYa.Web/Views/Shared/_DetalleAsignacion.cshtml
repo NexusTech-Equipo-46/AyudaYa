@@ -1,0 +1,188 @@
+@model AsignacionDetalleDto
+@{
+    var controlador = ViewData["Controlador"] as string ?? "Voluntario";
+    var organizacion = ViewData["OrganizacionId"] as Guid?;
+    var enOrganizacion = controlador == "Organizacion";
+    var quien = Model.SolicitanteNombre;
+    var activa = Model.Estado is "asignada" or "en_atencion";
+    var titulo = $"{Model.RecursoNombre} · Solicitud #{Model.SolicitudCodigo}";
+}
+<div class="contenedor" id="detalle-asignacion">
+    <nav class="migas" aria-label="Estás en">
+        <ol>
+            <li><a asp-controller="@controlador" asp-action="Panel" asp-route-org="@organizacion">Panel</a></li>
+            <li><a asp-controller="@controlador" asp-action="@(enOrganizacion ? "Asignaciones" : "MisAsignaciones")" asp-route-org="@organizacion">@(enOrganizacion ? "Asignaciones" : "Mis asignaciones")</a></li>
+            <li><a asp-controller="@controlador" asp-action="Asignacion" asp-route-id="@Model.Id" asp-route-org="@organizacion" aria-current="page">@titulo</a></li>
+        </ol>
+    </nav>
+
+    <div class="detalle-encabezado">
+        <div>
+            <h1>@titulo</h1>
+            <p class="meta">@Model.ZonaNombre, @Model.CiudadNombre · @Formato.Plural(Model.Personas, "persona", "personas")</p>
+            <p class="meta">Tomada @Formato.FechaHora(Model.AsignadaAt) por @Model.AsignadaPor@(enOrganizacion ? "" : "")</p>
+        </div>
+        <div class="insignias">
+            <partial name="_InsigniaAsignacion" model="Model.Estado" />
+            <partial name="_InsigniaUrgencia" model="Model.Urgencia" />
+        </div>
+    </div>
+
+    <div class="detalle">
+        <div>
+            @switch (Model.Estado)
+            {
+                case "asignada":
+                    <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>Asignada.</strong> Comunicate con @quien y, cuando empieces, tocá “Empezar la atención”.</p></div>
+                    break;
+                case "en_atencion":
+                    <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>En atención.</strong> Cuando termines, marcala como completada.</p></div>
+                    break;
+                case "completada":
+                    <div class="alerta alerta-advertencia">@Iconos.AlertaPeligro<p><strong>Falta la confirmación.</strong> Esperamos que @quien confirme que recibió la ayuda. Mientras tanto seguís viendo sus datos de contacto.</p></div>
+                    break;
+                case "confirmada":
+                    <div class="alerta alerta-exito">@Iconos.AlertaOk<p><strong>@quien confirmó la ayuda.</strong> ¡Gracias por tu trabajo!</p></div>
+                    break;
+                case "cancelada":
+                    <div class="alerta alerta-peligro">@Iconos.AlertaPeligro<p><strong>La solicitud se canceló.</strong> No hace falta que hagas nada más.</p></div>
+                    break;
+                default:
+                    <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>Liberada.</strong> La solicitud volvió a estar disponible para otras personas.</p></div>
+                    break;
+            }
+            @if (Model.Urgencia == "critica" && activa)
+            {
+                <div class="alerta alerta-advertencia">@Iconos.AlertaPeligro<p><strong>Urgencia crítica.</strong> Si hay riesgo de vida, llamá al <a href="tel:911">911</a> antes que nada.</p></div>
+            }
+
+            <section class="tarjeta" aria-labelledby="t-tarea">
+                <h2 id="t-tarea">Qué hay que llevar o hacer</h2>
+                <dl class="datos-contacto">
+                    <div><dt>Recurso</dt><dd>@Model.RecursoNombre</dd></div>
+                    <div><dt>Personas</dt><dd>@Model.Personas</dd></div>
+                    <div><dt>Detalle</dt><dd>@if (string.IsNullOrWhiteSpace(Model.DetalleRecurso)) { <span class="texto-suave">Sin detalle</span> } else { @Model.DetalleRecurso }</dd></div>
+                </dl>
+                <p class="texto-suave" style="margin:1rem 0 0">La solicitud completa es para @Formato.Plural(Model.PersonasAfectadas, "persona", "personas").</p>
+            </section>
+
+            @if (!string.IsNullOrWhiteSpace(Model.DescripcionSolicitud))
+            {
+                <section class="tarjeta" aria-labelledby="t-desc"><h2 id="t-desc">Lo que contó quien pidió ayuda</h2><p>@Model.DescripcionSolicitud</p></section>
+            }
+
+            <section class="tarjeta" aria-labelledby="t-historial">
+                <h2 id="t-historial">Historial</h2>
+                <ol class="cronologia">
+                    @foreach (var evento in Model.Linea)
+                    {
+                        <li>
+                            <partial name="_InsigniaAsignacion" model="evento.Estado" />
+                            <span class="cuando">@evento.Actor · <time datetime="@evento.Cuando.ToUniversalTime().ToString("O")" title="@Formato.FechaHora(evento.Cuando)">@Formato.HaceCuanto(evento.Cuando)</time></span>
+                            @if (!string.IsNullOrWhiteSpace(evento.Motivo)) { <p class="motivo">@evento.Motivo</p> }
+                        </li>
+                    }
+                </ol>
+            </section>
+        </div>
+        <div>
+            <section class="tarjeta @(Model.Contacto is not null ? "cuadro-privado" : "")" aria-labelledby="t-contacto">
+                <h2 id="t-contacto">Contacto de quien pidió ayuda</h2>
+                @if (Model.Contacto is not null)
+                {
+                    var telefono = new string(Model.Contacto.Telefono.Where(c => char.IsAsciiDigit(c) || c == '+').ToArray());
+                    var mapa = Model.Contacto.Latitud is double lat && Model.Contacto.Longitud is double lon
+                        ? $"https://www.google.com/maps/dir/?api=1&destination={Formato.Decimal(lat)},{Formato.Decimal(lon)}"
+                        : "https://www.google.com/maps/search/?api=1&query=" + Uri.EscapeDataString(Model.Contacto.Direccion);
+                    <p class="nota-privada">@Iconos.Candado<span>Son datos privados: usalos solo para esta atención. Dejás de verlos cuando termina.</span></p>
+                    <dl class="datos-contacto">
+                        <div><dt>Nombre</dt><dd>@Model.Contacto.Nombre</dd></div>
+                        <div><dt>Dirección</dt><dd>@Model.Contacto.Direccion</dd></div>
+                        <div><dt>Teléfono</dt><dd><a href="tel:@telefono">@Model.Contacto.Telefono</a></dd></div>
+                    </dl>
+                    <div class="acciones"><a class="boton boton-secundario" href="@mapa" target="_blank" rel="noopener noreferrer">Cómo llegar<span class="visualmente-oculto"> (se abre en otra pestaña)</span></a></div>
+                }
+                else
+                {
+                    <div class="contacto-oculto"><p>@Iconos.Candado Ya no tenés acceso a la dirección ni al teléfono de @Model.SolicitanteNombre. Se muestran solo mientras la asignación está activa o sin confirmar.</p></div>
+                }
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-acciones">
+                <h2 id="t-acciones">Acciones</h2>
+                @if (Model.PuedeIniciar)
+                {
+                    <p class="texto-suave">Cuando estés en camino o ya hayas hablado con la persona, empezá la atención.</p>
+                    <div class="acciones">
+                        <form asp-controller="@controlador" asp-action="Iniciar" method="post">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            @if (organizacion is not null) { <input type="hidden" name="org" value="@organizacion" /> }
+                            <button type="submit" class="boton">@(enOrganizacion ? "Empezar la atención" : "Iniciar atención")</button>
+                        </form>
+                        @if (Model.PuedeLiberar) { <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-liberar">Liberar asignación</button> }
+                    </div>
+                }
+                else if (Model.PuedeCompletar)
+                {
+                    <p class="texto-suave">Cuando termines de asistir, marcala como completada.</p>
+                    <div class="acciones">
+                        <button type="button" class="boton" data-abrir-dialogo="dialogo-completar">Marcar como completada</button>
+                        @if (Model.PuedeLiberar) { <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-liberar">Liberar asignación</button> }
+                    </div>
+                }
+                else if (Model.Estado == "completada")
+                {
+                    <p class="texto-suave">Ya no hay nada para hacer: esperamos la confirmación de @Model.SolicitanteNombre.</p>
+                }
+                else
+                {
+                    <p class="texto-suave">Esta asignación está cerrada y no se puede modificar.</p>
+                    <div class="acciones"><a class="boton" asp-controller="@controlador" asp-action="@(enOrganizacion ? "Solicitudes" : "Panel")" asp-route-org="@organizacion" asp-fragment="titulo-disponibles">Tomar otra solicitud</a></div>
+                }
+            </section>
+
+            <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
+                <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
+                <ul>
+                    <li><a href="tel:911">911 <span>Emergencias</span></a></li>
+                    <li><a href="tel:107">107 <span>SAME</span></a></li>
+                </ul>
+            </aside>
+        </div>
+    </div>
+</div>
+
+@if (Model.PuedeCompletar)
+{
+    <dialog id="dialogo-completar" aria-labelledby="titulo-completar">
+        <form asp-controller="@controlador" asp-action="Completar" method="post">
+            <input type="hidden" name="id" value="@Model.Id" />
+            @if (organizacion is not null) { <input type="hidden" name="org" value="@organizacion" /> }
+            <h2 id="titulo-completar">Marcar como completada</h2>
+            <p>Después de esto, <strong>@Model.SolicitanteNombre</strong> tiene que confirmar que recibió la ayuda. Hasta entonces seguís viendo sus datos de contacto.</p>
+            <div class="acciones">
+                <button type="submit" class="boton">Sí, está completada</button>
+                <button type="button" class="boton boton-secundario" data-cerrar-dialogo>Todavía no</button>
+            </div>
+        </form>
+    </dialog>
+}
+@if (Model.PuedeLiberar)
+{
+    <dialog id="dialogo-liberar" aria-labelledby="titulo-liberar">
+        <form asp-controller="@controlador" asp-action="Liberar" method="post">
+            <input type="hidden" name="id" value="@Model.Id" />
+            @if (organizacion is not null) { <input type="hidden" name="org" value="@organizacion" /> }
+            <h2 id="titulo-liberar">Liberar asignación</h2>
+            <p>La solicitud vuelve a estar disponible para otras personas y vos dejás de ver los datos de contacto. Esto no se puede deshacer.</p>
+            <div class="campo">
+                <label for="motivo-liberar">¿Por qué la liberás?</label>
+                <textarea id="motivo-liberar" name="motivo" rows="3" maxlength="300" required></textarea>
+            </div>
+            <div class="acciones">
+                <button type="submit" class="boton boton-peligro">Sí, liberar asignación</button>
+                <button type="button" class="boton boton-secundario" data-cerrar-dialogo>No, volver</button>
+            </div>
+        </form>
+    </dialog>
+}

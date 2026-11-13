@@ -1,0 +1,19 @@
+@* Diálogo genérico que pide un motivo. Se abre con data-abrir-dialogo="dialogo-motivo" y data-valores. *@
+@model (string Accion, string Controlador)
+<dialog id="dialogo-motivo" aria-labelledby="titulo-motivo">
+    <form asp-controller="@Model.Controlador" asp-action="@Model.Accion" method="post">
+        <input type="hidden" name="id" value="" />
+        <input type="hidden" name="nuevoEstado" value="" />
+        <input type="hidden" name="filtro" value="@ViewData["Filtro"]" />
+        <h2 id="titulo-motivo" data-dialogo-texto="titulo">Motivo</h2>
+        <p><strong data-dialogo-texto="nombre"></strong></p>
+        <div class="campo">
+            <label for="motivo-dialogo">Motivo</label>
+            <textarea id="motivo-dialogo" name="motivo" rows="3" maxlength="300" required></textarea>
+        </div>
+        <div class="acciones">
+            <button type="submit" class="boton boton-peligro">Confirmar</button>
+            <button type="button" class="boton boton-secundario" data-cerrar-dialogo>Cancelar</button>
+        </div>
+    </form>
+</dialog>

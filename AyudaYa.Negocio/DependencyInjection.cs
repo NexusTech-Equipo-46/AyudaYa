@@ -1,6 +1,7 @@
 using AyudaYa.Data;
 using AyudaYa.Negocio.Identity;
 using AyudaYa.Negocio.Servicios;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -73,13 +74,37 @@ public static class DependencyInjection
             options.LogoutPath = "/Cuenta/Logout";
             options.AccessDeniedPath = "/Cuenta/AccesoDenegado";
             options.Cookie.Name = "AyudaYa.Auth";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = true;
         });
 
+        services.AddMemoryCache();
+
+        // Correo: SMTP si hay host configurado; si no, el mensaje queda en el log.
+        services.Configure<CorreoOptions>(configuration.GetSection(CorreoOptions.Seccion));
+        if (string.IsNullOrWhiteSpace(configuration[$"{CorreoOptions.Seccion}:Host"]))
+        {
+            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoRegistro>();
+        }
+        else
+        {
+            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoSmtp>();
+        }
+
         services.AddScoped<UsuarioAppService>();
         services.AddScoped<SolicitudAppService>();
+        services.AddScoped<SolicitudConsultasAppService>();
+        services.AddScoped<AsignacionAppService>();
+        services.AddScoped<VoluntarioAppService>();
+        services.AddScoped<OrganizacionAppService>();
+        services.AddScoped<AdministracionAppService>();
+        services.AddScoped<CatalogosAppService>();
         services.AddScoped<CentrosPublicosAppService>();
+        services.AddScoped<MetricasAppService>();
+        services.AddScoped<InicializadorAppService>();
         services.AddAuthorization();
 
         return services;

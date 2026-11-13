@@ -1,7 +1,10 @@
+@model AsignacionesOrganizacionViewModel
+@using AyudaYa.Web.Models.Organizacion
 @{
-    Layout = "_OrganizacionLayout";
     ViewData["Title"] = "Asignaciones";
-    ViewData["ListaAsignaciones"] = true;
+    ViewData["ClaseMain"] = "pagina-voluntario";
+    ViewData["Seccion"] = "asignaciones";
+    var datosTarjeta = new ViewDataDictionary(ViewData) { ["Controlador"] = "Organizacion", ["OrganizacionId"] = Model.Contexto.OrganizacionId };
 }
 <div class="contenedor">
     <div class="cabecera-pagina">
@@ -10,21 +13,30 @@
             <p class="texto-suave">Los recursos de solicitudes que la organización se comprometió a cubrir.</p>
         </div>
     </div>
+    <partial name="_SubnavOrganizacion" model="Model.Contexto" view-data="ViewData" />
 
-    <div class="filtro-estado" role="group" aria-label="Filtrar por estado" style="margin-bottom:1rem">
-        <button type="button" aria-pressed="true" data-filtro="activas">Activas</button>
-        <button type="button" aria-pressed="false" data-filtro="cerradas">Cerradas</button>
-        <button type="button" aria-pressed="false" data-filtro="todas">Todas</button>
-    </div>
+    <form method="get" class="filtro-estado" role="group" aria-label="Filtrar por estado" style="margin-bottom:1rem">
+        <input type="hidden" name="org" value="@Model.Contexto.OrganizacionId" />
+        <button type="submit" name="estado" value="activas" aria-pressed="@(Model.Filtro == "activas" ? "true" : "false")">Activas</button>
+        <button type="submit" name="estado" value="cerradas" aria-pressed="@(Model.Filtro == "cerradas" ? "true" : "false")">Cerradas</button>
+        <button type="submit" name="estado" value="todas" aria-pressed="@(Model.Filtro == "todas" ? "true" : "false")">Todas</button>
+    </form>
 
-    <p id="contador" role="status" class="texto-suave"></p>
-    <ul class="lista-solicitudes" id="lista"></ul>
-    <div class="tarjeta estado-vacio" id="vacio" hidden>
-        <h2>No hay asignaciones para mostrar</h2>
-        <p>Probá con otro filtro, o buscá solicitudes pendientes en la zona.</p>
-    </div>
+    <p role="status" class="texto-suave">@Formato.Plural(Model.Asignaciones.Count, "asignación", "asignaciones")</p>
+    @if (Model.Asignaciones.Count > 0)
+    {
+        <ul class="lista-tarjetas">
+            @foreach (var asignacion in Model.Asignaciones)
+            {
+                <li><partial name="_TarjetaAsignacion" model="asignacion" view-data="datosTarjeta" /></li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="tarjeta estado-vacio">
+            <h2>No hay asignaciones para mostrar</h2>
+            <p>Probá con otro filtro, o <a asp-action="Solicitudes" asp-route-org="@Model.Contexto.OrganizacionId">buscá solicitudes pendientes</a> en la zona.</p>
+        </div>
+    }
 </div>
-
-@section Scripts {
-    <script src="~/js/demo/asignaciones.js" asp-append-version="true"></script>
-}

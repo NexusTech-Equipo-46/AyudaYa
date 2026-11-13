@@ -1,8 +1,6 @@
 @model PerfilViewModel
 @{
-    Layout = "_UsuarioLayout";
     ViewData["Title"] = "Mi perfil";
-    ViewData["PerfilActual"] = true;
     var errores = ViewData.ModelState.Where(e => e.Value is not null)
         .SelectMany(e => e.Value!.Errors.Select(error => (Campo: e.Key, Mensaje: error.ErrorMessage))).ToList();
     var erroresDatos = errores.Where(e => e.Campo.StartsWith("Datos", StringComparison.Ordinal)).ToList();
@@ -20,9 +18,19 @@
 }
 <div class="contenedor">
     <div class="cabecera-pagina"><div><h1>Mi perfil</h1><p class="texto-suave">Tus datos personales y la seguridad de tu cuenta.</p></div></div>
-    @if (TempData["Mensaje"] is string mensaje)
+    @if (!Model.EmailConfirmado)
     {
-        <div class="alerta alerta-info" role="status" style="margin-bottom:1.25rem"><p>@mensaje</p></div>
+        <div class="alerta alerta-advertencia" role="status" style="margin-bottom:1.25rem">
+            @Iconos.AlertaPeligro
+            <div>
+                <p><strong>Falta confirmar tu correo.</strong> Mientras tanto no podés pedir ayuda, sumarte como voluntario ni registrar una organización.</p>
+                <form asp-action="ReenviarConfirmacion" method="post"><button type="submit" class="boton boton-secundario">Reenviarme el correo de confirmación</button></form>
+                @if (TempData["EnlaceDesarrollo"] is string enlaceDesarrollo)
+                {
+                    <p class="texto-suave" style="margin-top:.75rem">Solo en desarrollo, como no hay SMTP configurado: <a href="@enlaceDesarrollo">confirmar ahora</a>.</p>
+                }
+            </div>
+        </div>
     }
     <div class="detalle">
         <div>
@@ -80,12 +88,41 @@
             </section>
             <section class="tarjeta llamado" aria-labelledby="t-voluntario">
                 <h2 id="t-voluntario">Voluntariado</h2>
-                @if (Model.EsVoluntario) { <p>Ya estás registrado/a como voluntario/a.</p><div class="acciones"><a class="boton" asp-controller="Voluntariado" asp-action="Index">Ver demostración</a></div> }
-                else { <p>Todavía no sos voluntario/a. Completá tu ciudad, zona y teléfono para empezar a atender solicitudes.</p><div class="acciones"><a class="boton" asp-controller="Voluntariado" asp-action="Index">Quiero ser voluntario</a></div><p class="texto-suave aviso-proximamente">La pantalla es una demostración; la inscripción real todavía no está disponible.</p> }
+                @if (Model.EsVoluntario)
+                {
+                    <p>Ya estás registrado/a como voluntario/a.</p>
+                    <div class="acciones">
+                        <a class="boton" asp-controller="Voluntario" asp-action="Panel">Ir a mi panel de voluntario</a>
+                        <a class="boton boton-secundario" asp-controller="Voluntariado" asp-action="Index">Editar mis datos</a>
+                    </div>
+                }
+                else
+                {
+                    <p>Todavía no sos voluntario/a. Completá tu ciudad, zona y teléfono para empezar a atender solicitudes.</p>
+                    <div class="acciones"><a class="boton" asp-controller="Voluntariado" asp-action="Index">Quiero ser voluntario</a></div>
+                }
+            </section>
+            <section class="tarjeta" aria-labelledby="t-organizacion">
+                <h2 id="t-organizacion">Organizaciones</h2>
+                @if (Model.Organizaciones.Count > 0)
+                {
+                    <ul class="lista-simple">
+                        @foreach (var organizacion in Model.Organizaciones)
+                        {
+                            <li><a asp-controller="Organizacion" asp-action="Panel" asp-route-org="@organizacion.OrganizacionId">@organizacion.OrganizacionNombre</a> · @Textos.Rol(organizacion.Rol) · @Textos.Verificacion(organizacion.OrganizacionEstado)</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>Si representás a una organización, registrala para publicar centros y tomar solicitudes.</p>
+                }
+                <div class="acciones"><a class="boton boton-secundario" asp-controller="Organizacion" asp-action="Registrar">Registrar una organización</a></div>
             </section>
         </div>
     </div>
 </div>
 @section Scripts {
+    <script src="~/js/formularios.js" asp-append-version="true"></script>
     <script src="~/js/perfil.js" asp-append-version="true"></script>
 }

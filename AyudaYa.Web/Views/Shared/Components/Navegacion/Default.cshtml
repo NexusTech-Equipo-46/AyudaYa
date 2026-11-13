@@ -1,0 +1,43 @@
+@model ContextoUsuarioDto?
+@{
+    var controlador = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    string? Actual(params string[] controladores) => controladores.Contains(controlador, StringComparer.OrdinalIgnoreCase) ? "page" : null;
+}
+<nav id="nav-principal" class="nav-principal" aria-label="Principal">
+    <ul>
+        @if (Model is null)
+        {
+            <li><a asp-controller="Home" asp-action="Index" aria-current="@Actual("Home")">Inicio</a></li>
+            <li><a asp-controller="Centros" asp-action="Index" aria-current="@Actual("Centros")">Mapa de centros</a></li>
+            <li><a asp-controller="Impacto" asp-action="Index" aria-current="@Actual("Impacto")">Impacto</a></li>
+            <li><a asp-controller="Cuenta" asp-action="Login" aria-current="@(controlador == "Cuenta" && ViewContext.RouteData.Values["action"]?.ToString() == "Login" ? "page" : null)">Iniciar sesión</a></li>
+            <li><a class="boton" asp-controller="Cuenta" asp-action="Registro">Crear cuenta</a></li>
+        }
+        else
+        {
+            <li><a asp-controller="Panel" asp-action="Index" aria-current="@Actual("Panel")">Panel</a></li>
+            <li><a asp-controller="Solicitudes" asp-action="Index" aria-current="@Actual("Solicitudes")">Mis solicitudes</a></li>
+            @if (Model.EsVoluntario)
+            {
+                <li><a asp-controller="Voluntario" asp-action="Panel" aria-current="@Actual("Voluntario", "Voluntariado")">Voluntariado</a></li>
+            }
+            @if (Model.Organizaciones.Count > 0)
+            {
+                <li><a asp-controller="Organizacion" asp-action="Panel" aria-current="@Actual("Organizacion")">Organización</a></li>
+            }
+            @if (Model.EsAdministrador)
+            {
+                <li><a asp-controller="Admin" asp-action="Index" aria-current="@Actual("Admin")">Administración</a></li>
+            }
+            <li><a asp-controller="Centros" asp-action="Index" aria-current="@Actual("Centros")">Mapa</a></li>
+            <li><a asp-controller="Impacto" asp-action="Index" aria-current="@Actual("Impacto")">Impacto</a></li>
+            <li><a asp-controller="Cuenta" asp-action="Perfil" aria-current="@Actual("Cuenta")">Perfil</a></li>
+            <li><a class="boton" asp-controller="Solicitudes" asp-action="Nueva">Pedir ayuda</a></li>
+            <li>
+                <form asp-controller="Cuenta" asp-action="Logout" method="post">
+                    <button type="submit" class="cerrar-sesion-nav">Cerrar sesión</button>
+                </form>
+            </li>
+        }
+    </ul>
+</nav>

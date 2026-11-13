@@ -1,33 +1,170 @@
-@model string
+@model SolicitudDetalleDto
 @{
-    Layout = "_UsuarioLayout";
-    ViewData["Title"] = "Detalle de solicitud";
-    ViewData["SolicitudActual"] = true;
-    ViewData["DetalleSolicitud"] = true;
-    ViewData["DatosFicticios"] = true;
+    ViewData["Title"] = $"Solicitud #{Model.Codigo}";
+    var descripcionEstado = Textos.DescripcionEstadoSolicitud(Model.Estado);
 }
-<div class="contenedor" id="detalle-solicitud" data-id-solicitud="@Model"></div>
-@section DespuesDelContenido {
+<div class="contenedor" id="detalle-solicitud">
+    <nav class="migas" aria-label="Estás en">
+        <ol>
+            @if (Model.EsDelSolicitante)
+            {
+                <li><a asp-controller="Panel" asp-action="Index">Panel</a></li>
+                <li><a asp-action="Index">Mis solicitudes</a></li>
+            }
+            else
+            {
+                <li><a asp-controller="Admin" asp-action="Index">Administración</a></li>
+                <li><a asp-controller="Admin" asp-action="Solicitudes">Solicitudes</a></li>
+            }
+            <li><a asp-action="Detalle" asp-route-id="@Model.Id" aria-current="page">Solicitud #@Model.Codigo</a></li>
+        </ol>
+    </nav>
+
+    <div class="detalle-encabezado">
+        <div>
+            <h1>Solicitud #@Model.Codigo</h1>
+            <p class="meta">@Model.ZonaNombre, @Model.CiudadNombre · @Formato.Plural(Model.PersonasAfectadas, "persona afectada", "personas afectadas")</p>
+            <p class="meta">Creada @Formato.FechaHora(Model.CreadoAt)@(Model.EsDelSolicitante ? "" : $" por {Model.SolicitanteNombre}")</p>
+        </div>
+        <div class="insignias">
+            <partial name="_InsigniaSolicitud" model="Model.Estado" />
+            <partial name="_InsigniaUrgencia" model="Model.Urgencia" />
+        </div>
+    </div>
+
+    <div class="detalle">
+        <div>
+            @switch (Model.Estado)
+            {
+                case "cancelada":
+                    <div class="alerta alerta-peligro">@Iconos.AlertaPeligro<p><strong>Cancelada.</strong> Motivo: @Model.MotivoCancelacion</p></div>
+                    break;
+                case "resuelta":
+                    <div class="alerta alerta-exito">@Iconos.AlertaOk<p><strong>Resuelta.</strong> @descripcionEstado</p></div>
+                    break;
+                case "parcial":
+                    <div class="alerta alerta-advertencia">@Iconos.AlertaPeligro<p><strong>Atención parcial.</strong> @descripcionEstado</p></div>
+                    break;
+                default:
+                    <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>@Textos.EstadoSolicitud(Model.Estado).</strong> @descripcionEstado</p></div>
+                    break;
+            }
+            @if (Model.Urgencia == "critica" && Model.EstaAbierta)
+            {
+                <div class="alerta alerta-advertencia">@Iconos.AlertaPeligro<p><strong>Urgencia crítica.</strong> Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p></div>
+            }
+
+            <section class="tarjeta" aria-labelledby="t-recursos">
+                <h2 id="t-recursos">Lo que pediste</h2>
+                <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="t-recursos">
+                    <table class="tabla-recursos">
+                        <thead><tr><th scope="col">Recurso</th><th scope="col">Personas</th><th scope="col">Estado</th><th scope="col">Quién atiende</th></tr></thead>
+                        <tbody>
+                            @foreach (var recurso in Model.Recursos)
+                            {
+                                <tr>
+                                    <th scope="row">@recurso.TipoNombre@if (!string.IsNullOrWhiteSpace(recurso.Detalle)) { <span class="detalle-recurso">@recurso.Detalle</span> }</th>
+                                    <td>@recurso.Personas</td>
+                                    <td><partial name="_InsigniaSolicitud" model="recurso.Estado" /></td>
+                                    <td>
+                                        @if (recurso.Asignado is null) { <text>Sin asignar</text> }
+                                        else { <text>@recurso.Asignado.Nombre (@(recurso.Asignado.Tipo == "organizacion" ? "organización" : "voluntario/a"))</text> }
+                                        @if (recurso.PuedeConfirmar && Model.EsDelSolicitante)
+                                        {
+                                            <form asp-action="Confirmar" method="post" class="form-en-linea">
+                                                <input type="hidden" name="id" value="@Model.Id" />
+                                                <input type="hidden" name="asignacionId" value="@recurso.AsignacionId" />
+                                                <button type="submit" class="boton boton-secundario">Confirmar que lo recibí</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Descripcion))
+            {
+                <section class="tarjeta" aria-labelledby="t-desc"><h2 id="t-desc">Descripción</h2><p>@Model.Descripcion</p></section>
+            }
+
+            <section class="tarjeta" aria-labelledby="t-historial">
+                <h2 id="t-historial">Historial</h2>
+                <ol class="cronologia">
+                    @foreach (var evento in Model.Historial.OrderByDescending(h => h.CreadoAt))
+                    {
+                        <li>
+                            <partial name="_InsigniaSolicitud" model="evento.EstadoNuevo" />
+                            <span class="cuando">@(evento.EsElSolicitante && Model.EsDelSolicitante ? "Vos" : evento.Actor) · <time datetime="@evento.CreadoAt.ToUniversalTime().ToString("O")" title="@Formato.FechaHora(evento.CreadoAt)">@Formato.HaceCuanto(evento.CreadoAt)</time></span>
+                            @if (!string.IsNullOrWhiteSpace(evento.Motivo)) { <p class="motivo">@evento.Motivo</p> }
+                        </li>
+                    }
+                </ol>
+            </section>
+        </div>
+        <div>
+            @if (Model.Contacto is not null)
+            {
+                <section class="tarjeta" aria-labelledby="t-contacto">
+                    <h2 id="t-contacto">@(Model.EsDelSolicitante ? "Tus datos de contacto" : "Datos de contacto")</h2>
+                    <p class="nota-privada">@Iconos.Candado<span>Solo los ve @(Model.EsDelSolicitante ? "vos" : "el solicitante"), quienes lo asisten y el equipo administrador.</span></p>
+                    <dl class="datos-contacto">
+                        <div><dt>Dirección</dt><dd>@Model.Contacto.Direccion</dd></div>
+                        <div><dt>Teléfono</dt><dd>@Model.Contacto.Telefono</dd></div>
+                    </dl>
+                </section>
+            }
+
+            <section class="tarjeta" aria-labelledby="t-acciones">
+                <h2 id="t-acciones">Acciones</h2>
+                @if (Model.EstaAbierta)
+                {
+                    <p class="texto-suave">Si cancelás, quienes la tienen asignada dejan de atenderla. Esto no se puede deshacer.</p>
+                    <div class="acciones">
+                        <button type="button" class="boton boton-peligro" data-abrir-dialogo="dialogo-cancelar">Cancelar solicitud</button>
+                    </div>
+                }
+                else
+                {
+                    <p class="texto-suave">Esta solicitud está cerrada y no se puede modificar.</p>
+                    @if (Model.EsDelSolicitante)
+                    {
+                        <div class="acciones"><a class="boton" asp-action="Nueva">Pedir ayuda de nuevo</a></div>
+                    }
+                }
+            </section>
+
+            <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
+                <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
+                <ul>
+                    <li><a href="tel:911">911 <span>Emergencias</span></a></li>
+                    <li><a href="tel:107">107 <span>SAME</span></a></li>
+                </ul>
+            </aside>
+        </div>
+    </div>
+</div>
+
+@if (Model.EstaAbierta)
+{
     <dialog id="dialogo-cancelar" aria-labelledby="titulo-cancelar">
-        <form id="form-cancelar" novalidate>
+        <form asp-action="Cancelar" method="post">
+            <input type="hidden" name="id" value="@Model.Id" />
             <h2 id="titulo-cancelar">Cancelar solicitud</h2>
             <p>Si cancelás, quienes la tenían asignada dejan de atenderla. Esto no se puede deshacer.</p>
-            <p class="texto-suave">En esta demostración la cancelación solo se simula.</p>
             <div class="campo">
-                <label for="motivo">Motivo de la cancelación</label>
-                <textarea id="motivo" name="motivo" rows="3" maxlength="300" required aria-describedby="error-motivo"></textarea>
-                <p class="error-campo" id="error-motivo"></p>
+                <label for="motivo-cancelar">Motivo de la cancelación</label>
+                <textarea id="motivo-cancelar" name="motivo" rows="3" maxlength="300" required></textarea>
             </div>
             <div class="acciones">
                 <button type="submit" class="boton boton-peligro">Sí, cancelar solicitud</button>
-                <button type="button" class="boton boton-secundario" id="cerrar-dialogo">No, volver</button>
+                <button type="button" class="boton boton-secundario" data-cerrar-dialogo>No, volver</button>
             </div>
         </form>
     </dialog>
 }
 @section Scripts {
-    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
-    <script src="~/js/demo/datos-usuario.js" asp-append-version="true"></script>
-    <script src="~/js/demo/comun-usuario.js" asp-append-version="true"></script>
-    <script src="~/js/demo/solicitud.js" asp-append-version="true"></script>
+    <script src="~/js/dialogos.js" asp-append-version="true"></script>
 }

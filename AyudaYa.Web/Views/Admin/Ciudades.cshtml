@@ -1,0 +1,83 @@
+@model IReadOnlyList<CiudadAdminDto>
+@{
+    ViewData["Title"] = "Ciudades y zonas";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    ViewData["Seccion"] = "ciudades";
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Ciudades y zonas</h1>
+            <p class="texto-suave">Sin ciudades y zonas activas nadie puede pedir ayuda ni sumarse como voluntario. El punto central de cada zona se usa para mostrar los pedidos de forma aproximada en el mapa público.</p>
+        </div>
+    </div>
+    <partial name="_SubnavAdmin" />
+
+    <section class="tarjeta" aria-labelledby="t-nueva-ciudad" style="margin-bottom:1.25rem">
+        <h2 id="t-nueva-ciudad">Nueva ciudad</h2>
+        <form asp-action="CrearCiudad" method="post" class="form-en-fila">
+            <div class="campo"><label for="ciudad-nombre">Nombre</label><input id="ciudad-nombre" name="nombre" type="text" maxlength="100" required /></div>
+            <div class="campo"><label for="ciudad-provincia">Provincia</label><input id="ciudad-provincia" name="provincia" type="text" maxlength="100" required /></div>
+            <button type="submit" class="boton">Crear ciudad</button>
+        </form>
+    </section>
+
+    @foreach (var ciudad in Model)
+    {
+        <section class="tarjeta" aria-labelledby="ciudad-@ciudad.Id" style="margin-bottom:1.25rem">
+            <div class="encabezado-seccion">
+                <h2 id="ciudad-@ciudad.Id">@ciudad.Nombre, @ciudad.Provincia @if (!ciudad.Activa) { <span class="insignia asig-cancelada">Inactiva</span> }</h2>
+                <form asp-action="EstadoCiudad" method="post">
+                    <input type="hidden" name="id" value="@ciudad.Id" />
+                    <input type="hidden" name="activa" value="@(ciudad.Activa ? "false" : "true")" />
+                    <button type="submit" class="boton boton-secundario">@(ciudad.Activa ? "Desactivar" : "Activar")</button>
+                </form>
+            </div>
+
+            <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="ciudad-@ciudad.Id">
+                <table class="tabla-recursos tabla-edicion">
+                    <caption class="visualmente-oculto">Zonas de @ciudad.Nombre</caption>
+                    <thead><tr><th scope="col">Zona</th><th scope="col">Latitud</th><th scope="col">Longitud</th><th scope="col">Activa</th><th scope="col">Acción</th></tr></thead>
+                    <tbody>
+                        @foreach (var zona in ciudad.Zonas)
+                        {
+                            <tr>
+                                <td colspan="5">
+                                    <form asp-action="EditarZona" method="post" class="form-zona">
+                                        <input type="hidden" name="id" value="@zona.Id" />
+                                        <label class="visualmente-oculto" for="zn-@zona.Id">Nombre de la zona</label>
+                                        <input id="zn-@zona.Id" name="nombre" type="text" value="@zona.Nombre" maxlength="100" required />
+                                        <label class="visualmente-oculto" for="zla-@zona.Id">Latitud</label>
+                                        <input id="zla-@zona.Id" name="latitud" type="number" step="any" value="@(zona.LatitudCentro is double la ? Formato.Decimal(la) : "")" />
+                                        <label class="visualmente-oculto" for="zlo-@zona.Id">Longitud</label>
+                                        <input id="zlo-@zona.Id" name="longitud" type="number" step="any" value="@(zona.LongitudCentro is double lo ? Formato.Decimal(lo) : "")" />
+                                        <label class="check"><input type="checkbox" name="activa" value="true" checked="@zona.Activa" /> Activa</label>
+                                        <input type="hidden" name="activa" value="false" />
+                                        <button type="submit" class="boton boton-secundario">Guardar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        @if (ciudad.Zonas.Count == 0)
+                        {
+                            <tr><td colspan="5" class="texto-suave">Todavía no tiene zonas.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top:1.25rem">Nueva zona en @ciudad.Nombre</h3>
+            <form asp-action="CrearZona" method="post" class="form-en-fila">
+                <input type="hidden" name="ciudadId" value="@ciudad.Id" />
+                <div class="campo"><label for="nz-@ciudad.Id">Nombre</label><input id="nz-@ciudad.Id" name="nombre" type="text" maxlength="100" required /></div>
+                <div class="campo"><label for="nzla-@ciudad.Id">Latitud del centro</label><input id="nzla-@ciudad.Id" name="latitud" type="number" step="any" /></div>
+                <div class="campo"><label for="nzlo-@ciudad.Id">Longitud del centro</label><input id="nzlo-@ciudad.Id" name="longitud" type="number" step="any" /></div>
+                <button type="submit" class="boton">Crear zona</button>
+            </form>
+        </section>
+    }
+    @if (Model.Count == 0)
+    {
+        <div class="tarjeta estado-vacio"><h3>Todavía no hay ciudades</h3><p>Creá la primera con el formulario de arriba.</p></div>
+    }
+</div>

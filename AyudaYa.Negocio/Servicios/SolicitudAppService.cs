@@ -430,7 +430,8 @@ public sealed class SolicitudAppService
     /// - el voluntario con una asignación activa sobre la solicitud;
     /// - un miembro activo de una organización con una asignación activa.
     ///
-    /// Una asignación cancelada o liberada ya no da acceso.
+    /// Una asignación cancelada, liberada o ya confirmada por quien pidió
+    /// ayuda deja de dar acceso (ver <see cref="ReglasNegocio.AsignacionDaAccesoAlContacto"/>).
     /// </summary>
     public async Task<ResultadoUbicacionExacta> ObtenerUbicacionExactaAsync(
         Guid actorId,
@@ -467,7 +468,9 @@ public sealed class SolicitudAppService
             var tieneAsignacionActiva = await _db.Asignacion
                 .AsNoTracking()
                 .Where(a => a.SolicitudRecurso.SolicitudId == solicitudId
-                    && EstadosAsignacionActiva.Contains(a.Estado))
+                    && (a.Estado == "asignada"
+                        || a.Estado == "en_atencion"
+                        || (a.Estado == "completada" && a.ConfirmadaAt == null)))
                 .AnyAsync(
                     a => a.VoluntarioId == actorId
                         || (a.OrganizacionId != null
@@ -574,6 +577,19 @@ public sealed class SolicitudAppService
             return ResultadoOperacion.Falla(Error(
                 "SolicitudCerrada",
                 "No se puede asignar un recurso de una solicitud cerrada."));
+        }
+
+        if (voluntarioId == recurso.Solicitud.SolicitanteId
+            || (organizacionId.HasValue
+                && await _db.OrganizacionUsuario.AsNoTracking().AnyAsync(
+                    ou => ou.OrganizacionId == organizacionId
+                        && ou.UsuarioId == recurso.Solicitud.SolicitanteId
+                        && ou.Activo,
+                    cancellationToken)))
+        {
+            return ResultadoOperacion.Falla(Error(
+                "SolicitudPropia",
+                "No se puede tomar una solicitud propia."));
         }
 
         var existeAsignacionActiva = await _db.Asignacion

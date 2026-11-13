@@ -1,9 +1,6 @@
 @model AyudaYa.Web.Models.Cuenta.RegistroViewModel
 @{
-    Layout = "_VisitanteLayout";
     ViewData["Title"] = "Crear cuenta";
-    ViewData["RegistroActual"] = true;
-    ViewData["UsaScriptsPrototipo"] = true;
     var errores = ViewData.ModelState
         .Where(entrada => entrada.Value is not null)
         .SelectMany(entrada => entrada.Value!.Errors.Select(error => (Campo: entrada.Key, Mensaje: error.ErrorMessage)))
@@ -83,7 +80,6 @@
     </div>
 </div>
 @section Scripts {
-    <script src="~/js/demo/comun.js" asp-append-version="true"></script>
-    <script src="~/js/demo/formularios.js" asp-append-version="true"></script>
+    <script src="~/js/formularios.js" asp-append-version="true"></script>
     <script src="~/js/registro.js" asp-append-version="true"></script>
 }

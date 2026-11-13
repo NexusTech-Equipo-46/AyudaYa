@@ -1,0 +1,90 @@
+@model RegistrarOrganizacionViewModel
+@using AyudaYa.Web.Models.Organizacion
+@{
+    ViewData["Title"] = "Registrar una organización";
+    ViewData["ClaseMain"] = "pagina-usuario";
+}
+<div class="contenedor">
+    <nav class="migas" aria-label="Estás en">
+        <ol>
+            <li><a asp-controller="Panel" asp-action="Index">Panel</a></li>
+            <li><a asp-action="Registrar" aria-current="page">Registrar una organización</a></li>
+        </ol>
+    </nav>
+    <div class="formulario-solicitud">
+        <h1>Registrar una organización</h1>
+        <p class="texto-suave">Una organización puede publicar centros (refugios, comedores, puntos de donación…) y tomar solicitudes de ayuda. Un administrador la revisa antes de activarla.</p>
+
+        <partial name="_ResumenErrores" />
+
+        <form asp-action="Registrar" method="post" novalidate>
+            <section class="tarjeta" aria-labelledby="t-datos">
+                <h2 id="t-datos">Datos de la organización</h2>
+
+                @if (Model.Ciudades.Count > 1)
+                {
+                    <div class="campo">
+                        <label asp-for="CiudadId">Ciudad</label>
+                        <select asp-for="CiudadId" required>
+                            <option value="">Elegí una ciudad</option>
+                            @foreach (var ciudad in Model.Ciudades)
+                            {
+                                <option value="@ciudad.Id" selected="@(ciudad.Id == Model.CiudadId)">@ciudad.Nombre, @ciudad.Provincia</option>
+                            }
+                        </select>
+                        <span asp-validation-for="CiudadId" class="error-campo"></span>
+                    </div>
+                }
+                else
+                {
+                    <input type="hidden" asp-for="CiudadId" />
+                    @if (Model.Ciudades.Count == 1) { <p class="texto-suave">Ciudad: @Model.Ciudades[0].Nombre, @Model.Ciudades[0].Provincia</p> }
+                }
+
+                <div class="campo">
+                    <label asp-for="Nombre">Nombre de la organización</label>
+                    <input asp-for="Nombre" type="text" maxlength="150" autocomplete="organization" required />
+                    <span asp-validation-for="Nombre" class="error-campo"></span>
+                </div>
+
+                <fieldset class="grupo">
+                    <legend>Tipo de organización</legend>
+                    <div class="opciones-radio">
+                        <label class="opcion">
+                            <input type="radio" name="Tipo" value="comunitaria" checked="@(Model.Tipo != "institucional")">
+                            <span><strong>Comunitaria</strong><small>Vecinos, parroquias, clubes, cooperadoras. Siempre necesita al menos una persona responsable.</small></span>
+                        </label>
+                        <label class="opcion">
+                            <input type="radio" name="Tipo" value="institucional" checked="@(Model.Tipo == "institucional")">
+                            <span><strong>Institucional</strong><small>Organismos públicos, hospitales, defensa civil, bomberos.</small></span>
+                        </label>
+                    </div>
+                    <span asp-validation-for="Tipo" class="error-campo"></span>
+                </fieldset>
+
+                <div class="campo">
+                    <label asp-for="EmailContacto">Correo de contacto</label>
+                    <span class="ayuda" id="ayuda-email-org">Es público en los centros de la organización.</span>
+                    <input asp-for="EmailContacto" type="email" autocomplete="email" required aria-describedby="ayuda-email-org" />
+                    <span asp-validation-for="EmailContacto" class="error-campo"></span>
+                </div>
+
+                <div class="campo">
+                    <label asp-for="TelefonoContacto">Teléfono de contacto</label>
+                    <input asp-for="TelefonoContacto" type="tel" maxlength="20" inputmode="tel" autocomplete="tel" required />
+                    <span asp-validation-for="TelefonoContacto" class="error-campo"></span>
+                </div>
+
+                <div class="campo">
+                    <label asp-for="Descripcion">Descripción <span class="opcional">(opcional)</span></label>
+                    <textarea asp-for="Descripcion" rows="3" maxlength="500"></textarea>
+                    <span asp-validation-for="Descripcion" class="error-campo"></span>
+                </div>
+            </section>
+            <div class="acciones">
+                <button type="submit" class="boton">Enviar para aprobación</button>
+                <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>

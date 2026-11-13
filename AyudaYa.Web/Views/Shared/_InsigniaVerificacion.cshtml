@@ -1,0 +1,10 @@
+@model string
+@{
+    var clase = Model switch
+    {
+        "aprobado" or "activa" => "ver-aprobado",
+        "pendiente" => "ver-pendiente",
+        _ => "ver-rechazado"
+    };
+}
+<span class="insignia @clase">@Iconos.Verificacion(Model)<span class="visualmente-oculto">Verificación: </span>@Textos.Verificacion(Model)</span>

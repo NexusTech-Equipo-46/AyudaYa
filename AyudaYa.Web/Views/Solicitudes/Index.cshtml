@@ -1,8 +1,10 @@
+@model IReadOnlyList<SolicitudResumenDto>
 @{
-    Layout = "_UsuarioLayout";
     ViewData["Title"] = "Mis solicitudes";
-    ViewData["SolicitudActual"] = true;
-    ViewData["DatosFicticios"] = true;
+    ViewData["ClaseMain"] = "pagina-usuario";
+    var filtro = (string)ViewData["Filtro"]!;
+    var total = (int)ViewData["Total"]!;
+    var sufijo = filtro switch { "abiertas" => " abiertas", "cerradas" => " cerradas", _ => "" };
 }
 <div class="contenedor">
     <div class="cabecera-pagina">
@@ -10,27 +12,40 @@
             <h1>Mis solicitudes</h1>
             <p class="texto-suave">Todos tus pedidos de ayuda, del más reciente al más antiguo.</p>
         </div>
-        <a class="boton" asp-controller="Solicitudes" asp-action="Nueva">Pedir ayuda</a>
+        <a class="boton" asp-action="Nueva">Pedir ayuda</a>
     </div>
     <div class="barra-resultados">
-        <p id="cantidad" role="status" aria-live="polite"></p>
-        <div class="filtro-estado" role="group" aria-label="Filtrar por estado">
-            <button type="button" data-filtro="todas" aria-pressed="true">Todas</button>
-            <button type="button" data-filtro="abiertas" aria-pressed="false">Abiertas</button>
-            <button type="button" data-filtro="cerradas" aria-pressed="false">Cerradas</button>
-        </div>
+        <p role="status" aria-live="polite">@Formato.Plural(Model.Count, "solicitud", "solicitudes")@sufijo</p>
+        <form method="get" class="filtro-estado" role="group" aria-label="Filtrar por estado">
+            <button type="submit" name="estado" value="todas" aria-pressed="@(filtro == "todas" ? "true" : "false")">Todas</button>
+            <button type="submit" name="estado" value="abiertas" aria-pressed="@(filtro == "abiertas" ? "true" : "false")">Abiertas</button>
+            <button type="submit" name="estado" value="cerradas" aria-pressed="@(filtro == "cerradas" ? "true" : "false")">Cerradas</button>
+        </form>
     </div>
     <h2 class="visualmente-oculto">Lista de solicitudes</h2>
-    <ul class="lista-solicitudes" id="lista"></ul>
-    <div class="tarjeta estado-vacio" id="vacio" hidden>
-        <h3 id="vacio-titulo">No tenés solicitudes</h3>
-        <p id="vacio-texto"></p>
-        <div class="acciones" id="vacio-acciones"></div>
-    </div>
+    @if (Model.Count > 0)
+    {
+        <ul class="lista-solicitudes">
+            @foreach (var solicitud in Model)
+            {
+                <li><partial name="_TarjetaSolicitud" model="solicitud" /></li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="tarjeta estado-vacio">
+            @if (total == 0)
+            {
+                <h3>Todavía no pediste ayuda</h3>
+                <p>Cuando cargues un pedido, lo vas a ver acá con su estado.</p>
+                <div class="acciones"><a class="boton" asp-action="Nueva">Pedir ayuda</a></div>
+            }
+            else
+            {
+                <h3>No hay solicitudes@(sufijo)</h3>
+                <p>Probá con otro filtro.</p>
+            }
+        </div>
+    }
 </div>
-@section Scripts {
-    <script src="~/js/demo/datos.js" asp-append-version="true"></script>
-    <script src="~/js/demo/datos-usuario.js" asp-append-version="true"></script>
-    <script src="~/js/demo/comun-usuario.js" asp-append-version="true"></script>
-    <script src="~/js/demo/mis-solicitudes.js" asp-append-version="true"></script>
-}

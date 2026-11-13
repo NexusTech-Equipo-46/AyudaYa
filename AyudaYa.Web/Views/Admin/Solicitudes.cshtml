@@ -1,0 +1,49 @@
+@model ListaAdminViewModel<SolicitudResumenDto>
+@{
+    ViewData["Title"] = "Solicitudes";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    ViewData["Seccion"] = "solicitudes";
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Solicitudes</h1>
+            <p class="texto-suave">Vista general de todos los pedidos. Desde el detalle podés cancelar una solicitud (queda en la auditoría).</p>
+        </div>
+    </div>
+    <partial name="_SubnavAdmin" />
+
+    <form method="get" class="filtro-estado" role="group" aria-label="Filtrar por estado" style="margin-bottom:1rem">
+        @foreach (var (valor, texto) in new[] { ("todas", "Todas"), ("pendiente", "Pendientes"), ("asignada", "Asignadas"), ("en_atencion", "En atención"), ("parcial", "Parciales"), ("resuelta", "Resueltas"), ("cancelada", "Canceladas") })
+        {
+            <button type="submit" name="estado" value="@valor" aria-pressed="@(Model.Filtro == valor ? "true" : "false")">@texto</button>
+        }
+    </form>
+    <p role="status" class="texto-suave">@Formato.Plural(Model.Elementos.Count, "solicitud", "solicitudes") (las 100 más recientes)</p>
+
+    @if (Model.Elementos.Count == 0)
+    {
+        <div class="tarjeta estado-vacio"><h3>No hay solicitudes con ese estado</h3></div>
+    }
+    else
+    {
+        <div class="tabla-scroll" tabindex="0" role="region" aria-label="Solicitudes">
+            <table class="tabla-recursos">
+                <thead><tr><th scope="col">Solicitud</th><th scope="col">Estado</th><th scope="col">Zona</th><th scope="col">Personas</th><th scope="col">Recursos</th><th scope="col">Creada</th></tr></thead>
+                <tbody>
+                    @foreach (var s in Model.Elementos)
+                    {
+                        <tr>
+                            <th scope="row"><a asp-controller="Solicitudes" asp-action="Detalle" asp-route-id="@s.Id">#@s.Codigo</a> @if (s.Urgencia == "critica") { <partial name="_InsigniaUrgencia" model="s.Urgencia" /> }</th>
+                            <td><partial name="_InsigniaSolicitud" model="s.Estado" /></td>
+                            <td>@s.ZonaNombre, @s.CiudadNombre</td>
+                            <td>@s.PersonasAfectadas</td>
+                            <td>@string.Join(", ", s.Recursos.Select(r => r.Nombre))</td>
+                            <td>@Formato.HaceCuanto(s.CreadoAt)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
