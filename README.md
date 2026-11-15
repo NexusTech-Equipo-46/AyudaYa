@@ -1,4 +1,4 @@
-# AyudaYa
+﻿# AyudaYa
 
 Plataforma web para coordinar ayuda en emergencias (inundaciones, temporales, etc.): las personas afectadas piden ayuda, los voluntarios y las organizaciones la toman y la atienden, y cualquiera puede ver en un mapa qué centros (refugios, comedores, salitas, puntos de donación) están abiertos y con qué recursos.
 
@@ -64,6 +64,10 @@ Requisitos: **.NET 10 SDK** y **PostgreSQL 16 o 17** (por ejemplo `winget instal
 
    Las pruebas de integración usan `ayudaya_test` (secreto `ConnectionStrings:AyudaYaTest` o variable `AYUDAYA_TEST_CONN`); sin esa conexión se omiten y corren solo las reglas puras.
 
+### Base compartida del equipo
+
+Para que todos usen la misma base (sin instalar PostgreSQL) mirá [docs/base-compartida.md](docs/base-compartida.md).
+
 ### Configuración (user-secrets o variables de entorno)
 
 | Clave | Para qué |
@@ -89,3 +93,4 @@ Ninguna credencial va en el repositorio.
 - Las solicitudes no se pueden editar una vez creadas: se cancelan y se vuelven a cargar.
 - El envío de correo usa `System.Net.Mail` (SMTP con STARTTLS); para volumen alto conviene un proveedor transaccional.
 - El mapa usa los mosaicos públicos de OpenStreetMap (sujetos a su política de uso); para producción conviene un proveedor propio.
+
