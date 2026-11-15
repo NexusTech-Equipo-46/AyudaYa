@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Net.Mail;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,13 +17,21 @@ public interface IEnviadorCorreo
 }
 
 /// <summary>
-/// Configuración SMTP (sección "Correo"). Si <see cref="Host"/> está vacío se
-/// usa el enviador de registro, que solo escribe el mensaje en el log.
-/// La clave va en user-secrets o en variables de entorno, nunca en el repo.
+/// Configuración de correo (sección "Correo"). Orden de elección:
+/// <see cref="ApiKey"/> (API HTTP de Brevo, funciona en hostings que bloquean SMTP),
+/// luego <see cref="Host"/> (SMTP) y, si no hay ninguno, el enviador de registro,
+/// que solo escribe el mensaje en el log.
+/// Las claves van en user-secrets o en variables de entorno, nunca en el repo.
 /// </summary>
 public sealed class CorreoOptions
 {
     public const string Seccion = "Correo";
+
+    /// <summary>Clave de la API de Brevo (empieza con "xkeysib-").</summary>
+    public string? ApiKey { get; set; }
+
+    /// <summary>Nombre que ve quien recibe el correo (solo para la API).</summary>
+    public string NombreRemitente { get; set; } = "AyudaYa";
 
     public string? Host { get; set; }
 
@@ -70,6 +79,62 @@ public sealed class EnviadorCorreoSmtp : IEnviadorCorreo
         }
 
         await cliente.SendMailAsync(mensaje, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Envía por la API HTTPS de Brevo (plan gratuito: 300 correos por día). Se usa HTTPS
+/// (puerto 443) porque los planes gratuitos de varios hostings bloquean los puertos SMTP.
+/// El <see cref="CorreoOptions.Remitente"/> debe ser un remitente verificado en Brevo.
+/// </summary>
+public sealed class EnviadorCorreoBrevo : IEnviadorCorreo
+{
+    private static readonly Uri Destino = new("https://api.brevo.com/v3/smtp/email");
+
+    private readonly CorreoOptions _opciones;
+    private readonly HttpClient _http;
+
+    public EnviadorCorreoBrevo(IOptions<CorreoOptions> opciones)
+        : this(opciones, new HttpClient { Timeout = TimeSpan.FromSeconds(15) })
+    {
+    }
+
+    public EnviadorCorreoBrevo(IOptions<CorreoOptions> opciones, HttpClient http)
+    {
+        _opciones = opciones.Value;
+        _http = http;
+    }
+
+    public async Task EnviarAsync(
+        string destinatario,
+        string asunto,
+        string cuerpo,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_opciones.Remitente))
+        {
+            throw new InvalidOperationException("Correo:Remitente es obligatorio para enviar con Brevo.");
+        }
+
+        using var pedido = new HttpRequestMessage(HttpMethod.Post, Destino)
+        {
+            Content = JsonContent.Create(new
+            {
+                sender = new { name = _opciones.NombreRemitente, email = _opciones.Remitente },
+                to = new[] { new { email = destinatario } },
+                subject = asunto,
+                textContent = cuerpo
+            })
+        };
+        pedido.Headers.Add("api-key", _opciones.ApiKey);
+        pedido.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var respuesta = await _http.SendAsync(pedido, cancellationToken);
+        if (!respuesta.IsSuccessStatusCode)
+        {
+            // Solo el código: el cuerpo puede incluir datos del destinatario y nunca la clave.
+            throw new InvalidOperationException($"Brevo rechazó el envío (HTTP {(int)respuesta.StatusCode}).");
+        }
     }
 }
 

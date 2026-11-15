@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace AyudaYa.Negocio.Servicios;
@@ -58,19 +59,22 @@ public sealed class UsuarioAppService
     private readonly AyudaYaDbContext _db;
     private readonly IEnviadorCorreo _correo;
     private readonly IMemoryCache _cache;
+    private readonly ILogger<UsuarioAppService> _logger;
 
     public UsuarioAppService(
         UserManager<UsuarioIdentity> userManager,
         SignInManager<UsuarioIdentity> signInManager,
         AyudaYaDbContext db,
         IEnviadorCorreo correo,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        ILogger<UsuarioAppService> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _db = db;
         _correo = correo;
         _cache = cache;
+        _logger = logger;
     }
 
     public static string NormalizarEmail(string email)
@@ -410,17 +414,28 @@ public sealed class UsuarioAppService
         var tokenCodificado = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
         var enlace = construirEnlace(user.Id, tokenCodificado);
 
-        await _correo.EnviarAsync(
-            user.Email!,
-            "Confirmá tu correo en AyudaYa",
-            string.Join(Environment.NewLine,
-                $"Hola {user.NombreCompleto},",
-                string.Empty,
-                "Para confirmar tu correo y poder pedir ayuda o sumarte como voluntario, abrí este enlace:",
-                enlace,
-                string.Empty,
-                "Si no creaste una cuenta en AyudaYa, ignorá este mensaje."),
-            cancellationToken);
+        try
+        {
+            await _correo.EnviarAsync(
+                user.Email!,
+                "Confirmá tu correo en AyudaYa",
+                string.Join(Environment.NewLine,
+                    $"Hola {user.NombreCompleto},",
+                    string.Empty,
+                    "Para confirmar tu correo y poder pedir ayuda o sumarte como voluntario, abrí este enlace:",
+                    enlace,
+                    string.Empty,
+                    "Si no creaste una cuenta en AyudaYa, ignorá este mensaje."),
+                cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Un fallo del proveedor de correo no debe tumbar el alta ni mostrar un error técnico.
+            _logger.LogError(ex, "No se pudo enviar el correo de confirmación al usuario {UsuarioId}.", usuarioId);
+            return Resultado<string>.Falla(
+                "CorreoNoEnviado",
+                "No pudimos enviar el correo en este momento. Probá de nuevo en unos minutos desde tu perfil.");
+        }
 
         _cache.Set(clave, true, EsperaReenvio);
         return Resultado<string>.Ok(enlace);

@@ -97,15 +97,19 @@ public static class DependencyInjection
 
         services.AddMemoryCache();
 
-        // Correo: SMTP si hay host configurado; si no, el mensaje queda en el log.
+        // Correo: API de Brevo si hay clave; si no, SMTP si hay host; si no, el mensaje queda en el log.
         services.Configure<CorreoOptions>(configuration.GetSection(CorreoOptions.Seccion));
-        if (string.IsNullOrWhiteSpace(configuration[$"{CorreoOptions.Seccion}:Host"]))
+        if (!string.IsNullOrWhiteSpace(configuration[$"{CorreoOptions.Seccion}:ApiKey"]))
         {
-            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoRegistro>();
+            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoBrevo>();
+        }
+        else if (!string.IsNullOrWhiteSpace(configuration[$"{CorreoOptions.Seccion}:Host"]))
+        {
+            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoSmtp>();
         }
         else
         {
-            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoSmtp>();
+            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoRegistro>();
         }
 
         services.AddScoped<UsuarioAppService>();

@@ -61,9 +61,10 @@ public sealed class CuentaController : ControladorAyudaYa
 
         // Correo de confirmación: sin confirmar no se puede pedir ayuda ni sumarse.
         var usuario = await _usuarios.ObtenerPorEmailAsync(model.Email, cancellationToken);
+        var correoEnviado = true;
         if (usuario is not null)
         {
-            await EnviarConfirmacionAsync(usuario.Id, cancellationToken);
+            correoEnviado = (await EnviarConfirmacionAsync(usuario.Id, cancellationToken)).Exito;
         }
 
         // Si el alta salió bien, se intenta dejar la sesión iniciada.
@@ -77,7 +78,15 @@ public sealed class CuentaController : ControladorAyudaYa
             return RedirectToAction(nameof(Login));
         }
 
-        Exito("Cuenta creada. Te enviamos un correo para confirmar tu dirección: lo necesitás para pedir ayuda o sumarte como voluntario.");
+        if (correoEnviado)
+        {
+            Exito("Cuenta creada. Te enviamos un correo para confirmar tu dirección: lo necesitás para pedir ayuda o sumarte como voluntario.");
+        }
+        else
+        {
+            Error("Cuenta creada, pero no pudimos enviarte el correo de confirmación. Pedilo de nuevo desde tu perfil en unos minutos.");
+        }
+
         return RedirectToAction("Index", "Panel");
     }
 

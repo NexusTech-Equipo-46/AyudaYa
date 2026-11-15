@@ -40,6 +40,18 @@ La base compartida ya tiene una ciudad con zonas, organizaciones, centros, perso
 - Consola: <https://console.neon.tech> con la cuenta de Google que la creó.
 - Para rotar la contraseña del rol de la app: `ALTER ROLE ayudaya_app PASSWORD '...'` y pasar la cadena nueva al equipo.
 
+## Correo (confirmación de cuenta)
+
+La app necesita enviar un correo para confirmar cada cuenta nueva. Render (plan gratis) **bloquea los puertos SMTP**, así que se usa la **API HTTPS de Brevo** (plan gratis: 300 correos por día, sin tarjeta). Se activa con variables de entorno (en Render, y en *user-secrets* si se quiere probar en local):
+
+| Variable | Valor |
+|---|---|
+| `Correo__ApiKey` | clave de la API de Brevo (empieza con `xkeysib-`) |
+| `Correo__Remitente` | remitente verificado en Brevo |
+| `Correo__NombreRemitente` | `AyudaYa` |
+
+Sin `Correo__ApiKey` la app no envía nada: el mensaje solo queda en el log del servidor y las cuentas nuevas no pueden confirmarse. Con un remitente de Gmail, Brevo reemplaza la dirección de envío y los mensajes pueden caer en spam; con un dominio propio verificado llegan mejor.
+
 ## App en la nube (Render, plan gratuito)
 
 La rama `leo_pruebas` está desplegada en **https://ayudaya.onrender.com** y usa esta misma base de Neon.
