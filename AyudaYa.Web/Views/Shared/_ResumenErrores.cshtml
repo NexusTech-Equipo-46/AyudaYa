@@ -4,6 +4,7 @@
         .Where(e => e.Value is { Errors.Count: > 0 })
         .SelectMany(e => e.Value!.Errors.Select(error => (Campo: e.Key, Mensaje: error.ErrorMessage)))
         .Where(e => !string.IsNullOrWhiteSpace(e.Mensaje))
+        .DistinctBy(e => e.Mensaje)   // latitud y longitud repiten el mismo aviso
         .ToList();
 }
 @if (errores.Count > 0)

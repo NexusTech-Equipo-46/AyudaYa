@@ -172,7 +172,7 @@ img, svg { max-width: 100%; }
         box-shadow: var(--sombra);
         padding: .5rem 16px 1rem;
     }
-    .js .nav-principal.abierto { display: block; }
+    .js .nav-principal.abierto { display: block; max-height: calc(100vh - 80px); max-height: calc(100dvh - 80px); overflow-y: auto; overscroll-behavior: contain; }
     .nav-principal ul { flex-direction: column; align-items: stretch; }
     .nav-principal a { width: 100%; }
     .nav-principal a.boton { margin: .5rem 0 0; justify-content: center; }
@@ -529,7 +529,13 @@ input[aria-invalid="true"] { border-color: var(--peligro); border-width: 3px; }
 .sin-resultados { text-align: center; padding: 2rem 1rem; }
 .sin-resultados[hidden] { display: none; }
 
-.leaflet-container { font: inherit; }
+.leaflet-container { font: inherit; z-index: 0; } /* z-index: 0 crea su propio contexto: los controles del mapa no tapan el encabezado fijo */
+
+/* Botones de zoom del mapa más grandes en pantallas táctiles. */
+@media (pointer: coarse) {
+    .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; font-size: 22px; }
+    .leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+}
 .leaflet-popup-content { margin: .85rem 1rem; font-size: .95rem; line-height: 1.5; }
 .leaflet-popup-content h3 { font-size: 1rem; margin: 0 0 .35rem; }
 .leaflet-popup-content p { margin: 0 0 .5rem; }
@@ -589,7 +595,7 @@ input[aria-invalid="true"] { border-color: var(--peligro); border-width: 3px; }
 .no-encontrado { max-width: 560px; margin: 3rem auto; text-align: center; }
 
 @media (max-width: 900px) {
-    .detalle { grid-template-columns: 1fr; }
+    .detalle { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -649,8 +655,10 @@ textarea[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(-
 .nota-privada svg { width: 18px; height: 18px; flex: none; margin-top: .2rem; color: var(--principal-oscuro); }
 
 @media (max-width: 900px) {
-    .panel { grid-template-columns: 1fr; }
+    /* minmax(0, 1fr): sin esto una tabla ancha estira la columna más allá de la pantalla. */
+    .panel { grid-template-columns: minmax(0, 1fr); }
 }
+.panel > div, .detalle > div { min-width: 0; grid-template-columns: minmax(0, 1fr); }
 
 /* --- Estados de solicitud: siempre ícono + texto --- */
 
@@ -738,7 +746,9 @@ textarea[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(-
 
 /* --- Detalle de solicitud --- */
 
-.tabla-scroll { overflow-x: auto; }
+/* position: relative hace que los textos ocultos (absolute) queden contenidos y no
+   estiren la página en horizontal en pantallas chicas. */
+.tabla-scroll { overflow-x: auto; position: relative; -webkit-overflow-scrolling: touch; }
 .tabla-scroll:focus-visible { outline-offset: 0; }
 .tabla-recursos td .detalle-recurso { display: block; color: var(--texto-suave); font-size: .9rem; }
 

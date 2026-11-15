@@ -19,12 +19,16 @@
     const zona = document.getElementById("ZonaId");
     const botonUbicacion = document.getElementById("usar-mi-ubicacion");
 
-    // Centro por defecto: el de la zona elegida y, si no hay, el centro del país.
+    // Centro por defecto: el de la zona elegida; si todavía no hay zona, el de la primera
+    // zona de la lista con coordenadas (así el mapa abre en la ciudad y no en todo el país).
     function centroDeZona() {
-        if (!zona || !zona.selectedOptions.length) return null;
-        const o = zona.selectedOptions[0];
-        const lat = parseFloat(o.dataset.lat), lon = parseFloat(o.dataset.lon);
-        return Number.isFinite(lat) && Number.isFinite(lon) ? [lat, lon] : null;
+        if (!zona) return null;
+        const opciones = [...zona.selectedOptions, ...zona.options];
+        for (const o of opciones) {
+            const lat = parseFloat(o.dataset.lat), lon = parseFloat(o.dataset.lon);
+            if (Number.isFinite(lat) && Number.isFinite(lon)) return [lat, lon];
+        }
+        return null;
     }
 
     function valorActual() {

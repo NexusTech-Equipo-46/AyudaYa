@@ -20,7 +20,7 @@
         <div>
             <h1>@titulo</h1>
             <p class="meta">@Model.ZonaNombre, @Model.CiudadNombre · @Formato.Plural(Model.Personas, "persona", "personas")</p>
-            <p class="meta">Tomada @Formato.FechaHora(Model.AsignadaAt) por @Model.AsignadaPor@(enOrganizacion ? "" : "")</p>
+            <p class="meta">Tomada @Formato.FechaHora(Model.AsignadaAt) por @Model.AsignadaPor</p>
         </div>
         <div class="insignias">
             <partial name="_InsigniaAsignacion" model="Model.Estado" />
@@ -33,7 +33,7 @@
             @switch (Model.Estado)
             {
                 case "asignada":
-                    <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>Asignada.</strong> Comunicate con @quien y, cuando empieces, tocá “Empezar la atención”.</p></div>
+                    <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>Asignada.</strong> Comunicate con @quien y, cuando empieces, tocá “@(enOrganizacion ? "Empezar la atención" : "Iniciar atención")”.</p></div>
                     break;
                 case "en_atencion":
                     <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>En atención.</strong> Cuando termines, marcala como completada.</p></div>
