@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+.vscode/
+.idea/
+AyudaYa.Tests/
+docs/
+scripts/
+database/
+*.md
+**/*.user
+**/appsettings.Development.json

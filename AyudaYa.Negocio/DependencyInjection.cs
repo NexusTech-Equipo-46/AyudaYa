@@ -1,6 +1,7 @@
 using AyudaYa.Data;
 using AyudaYa.Negocio.Identity;
 using AyudaYa.Negocio.Servicios;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -84,6 +85,15 @@ public static class DependencyInjection
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = true;
         });
+
+        // En contenedores sin disco persistente, las claves de cookies y tokens se
+        // guardan en la base para que un reinicio no cierre todas las sesiones.
+        if (configuration.GetValue<bool>("DataProtection:PersistirEnBase"))
+        {
+            services.AddDataProtection()
+                .SetApplicationName("AyudaYa")
+                .PersistKeysToDbContext<AyudaYaDbContext>();
+        }
 
         services.AddMemoryCache();
 

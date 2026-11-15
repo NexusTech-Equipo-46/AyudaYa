@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Threading.RateLimiting;
 using AyudaYa.Negocio;
 using AyudaYa.Negocio.Servicios;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 
 // Cultura invariante para interpretar números y coordenadas: los campos
@@ -41,7 +42,26 @@ builder.Services.AddRateLimiter(opciones =>
             }));
 });
 
+// Detrás de un proxy inverso (hosting en la nube) el TLS lo termina el proxy:
+// sin esto la app ve http y arma mal los enlaces de los correos y las cookies.
+// Solo se activa con ForwardedHeaders:Habilitar = true.
+if (builder.Configuration.GetValue<bool>("ForwardedHeaders:Habilitar"))
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(opciones =>
+    {
+        opciones.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        // El contenedor solo es alcanzable a través del proxy del proveedor.
+        opciones.KnownIPNetworks.Clear();
+        opciones.KnownProxies.Clear();
+    });
+}
+
 var app = builder.Build();
+
+if (builder.Configuration.GetValue<bool>("ForwardedHeaders:Habilitar"))
+{
+    app.UseForwardedHeaders();
+}
 
 if (!app.Environment.IsDevelopment())
 {
