@@ -1,4 +1,4 @@
-# Imagen de AyudaYa para hosting en contenedor (por ejemplo Hugging Face Spaces).
+# Imagen de AyudaYa para hosting en contenedor (por ejemplo Render).
 # Solo compila la web y sus dependencias; las pruebas, la documentación y los
 # scripts no entran (ver .dockerignore).
 
@@ -21,16 +21,16 @@ RUN dotnet publish AyudaYa.Web/AyudaYa.Web.csproj -c Release -o /out --no-restor
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-# Hugging Face Spaces ejecuta el contenedor con el usuario 1000 y escucha en 7860.
-RUN useradd --create-home --uid 1000 ayudaya
 COPY --from=build /out .
-USER 1000
 
-ENV ASPNETCORE_URLS=http://+:7860 \
+# La imagen de .NET ya trae un usuario sin privilegios (APP_UID): no se corre como root.
+USER $APP_UID
+
+ENV ASPNETCORE_URLS=http://+:10000 \
     ASPNETCORE_ENVIRONMENT=Production \
     DOTNET_gcServer=0 \
     DOTNET_TieredPGO=0
-EXPOSE 7860
+EXPOSE 10000
 
 # La configuración (conexión a la base, etc.) llega por variables de entorno:
 #   ConnectionStrings__AyudaYa, ForwardedHeaders__Habilitar=true,
