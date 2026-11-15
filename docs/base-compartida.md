@@ -39,3 +39,12 @@ La base compartida ya tiene una ciudad con zonas, organizaciones, centros, perso
 
 - Consola: <https://console.neon.tech> con la cuenta de Google que la creó.
 - Para rotar la contraseña del rol de la app: `ALTER ROLE ayudaya_app PASSWORD '...'` y pasar la cadena nueva al equipo.
+
+## App en la nube (Render, plan gratuito)
+
+La rama `leo_pruebas` está desplegada en **https://ayudaya.onrender.com** y usa esta misma base de Neon.
+
+- Se **duerme tras 15 minutos sin visitas**: la primera visita tarda cerca de 1 minuto en despertarla.
+- Render construye con el `Dockerfile` del repositorio. Al ser un repositorio público sin conexión a GitHub, **no redespliega solo**: después de subir cambios hay que entrar a Render → *Manual Deploy* → *Deploy latest commit*.
+- La configuración (conexión a la base, `ForwardedHeaders__Habilitar`, `DataProtection__PersistirEnBase`) está en las variables de entorno del servicio. No se carga ninguna tarjeta, así que no hay forma de que cobre.
+- Para que el equipo vea los mismos datos de ejemplo, sus usuarios son los mismos que en la base local compartida.
