@@ -9,25 +9,34 @@ namespace AyudaYa.Web.Controllers;
 public sealed class CentrosController : Controller
 {
     private readonly CentrosPublicosAppService _centros;
+    private readonly ILogger<CentrosController> _logger;
 
-    public CentrosController(CentrosPublicosAppService centros)
+    public CentrosController(CentrosPublicosAppService centros, ILogger<CentrosController> logger)
     {
         _centros = centros;
+        _logger = logger;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        return View("Ejemplos");
+        try
+        {
+            var centros = await _centros.ObtenerTodosAsync(cancellationToken);
+            var tiposRecurso = await _centros.ObtenerTiposRecursoAsync(cancellationToken);
+            return View(new MapaCentrosViewModel { Centros = centros, TiposRecurso = tiposRecurso });
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "No se pudieron cargar los centros públicos.");
+            Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            return View(new MapaCentrosViewModel { ErrorCarga = true });
+        }
     }
 
     public IActionResult Ejemplo() => View();
 
-    // La lista conectada a la base se conserva mientras /Centros muestra la demo.
-    public async Task<IActionResult> Reales(CancellationToken cancellationToken)
-    {
-        var centros = await _centros.ObtenerTodosAsync(cancellationToken);
-        return View("Index", centros);
-    }
+    // Conserva los enlaces anteriores mientras la ruta principal muestra datos reales.
+    public IActionResult Reales() => LocalRedirect(Url.Action(nameof(Index))! + Request.QueryString);
 
     public async Task<IActionResult> Detalle(
         Guid id, CancellationToken cancellationToken)

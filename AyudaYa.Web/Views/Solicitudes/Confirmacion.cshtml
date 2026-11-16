@@ -1,0 +1,28 @@
+@model string
+@{
+    Layout = "_UsuarioLayout";
+    ViewData["Title"] = "Solicitud registrada";
+}
+
+<div class="contenedor">
+    <div class="formulario-solicitud" style="margin-top:1.5rem">
+        <div class="alerta alerta-exito" style="margin-bottom:1.5rem" role="status">
+            <div>
+                <h1 style="font-size:1.75rem">Recibimos tu solicitud</h1>
+                <p>Se registró con estado inicial <strong>Pendiente</strong>.</p>
+            </div>
+        </div>
+        <section class="tarjeta" aria-labelledby="t-resumen">
+            <h2 id="t-resumen">Tu solicitud</h2>
+            <p>Identificador: <strong>@Model</strong></p>
+            <p>Guardá este identificador para consultar el pedido durante las pruebas.</p>
+        </section>
+        <div class="alerta alerta-info">
+            <p>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</p>
+        </div>
+        <div class="acciones">
+            <a class="boton" asp-controller="Solicitudes" asp-action="Nueva">Crear otra solicitud</a>
+            <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Volver al panel</a>
+        </div>
+    </div>
+</div>

@@ -90,6 +90,12 @@ public sealed record CrearSolicitudRequest(
     double? Longitud,
     IReadOnlyList<RecursoSolicitadoRequest> Recursos);
 
+    public sealed record ZonaParaSolicitud(Guid Id, Guid CiudadId, string Nombre);
+    public sealed record TipoRecursoParaSolicitud(Guid Id, string Nombre);
+    public sealed record OpcionesNuevaSolicitud(
+    IReadOnlyList<ZonaParaSolicitud> Zonas,
+    IReadOnlyList<TipoRecursoParaSolicitud> TiposRecurso);
+
 /// <summary>
 /// Reglas de negocio de las solicitudes: creación, asignación, cancelación y
 /// acceso a la ubicación exacta.
@@ -130,6 +136,28 @@ public sealed class SolicitudAppService
     {
         _db = db;
         _userManager = userManager;
+    }
+
+        public async Task<OpcionesNuevaSolicitud> ObtenerOpcionesNuevaAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var zonas = await _db.Zona
+            .AsNoTracking()
+            .Where(z => z.Activa && z.Ciudad.Activa)
+            .OrderBy(z => z.Ciudad.Nombre)
+            .ThenBy(z => z.Nombre)
+            .Select(z => new ZonaParaSolicitud(
+                z.Id, z.CiudadId, z.Ciudad.Nombre + " / " + z.Nombre))
+            .ToListAsync(cancellationToken);
+
+        var tiposRecurso = await _db.TipoRecurso
+            .AsNoTracking()
+            .Where(r => r.Activo)
+            .OrderBy(r => r.Nombre)
+            .Select(r => new TipoRecursoParaSolicitud(r.Id, r.Nombre))
+            .ToListAsync(cancellationToken);
+
+        return new OpcionesNuevaSolicitud(zonas, tiposRecurso);
     }
 
     /// <summary>

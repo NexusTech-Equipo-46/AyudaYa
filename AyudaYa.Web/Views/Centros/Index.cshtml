@@ -1,60 +1,87 @@
-@model List<AyudaYa.Negocio.Servicios.CentroPublicoDto>
+@model MapaCentrosViewModel
 @using System.Text.Json
-
 @{
-    ViewData["Title"] = "Centros de asistencia";
+    Layout = "_VisitanteLayout";
+    ViewData["Title"] = "Mapa de centros";
+    ViewData["UsaScriptsPrototipo"] = !Model.ErrorCarga;
+    ViewData["MapaActual"] = true;
+    var codigosOfrecidos = Model.Centros.SelectMany(c => c.Recursos.Keys).ToHashSet();
+    var datosMapa = new
+    {
+        centros = Model.Centros.Select(c => new
+        {
+            id = c.Id,
+            nombre = c.Nombre,
+            ciudad_nombre = c.Ciudad,
+            zona_id = c.ZonaId,
+            zona_nombre = c.Zona,
+            tipo_centro_codigo = c.TipoCodigo,
+            tipo_centro_nombre = c.TipoNombre,
+            direccion = c.Direccion,
+            latitud = c.Latitud is double lat && double.IsFinite(lat) && lat is >= -90 and <= 90 ? lat : (double?)null,
+            longitud = c.Longitud is double lon && double.IsFinite(lon) && lon is >= -180 and <= 180 ? lon : (double?)null,
+            estado_operativo = c.EstadoOperativo,
+            recursos_actualizado_at = c.RecursosActualizadoAt,
+            recursos = c.Recursos
+        }),
+        tiposRecurso = Model.TiposRecurso.Where(t => t.Activo || codigosOfrecidos.Contains(t.Codigo))
+            .Select(t => new { codigo = t.Codigo, nombre = t.Nombre })
+    };
 }
-
-<link rel="stylesheet" href="~/css/centros.css" asp-append-version="true" />
-
-<div class="centros-pagina">
-    <header class="centros-encabezado">
-        <h1>Centros de asistencia</h1>
-        <p>Buscá un centro por nombre, dirección, zona, tipo o recurso.</p>
-        <p>La disponibilidad la informan los centros. Si los datos no son recientes, llamá antes de ir.</p>
-    </header>
-
-    <section class="centros-filtros" aria-label="Filtros de búsqueda">
-        <div class="centros-campo centros-campo-busqueda">
-            <label for="buscar">Buscar por nombre o dirección</label>
-            <input id="buscar" type="search" autocomplete="off" />
+@section Head {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@@1.9.4/dist/leaflet.css" crossorigin="">
+}
+<div class="pagina-mapa">
+    <div class="contenedor">
+        <h1>Centros de ayuda<span id="nombre-ciudad"></span></h1>
+        <p class="introduccion texto-suave">Solo se muestran centros verificados de organizaciones activas. La disponibilidad la cargan los propios centros: si se actualizó hace mucho, llamá antes de ir.</p>
+        @if (Model.ErrorCarga)
+        {
+            <div class="alerta alerta-peligro" role="alert"><p>No pudimos cargar los centros en este momento. Intentá nuevamente más tarde.</p></div>
+        }
+        else
+        {
+        <div class="alerta alerta-advertencia" id="filtro-invalido" role="status" hidden><p>Algunos filtros del enlace no están disponibles y se quitaron.</p></div>
+        <details class="panel-filtros" id="panel-filtros" open>
+            <summary>Filtros <span id="filtros-activos"></span></summary>
+            <form class="filtros" id="filtros" role="search" aria-label="Filtrar centros">
+                <div class="campo campo-busqueda"><label for="f-buscar">Buscar por nombre o dirección</label><input type="search" id="f-buscar" name="q" autocomplete="off"></div>
+                <div class="campo"><label for="f-zona">Zona</label><select id="f-zona" name="zona"><option value="">Todas las zonas</option></select></div>
+                <div class="campo"><label for="f-tipo">Tipo de centro</label><select id="f-tipo" name="tipo"><option value="">Todos los tipos</option></select></div>
+                <div class="campo"><label for="f-recurso">Recurso que necesitás</label><select id="f-recurso" name="recurso" aria-describedby="ayuda-recurso"><option value="">Cualquier recurso</option></select></div>
+                <div class="filtros-extra">
+                    <label class="check"><input type="checkbox" id="f-abiertos" name="abiertos" value="1"> Ocultar centros cerrados temporalmente</label>
+                    <span id="ayuda-recurso" class="texto-suave">Con un recurso elegido, solo aparecen los centros que lo tienen disponible.</span>
+                    <button type="reset" class="boton-texto">Limpiar filtros</button>
+                </div>
+            </form>
+        </details>
+        <div class="barra-resultados">
+            <p id="cantidad" role="status" aria-live="polite"></p>
+            <div class="selector-vista" role="group" aria-label="Forma de ver los resultados"><button type="button" data-vista="lista" aria-pressed="true">Lista</button><button type="button" data-vista="mapa" aria-pressed="false">Mapa</button></div>
         </div>
-        <div class="centros-campo">
-            <label for="zona">Zona</label>
-            <select id="zona"><option value="">Todas las zonas</option></select>
-        </div>
-        <div class="centros-campo">
-            <label for="tipo">Tipo de centro</label>
-            <select id="tipo"><option value="">Todos los tipos</option></select>
-        </div>
-        <div class="centros-campo">
-            <label for="recurso">Recurso que necesitás</label>
-            <select id="recurso"><option value="">Todos los recursos</option></select>
-        </div>
-        <div class="centros-acciones-filtros">
-            <button type="button" id="limpiar-filtros" class="centros-boton-secundario">Limpiar filtros</button>
-        </div>
-    </section>
-
-    <p id="cantidad" class="centros-cantidad" role="status" aria-live="polite"></p>
-    <div class="centros-resultados">
-        <section aria-label="Lista de centros">
-            <ul id="lista-centros" class="centros-lista"></ul>
-            <div id="sin-resultados" class="centros-vacio" hidden>
-                <h2>No hay centros que coincidan con la búsqueda</h2>
-                <p>Probá con otra zona o quitá algún filtro.</p>
+        <div class="resultados" id="resultados" data-vista="lista">
+            <div>
+                <h2 class="visualmente-oculto">Lista de centros</h2>
+                <ul class="lista-centros" id="lista-centros"></ul>
+                <div class="tarjeta sin-resultados" id="sin-resultados" hidden><h3 id="titulo-sin-resultados">No hay centros con esos filtros</h3><p id="texto-sin-resultados">Probá con otra zona o quitá algún filtro.</p><button type="button" class="boton boton-secundario" id="limpiar-vacio">Limpiar filtros</button></div>
             </div>
-        </section>
-        <section class="centros-mapa-panel" aria-label="Mapa de centros de asistencia">
-            <h2>Mapa de centros</h2>
-            <div id="mapa"></div>
-        </section>
+            <section class="zona-mapa" aria-labelledby="titulo-mapa">
+                <h2 id="titulo-mapa" class="visualmente-oculto">Mapa de centros</h2>
+                <div id="mapa"></div>
+                <p class="texto-suave" id="mapa-error" role="status" hidden>No se pudo cargar el mapa. Podés consultar la lista de centros.</p>
+                <p class="nota-mapa" id="nota-mapa">Con teclado: <kbd>Tab</kbd> recorre los marcadores y <kbd>Enter</kbd> abre la información del centro. La lista muestra lo mismo que el mapa.</p>
+            </section>
+        </div>
+        <script id="datos-centros" type="application/json" data-url-detalle="@Url.Action("Detalle", "Centros")">@Html.Raw(JsonSerializer.Serialize(datosMapa))</script>
+        }
     </div>
 </div>
-
-<!-- El codificador predeterminado escapa los caracteres HTML sensibles. -->
-<script id="datos-centros" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model))</script>
-
 @section Scripts {
+    @if (!Model.ErrorCarga)
+    {
+    <script src="https://unpkg.com/leaflet@@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="~/js/demo/comun.js" asp-append-version="true"></script>
     <script src="~/js/centros-mapa.js" asp-append-version="true"></script>
+    }
 }
