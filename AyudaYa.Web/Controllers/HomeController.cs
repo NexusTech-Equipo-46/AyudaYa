@@ -1,24 +1,55 @@
 using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+using AyudaYa.Negocio.Servicios;
 using AyudaYa.Web.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AyudaYa.Web.Controllers;
 
-public class HomeController : Controller
+[AllowAnonymous]
+public sealed class HomeController : Controller
 {
-    public IActionResult Index()
+    private readonly CentrosPublicosAppService _centros;
+    private readonly ILogger<HomeController> _logger;
+
+    public HomeController(CentrosPublicosAppService centros, ILogger<HomeController> logger)
     {
-        return View();
+        _centros = centros;
+        _logger = logger;
     }
 
-    public IActionResult Privacy()
+    public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        return View();
+        try
+        {
+            var centros = await _centros.ObtenerTodosAsync(cancellationToken);
+            return View(new InicioViewModel
+            {
+                CentrosRecientes = centros
+                    .Where(c => c.EstadoOperativo != "cerrado" && c.RecursosActualizadoAt.HasValue)
+                    .OrderByDescending(c => c.RecursosActualizadoAt)
+                    .Take(3)
+                    .ToList()
+            });
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "No se pudieron cargar los centros recientes en el inicio.");
+            return View(new InicioViewModel { CentrosNoDisponibles = true });
+        }
     }
+
+    public IActionResult Privacy() => View();
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
+    public IActionResult Error(int? codigo)
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        var estado = codigo is >= 400 and < 600 ? codigo.Value : 500;
+        Response.StatusCode = estado;
+        return View(new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+            Codigo = estado
+        });
     }
 }

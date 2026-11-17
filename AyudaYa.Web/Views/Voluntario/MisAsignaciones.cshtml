@@ -1,0 +1,54 @@
+@model ListaAsignacionesViewModel
+@using AyudaYa.Web.Models.Voluntario
+@{
+    ViewData["Title"] = "Mis asignaciones";
+    ViewData["ClaseMain"] = "pagina-voluntario";
+    var datosTarjeta = new ViewDataDictionary(ViewData) { ["Controlador"] = "Voluntario" };
+    var sufijo = Model.Filtro switch { "activas" => " activas", "terminadas" => " completadas", "sin_completar" => " sin completar", _ => "" };
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Mis asignaciones</h1>
+            <p class="texto-suave">Todo lo que tomaste, con lo que tenés que hacer en cada caso.</p>
+        </div>
+        <a class="boton" asp-action="Panel" asp-fragment="titulo-disponibles">Tomar otra solicitud</a>
+    </div>
+
+    <div class="barra-resultados">
+        <p role="status" aria-live="polite">@Formato.Plural(Model.Asignaciones.Count, "asignación", "asignaciones")@sufijo</p>
+        <form method="get" class="filtro-estado" role="group" aria-label="Filtrar por estado">
+            <button type="submit" name="estado" value="todas" aria-pressed="@(Model.Filtro == "todas" ? "true" : "false")">Todas</button>
+            <button type="submit" name="estado" value="activas" aria-pressed="@(Model.Filtro == "activas" ? "true" : "false")">Activas</button>
+            <button type="submit" name="estado" value="terminadas" aria-pressed="@(Model.Filtro == "terminadas" ? "true" : "false")">Completadas</button>
+            <button type="submit" name="estado" value="sin_completar" aria-pressed="@(Model.Filtro == "sin_completar" ? "true" : "false")">Sin completar</button>
+        </form>
+    </div>
+
+    <h2 class="visualmente-oculto">Lista de asignaciones</h2>
+    @if (Model.Asignaciones.Count > 0)
+    {
+        <ul class="lista-tarjetas">
+            @foreach (var asignacion in Model.Asignaciones)
+            {
+                <li><partial name="_TarjetaAsignacion" model="asignacion" view-data="datosTarjeta" /></li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="tarjeta estado-vacio">
+            @if (Model.Total == 0)
+            {
+                <h3>Todavía no tomaste ninguna solicitud</h3>
+                <p>Mirá las solicitudes disponibles en tu zona y tomá la que puedas atender.</p>
+                <div class="acciones"><a class="boton" asp-action="Panel" asp-fragment="titulo-disponibles">Ver solicitudes disponibles</a></div>
+            }
+            else
+            {
+                <h3>No hay asignaciones@(sufijo)</h3>
+                <p>Probá con otro filtro.</p>
+            }
+        </div>
+    }
+</div>

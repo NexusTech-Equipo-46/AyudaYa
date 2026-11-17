@@ -1,0 +1,46 @@
+@model PanelAdminDto
+@{
+    ViewData["Title"] = "Administración";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    ViewData["Seccion"] = "panel";
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Administración</h1>
+            <p class="texto-suave">Aprobaciones pendientes y estado general de la red.</p>
+        </div>
+    </div>
+    <partial name="_SubnavAdmin" />
+
+    <div class="panel">
+        <div>
+            <section class="tarjeta" aria-labelledby="t-pendientes">
+                <h2 id="t-pendientes">Para revisar</h2>
+                <ul class="lista-simple" style="list-style:none;padding:0">
+                    <li style="margin-bottom:.75rem">
+                        <a asp-action="Organizaciones" asp-route-estado="pendiente"><strong>@Formato.Plural(Model.OrganizacionesPendientes, "organización pendiente", "organizaciones pendientes")</strong></a>
+                    </li>
+                    <li style="margin-bottom:.75rem">
+                        <a asp-action="Centros" asp-route-estado="pendiente"><strong>@Formato.Plural(Model.CentrosPendientes, "centro pendiente", "centros pendientes")</strong></a>
+                    </li>
+                    <li>
+                        <a asp-action="Solicitudes"><strong>@Formato.Plural(Model.SolicitudesAbiertas, "solicitud abierta", "solicitudes abiertas")</strong></a>
+                        @if (Model.SolicitudesCriticas > 0) { <span class="insignia urgencia-critica">@Iconos.Exclamacion @Model.SolicitudesCriticas críticas</span> }
+                    </li>
+                </ul>
+            </section>
+        </div>
+        <div>
+            <section class="tarjeta" aria-labelledby="t-resumen">
+                <h2 id="t-resumen">Red</h2>
+                <dl class="resumen">
+                    <div><dt>Usuarios activos</dt><dd>@Model.UsuariosActivos</dd></div>
+                    <div><dt>Voluntarios</dt><dd>@Model.VoluntariosActivos</dd></div>
+                    <div><dt>Ciudades activas</dt><dd>@Model.CiudadesActivas</dd></div>
+                    <div><dt>Solicitudes abiertas</dt><dd>@Model.SolicitudesAbiertas</dd></div>
+                </dl>
+            </section>
+        </div>
+    </div>
+</div>

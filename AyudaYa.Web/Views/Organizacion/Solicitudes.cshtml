@@ -1,0 +1,39 @@
+@model SolicitudesOrganizacionViewModel
+@using AyudaYa.Web.Models.Organizacion
+@{
+    ViewData["Title"] = "Solicitudes disponibles";
+    ViewData["ClaseMain"] = "pagina-voluntario";
+    ViewData["Seccion"] = "solicitudes";
+    var datosTarjeta = new ViewDataDictionary(ViewData)
+    {
+        ["Controlador"] = "Organizacion",
+        ["OrganizacionId"] = Model.Contexto.OrganizacionId,
+        ["PuedeTomar"] = Model.Contexto.EstaActiva
+    };
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1 id="titulo-disponibles">Solicitudes disponibles</h1>
+            <p class="texto-suave">Pedidos con recursos pendientes en @Model.Organizacion.CiudadNombre. Los críticos van primero. La dirección y el teléfono se ven recién al tomar el recurso.</p>
+        </div>
+    </div>
+    <partial name="_SubnavOrganizacion" model="Model.Contexto" view-data="ViewData" />
+
+    @if (Model.Disponibles.Count > 0)
+    {
+        <ul class="lista-tarjetas">
+            @foreach (var solicitud in Model.Disponibles)
+            {
+                <li><partial name="_TarjetaDisponible" model="solicitud" view-data="datosTarjeta" /></li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="tarjeta estado-vacio">
+            <h3>No hay solicitudes para tomar</h3>
+            <p>Por ahora no hay pedidos pendientes en la ciudad. Volvé a revisar más tarde.</p>
+        </div>
+    }
+</div>

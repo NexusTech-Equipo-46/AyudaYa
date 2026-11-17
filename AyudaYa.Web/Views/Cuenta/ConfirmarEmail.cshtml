@@ -1,0 +1,25 @@
+@model ConfirmarEmailViewModel
+@{
+    ViewData["Title"] = "Confirmar correo";
+}
+<div class="pagina-cuenta">
+    <div class="contenedor">
+        <div class="tarjeta">
+            <h1>Confirmar correo</h1>
+            @if (Model.Exito)
+            {
+                <div class="alerta alerta-exito" role="status">@Iconos.AlertaOk<p>@Model.Mensaje</p></div>
+                <div class="acciones" style="margin-top:0">
+                    <a class="boton" asp-controller="Panel" asp-action="Index">Ir a mi panel</a>
+                </div>
+            }
+            else
+            {
+                <div class="alerta alerta-peligro" role="alert">@Iconos.AlertaPeligro<p>@Model.Mensaje</p></div>
+                <div class="acciones" style="margin-top:0">
+                    <a class="boton" asp-controller="Cuenta" asp-action="Perfil">Pedir un enlace nuevo</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

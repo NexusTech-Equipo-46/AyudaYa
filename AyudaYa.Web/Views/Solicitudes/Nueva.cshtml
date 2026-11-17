@@ -1,0 +1,183 @@
+@model NuevaSolicitudViewModel
+@using AyudaYa.Web.Models.Solicitudes
+@{
+    ViewData["Title"] = "Pedir ayuda";
+    ViewData["ClaseMain"] = "pagina-usuario";
+}
+@section Head {
+    <link rel="stylesheet" href="~/lib/leaflet/leaflet.css">
+}
+<div class="contenedor">
+    <nav class="migas" aria-label="Estás en">
+        <ol>
+            <li><a asp-controller="Panel" asp-action="Index">Panel</a></li>
+            <li><a asp-action="Nueva" aria-current="page">Pedir ayuda</a></li>
+        </ol>
+    </nav>
+
+    <div class="formulario-solicitud">
+        <h1>Pedir ayuda</h1>
+        <p class="texto-suave">Contanos qué necesitás. Un voluntario o una organización de tu zona va a tomar tu pedido.</p>
+
+        <div class="alerta alerta-advertencia" style="margin-bottom:1.5rem">
+            @Iconos.AlertaPeligro
+            <p><strong>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</strong> AyudaYa no reemplaza a los servicios de emergencia.</p>
+        </div>
+
+        <partial name="_ResumenErrores" />
+
+        <form asp-action="Nueva" method="post" novalidate>
+            <section class="tarjeta" aria-labelledby="t-situacion">
+                <h2 id="t-situacion">1. Tu situación</h2>
+
+                @if (Model.Ciudades.Count > 1)
+                {
+                    <div class="campo">
+                        <label asp-for="CiudadId">Ciudad</label>
+                        <select asp-for="CiudadId" required>
+                            <option value="">Elegí una ciudad</option>
+                            @foreach (var ciudad in Model.Ciudades)
+                            {
+                                <option value="@ciudad.Id" selected="@(ciudad.Id == Model.CiudadId)">@ciudad.Nombre, @ciudad.Provincia</option>
+                            }
+                        </select>
+                        <span asp-validation-for="CiudadId" class="error-campo"></span>
+                    </div>
+                }
+                else
+                {
+                    <input type="hidden" asp-for="CiudadId" />
+                }
+
+                <div class="campo">
+                    <label asp-for="ZonaId">Zona donde estás</label>
+                    @if (Model.Ciudades.Count == 1)
+                    {
+                        <span class="ayuda">Ciudad: @Model.Ciudades[0].Nombre</span>
+                    }
+                    <select asp-for="ZonaId" required>
+                        <option value="">Elegí una zona</option>
+                        @foreach (var zona in Model.Zonas)
+                        {
+                            <option value="@zona.Id" data-ciudad="@zona.CiudadId" data-lat="@(zona.LatitudCentro is double la ? Formato.Decimal(la) : "")" data-lon="@(zona.LongitudCentro is double lo ? Formato.Decimal(lo) : "")" selected="@(zona.Id == Model.ZonaId)">@zona.Nombre</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ZonaId" class="error-campo"></span>
+                </div>
+
+                <fieldset class="grupo" aria-describedby="ayuda-urgencia">
+                    <legend>Urgencia</legend>
+                    <span class="ayuda" id="ayuda-urgencia">Marcá “Crítica” solo si la situación no puede esperar. Se atienden primero.</span>
+                    <div class="opciones-radio">
+                        <label class="opcion">
+                            <input type="radio" name="Urgencia" value="normal" checked="@(Model.Urgencia != "critica")">
+                            <span><strong>Normal</strong><small>Necesito ayuda, pero puedo esperar unas horas.</small></span>
+                        </label>
+                        <label class="opcion">
+                            <input type="radio" name="Urgencia" value="critica" checked="@(Model.Urgencia == "critica")">
+                            <span><strong>Crítica</strong><small>Es grave o no puede esperar.</small></span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <div class="campo">
+                    <label asp-for="PersonasAfectadas">Personas afectadas</label>
+                    <span class="ayuda" id="ayuda-personas">Contate a vos también.</span>
+                    <input asp-for="PersonasAfectadas" type="number" min="1" step="1" inputmode="numeric" required aria-describedby="ayuda-personas" />
+                    <span asp-validation-for="PersonasAfectadas" class="error-campo"></span>
+                </div>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-recursos">
+                <h2 id="t-recursos">2. Qué necesitás</h2>
+                <fieldset class="grupo" id="Recursos" tabindex="-1" aria-describedby="ayuda-recursos">
+                    <legend class="visualmente-oculto">Recursos que necesitás</legend>
+                    <span class="ayuda" id="ayuda-recursos">Elegí uno o más. Para cada uno, indicá cuántas personas lo necesitan.</span>
+                    <span asp-validation-for="Recursos" class="error-campo"></span>
+                    <div class="recursos-lista" id="recursos-lista">
+                        @for (var i = 0; i < Model.Recursos.Count; i++)
+                        {
+                            <div class="recurso-opcion">
+                                <input type="hidden" asp-for="Recursos[i].TipoRecursoId" />
+                                <label class="check"><input type="checkbox" asp-for="Recursos[i].Seleccionado" data-recurso-casilla> @Model.Recursos[i].Nombre</label>
+                                <div class="recurso-datos" data-recurso-datos>
+                                    <div class="campo">
+                                        <label asp-for="Recursos[i].Personas">Personas que lo necesitan</label>
+                                        <input asp-for="Recursos[i].Personas" type="number" min="1" step="1" inputmode="numeric" />
+                                        <span asp-validation-for="Recursos[i].Personas" class="error-campo"></span>
+                                    </div>
+                                    <div class="campo">
+                                        <label asp-for="Recursos[i].Detalle">Detalle <span class="opcional">(opcional)</span></label>
+                                        <input asp-for="Recursos[i].Detalle" type="text" maxlength="200" />
+                                        <span asp-validation-for="Recursos[i].Detalle" class="error-campo"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </fieldset>
+
+                <div class="campo">
+                    <label asp-for="Descripcion">Descripción <span class="opcional">(opcional)</span></label>
+                    <span class="ayuda" id="ayuda-descripcion">Otras personas con cuenta pueden leer esto. No escribas tu dirección ni tu teléfono: van en el siguiente paso.</span>
+                    <textarea asp-for="Descripcion" rows="4" maxlength="500" aria-describedby="ayuda-descripcion"></textarea>
+                    <span asp-validation-for="Descripcion" class="error-campo"></span>
+                </div>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-contacto">
+                <h2 id="t-contacto">3. Cómo ubicarte</h2>
+                <p class="nota-privada">
+                    @Iconos.Candado
+                    <span>Tu dirección, tu teléfono y el punto exacto del mapa solo los ven quienes te asistan y el equipo administrador. No se muestran en listados ni en el mapa público.</span>
+                </p>
+
+                <div class="campo">
+                    <label asp-for="Direccion">Dirección exacta</label>
+                    <span class="ayuda" id="ayuda-direccion">Calle, número y referencias para encontrarte.</span>
+                    <input asp-for="Direccion" type="text" autocomplete="street-address" maxlength="200" required aria-describedby="ayuda-direccion" />
+                    <span asp-validation-for="Direccion" class="error-campo"></span>
+                </div>
+
+                <div class="campo">
+                    <label asp-for="Telefono">Teléfono de contacto</label>
+                    <span class="ayuda" id="ayuda-telefono">Con característica, por ejemplo 011 5555-0123.</span>
+                    <input asp-for="Telefono" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" required aria-describedby="ayuda-telefono" />
+                    <span asp-validation-for="Telefono" class="error-campo"></span>
+                </div>
+
+                <fieldset class="grupo selector-ubicacion" aria-describedby="ayuda-ubicacion">
+                    <legend>Ubicación en el mapa</legend>
+                    <span class="ayuda" id="ayuda-ubicacion">Tocá el mapa donde estás o arrastrá el marcador. También podés usar tu ubicación actual.</span>
+                    <div id="selector-mapa" class="selector-mapa" role="application" aria-label="Mapa para elegir tu ubicación"></div>
+                    <div class="acciones" style="margin-top:.5rem">
+                        <button type="button" class="boton boton-secundario" id="usar-mi-ubicacion" hidden>Usar mi ubicación</button>
+                    </div>
+                    <div class="coordenadas">
+                        <div class="campo">
+                            <label asp-for="Latitud">Latitud</label>
+                            <input asp-for="Latitud" type="number" step="any" inputmode="decimal" />
+                            <span asp-validation-for="Latitud" class="error-campo"></span>
+                        </div>
+                        <div class="campo">
+                            <label asp-for="Longitud">Longitud</label>
+                            <input asp-for="Longitud" type="number" step="any" inputmode="decimal" />
+                            <span asp-validation-for="Longitud" class="error-campo"></span>
+                        </div>
+                    </div>
+                </fieldset>
+            </section>
+
+            <div class="acciones">
+                <button type="submit" class="boton">Enviar solicitud</button>
+                <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/lib/leaflet/leaflet.js"></script>
+    <script src="~/js/mapa-comun.js" asp-append-version="true"></script>
+    <script src="~/js/selector-ubicacion.js" asp-append-version="true"></script>
+    <script src="~/js/solicitud-nueva.js" asp-append-version="true"></script>
+}

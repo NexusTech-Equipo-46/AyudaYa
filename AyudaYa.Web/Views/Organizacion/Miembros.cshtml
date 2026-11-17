@@ -1,0 +1,114 @@
+@model MiembrosViewModel
+@using AyudaYa.Web.Models.Organizacion
+@{
+    ViewData["Title"] = "Miembros";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    ViewData["Seccion"] = "miembros";
+    var org = Model.Contexto.OrganizacionId;
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Miembros</h1>
+            <p class="texto-suave">Quiénes pueden actuar en nombre de la organización. Las bajas no borran a nadie: quedan con motivo y fecha.</p>
+        </div>
+    </div>
+    <partial name="_SubnavOrganizacion" model="Model.Contexto" view-data="ViewData" />
+
+    <div class="panel">
+        <div>
+            <section class="tarjeta" aria-labelledby="t-miembros">
+                <h2 id="t-miembros">Equipo</h2>
+                <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="t-miembros">
+                    <table class="tabla-recursos">
+                        <thead><tr><th scope="col">Persona</th><th scope="col">Rol</th><th scope="col">Estado</th>@if (Model.Contexto.EsResponsable) { <th scope="col">Acción</th> }</tr></thead>
+                        <tbody>
+                            @foreach (var miembro in Model.Miembros)
+                            {
+                                <tr class="@(miembro.Activo ? "" : "fila-baja")">
+                                    <th scope="row">
+                                        @miembro.Nombre@(miembro.UsuarioId == Model.UsuarioActualId ? " (vos)" : "")
+                                        <span class="detalle-recurso">@miembro.Email</span>
+                                        @if (!string.IsNullOrWhiteSpace(miembro.MotivoBaja)) { <span class="detalle-recurso">Baja: @miembro.MotivoBaja</span> }
+                                    </th>
+                                    <td>@Textos.Rol(miembro.Rol)</td>
+                                    <td>
+                                        @if (miembro.Activo) { <span class="insignia ver-aprobado">@Iconos.Check<span class="visualmente-oculto">Estado: </span>Activo</span> }
+                                        else { <span class="insignia asig-cancelada">@Iconos.Cruz<span class="visualmente-oculto">Estado: </span>De baja</span> }
+                                    </td>
+                                    @if (Model.Contexto.EsResponsable)
+                                    {
+                                        <td>
+                                            @if (miembro.Activo)
+                                            {
+                                                <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-baja" data-valores='@System.Text.Json.JsonSerializer.Serialize(new { membresiaId = miembro.MembresiaId, nombre = miembro.Nombre })'>Dar de baja<span class="visualmente-oculto"> a @miembro.Nombre</span></button>
+                                            }
+                                            else { <text>—</text> }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div>
+            @if (Model.Contexto.EsResponsable)
+            {
+                <section class="tarjeta" aria-labelledby="t-sumar">
+                    <h2 id="t-sumar">Sumar a alguien</h2>
+                    <p class="texto-suave">La persona tiene que tener una cuenta en AyudaYa.</p>
+                    <form asp-action="AgregarMiembro" method="post">
+                        <input type="hidden" name="org" value="@org" />
+                        <div class="campo">
+                            <label for="email">Correo electrónico</label>
+                            <input type="email" id="email" name="email" autocomplete="off" required />
+                        </div>
+                        <div class="campo">
+                            <label for="rol">Rol</label>
+                            <select id="rol" name="rol">
+                                <option value="miembro">Miembro</option>
+                                <option value="responsable">Responsable</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="boton">Agregar</button>
+                    </form>
+                </section>
+            }
+            <section class="tarjeta llamado" aria-labelledby="t-reglas">
+                <h2 id="t-reglas">Reglas</h2>
+                <ul class="lista-simple">
+                    <li>Una organización comunitaria siempre necesita al menos un responsable activo.</li>
+                    <li>Una persona solo puede ser responsable activa de una organización.</li>
+                    <li>Los miembros toman solicitudes y actualizan recursos; solo los responsables cargan centros y administran al equipo.</li>
+                    <li>Todo cambio queda con motivo y fecha.</li>
+                </ul>
+            </section>
+        </div>
+    </div>
+</div>
+
+@if (Model.Contexto.EsResponsable)
+{
+    <dialog id="dialogo-baja" aria-labelledby="titulo-baja">
+        <form asp-action="BajaMiembro" method="post">
+            <input type="hidden" name="org" value="@org" />
+            <input type="hidden" name="membresiaId" value="" />
+            <h2 id="titulo-baja">Dar de baja</h2>
+            <p><strong data-dialogo-texto="nombre"></strong> deja de actuar en nombre de la organización. No se borra: queda registrada con el motivo.</p>
+            <div class="campo">
+                <label for="motivo-baja">Motivo de la baja</label>
+                <textarea id="motivo-baja" name="motivo" rows="3" maxlength="300" required></textarea>
+            </div>
+            <div class="acciones">
+                <button type="submit" class="boton boton-peligro">Sí, dar de baja</button>
+                <button type="button" class="boton boton-secundario" data-cerrar-dialogo>No, volver</button>
+            </div>
+        </form>
+    </dialog>
+}
+@section Scripts {
+    <script src="~/js/dialogos.js" asp-append-version="true"></script>
+}

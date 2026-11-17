@@ -1,0 +1,43 @@
+@model CentroPublicoDto
+@{
+    var estado = Model.EstadoOperativo is "operativo" or "saturado" or "cerrado" ? Model.EstadoOperativo : "desconocido";
+    var tieneUbicacion = Model.Latitud is not null && Model.Longitud is not null;
+    var mostrarBotonMapa = ViewData["BotonMapa"] is true;
+    var nombres = ViewData["NombresRecursos"] as IReadOnlyDictionary<string, string>;
+}
+<article class="tarjeta centro" id="centro-@Model.Id" aria-labelledby="titulo-@Model.Id">
+    <h3 id="titulo-@Model.Id"><a asp-controller="Centros" asp-action="Detalle" asp-route-id="@Model.Id">@Model.Nombre</a></h3>
+    <p class="meta">@Model.TipoNombre · @Model.Zona</p>
+    <p class="estado"><span class="insignia estado-@estado">@Iconos.EstadoOperativo(estado)<span class="visualmente-oculto">Estado: </span>@Textos.EstadoOperativo(estado)</span></p>
+    @if (Model.Recursos.Count > 0)
+    {
+        <ul class="lista-recursos" aria-label="Recursos que ofrece">
+            @foreach (var recurso in Model.Recursos.OrderBy(r => r.Key))
+            {
+                var nombre = nombres is not null && nombres.TryGetValue(recurso.Key, out var encontrado) ? encontrado : recurso.Key.Replace('_', ' ');
+                <li><span class="insignia nivel-@recurso.Value">@Iconos.Nivel(recurso.Value)@nombre <span aria-hidden="true">·</span><span class="visualmente-oculto">: disponibilidad</span> @Textos.Nivel(recurso.Value)</span></li>
+            }
+        </ul>
+    }
+    <div class="pie-centro">
+        @if (Model.RecursosActualizadoAt is DateTime actualizado)
+        {
+            <span>Disponibilidad actualizada <time datetime="@actualizado.ToUniversalTime().ToString("O")" title="@Formato.FechaHora(actualizado)">@Formato.HaceCuanto(actualizado)</time></span>
+        }
+        else
+        {
+            <span>Disponibilidad sin informar</span>
+        }
+        @if (mostrarBotonMapa)
+        {
+            if (tieneUbicacion)
+            {
+                <button type="button" class="boton-texto" data-ver-mapa="@Model.Id">Ver en el mapa<span class="visualmente-oculto"> @Model.Nombre</span></button>
+            }
+            else
+            {
+                <span>Sin ubicación en el mapa</span>
+            }
+        }
+    </div>
+</article>

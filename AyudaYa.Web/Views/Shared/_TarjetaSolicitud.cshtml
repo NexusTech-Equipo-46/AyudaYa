@@ -1,0 +1,25 @@
+@model SolicitudResumenDto
+<article class="tarjeta solicitud" aria-labelledby="titulo-@Model.Id">
+    <div class="cabeza">
+        <h3 id="titulo-@Model.Id"><a asp-controller="Solicitudes" asp-action="Detalle" asp-route-id="@Model.Id">Solicitud #@Model.Codigo</a></h3>
+        <div class="insignias">
+            <partial name="_InsigniaSolicitud" model="Model.Estado" />
+            @if (Model.Urgencia == "critica") { <partial name="_InsigniaUrgencia" model="Model.Urgencia" /> }
+        </div>
+    </div>
+    <p class="meta">@Model.ZonaNombre · @Formato.Plural(Model.PersonasAfectadas, "persona afectada", "personas afectadas") · creada <time datetime="@Model.CreadoAt.ToUniversalTime().ToString("O")" title="@Formato.FechaHora(Model.CreadoAt)">@Formato.HaceCuanto(Model.CreadoAt)</time></p>
+    @if (!string.IsNullOrWhiteSpace(Model.Descripcion))
+    {
+        <p class="descripcion">@Model.Descripcion</p>
+    }
+    <ul class="lista-recursos" aria-label="Recursos pedidos">
+        @foreach (var recurso in Model.Recursos)
+        {
+            <li><span class="insignia sol-@recurso.Estado">@Iconos.EstadoSolicitud(recurso.Estado)@recurso.Nombre <span aria-hidden="true">·</span><span class="visualmente-oculto">:</span> @Textos.EstadoSolicitud(recurso.Estado)</span></li>
+        }
+    </ul>
+    <div class="pie-solicitud">
+        <span>Actualizada @Formato.HaceCuanto(Model.ActualizadoAt)</span>
+        <a asp-controller="Solicitudes" asp-action="Detalle" asp-route-id="@Model.Id">Ver detalle<span class="visualmente-oculto"> de la solicitud @Model.Codigo</span></a>
+    </div>
+</article>

@@ -1,0 +1,85 @@
+@model UsuariosAdminViewModel
+@{
+    ViewData["Title"] = "Usuarios";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    ViewData["Seccion"] = "usuarios";
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Usuarios</h1>
+            <p class="texto-suave">Una cuenta desactivada no puede iniciar sesión, pero se conserva su historial. El DNI es un dato sensible: usalo solo para verificar identidad.</p>
+        </div>
+    </div>
+    <partial name="_SubnavAdmin" />
+
+    <form method="get" role="search" class="form-en-fila" style="margin-bottom:1rem">
+        <div class="campo"><label for="q">Buscar por nombre o correo</label><input id="q" name="q" type="search" value="@Model.Busqueda" autocomplete="off" /></div>
+        <button type="submit" class="boton">Buscar</button>
+    </form>
+    <p role="status" class="texto-suave">@Formato.Plural(Model.Usuarios.Count, "usuario", "usuarios")</p>
+
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Usuarios">
+        <table class="tabla-recursos">
+            <thead><tr><th scope="col">Persona</th><th scope="col">Estado</th><th scope="col">Roles</th><th scope="col">DNI</th><th scope="col">Acciones</th></tr></thead>
+            <tbody>
+                @foreach (var u in Model.Usuarios)
+                {
+                    var esYo = u.Id == Model.UsuarioActualId;
+                    <tr class="@(u.Activo ? "" : "fila-baja")">
+                        <th scope="row">@u.Nombre@(esYo ? " (vos)" : "")<span class="detalle-recurso">@u.Email@(u.EmailConfirmado ? "" : " · sin confirmar")</span>@if (!string.IsNullOrWhiteSpace(u.MotivoDesactivacion)) { <span class="detalle-recurso">Baja: @u.MotivoDesactivacion</span> }</th>
+                        <td>@if (u.Activo) { <span class="insignia ver-aprobado">@Iconos.Check Activo</span> } else { <span class="insignia asig-cancelada">@Iconos.Cruz De baja</span> }</td>
+                        <td>@(u.EsAdministrador ? "Administrador" : "Usuario")@(u.EsVoluntario ? " · Voluntario" : "")</td>
+                        <td>@(u.Dni ?? "—")</td>
+                        <td>
+                            @if (!esYo)
+                            {
+                                <div class="acciones-tabla">
+                                    @if (u.Activo)
+                                    {
+                                        <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-desactivar" data-valores='@System.Text.Json.JsonSerializer.Serialize(new { id = u.Id, nombre = u.Nombre })'>Desactivar<span class="visualmente-oculto"> a @u.Nombre</span></button>
+                                        <form asp-action="RolAdministrador" method="post">
+                                            <input type="hidden" name="id" value="@u.Id" />
+                                            <input type="hidden" name="esAdministrador" value="@(u.EsAdministrador ? "false" : "true")" />
+                                            <input type="hidden" name="q" value="@Model.Busqueda" />
+                                            <button type="submit" class="boton boton-secundario">@(u.EsAdministrador ? "Quitar admin" : "Hacer admin")<span class="visualmente-oculto"> a @u.Nombre</span></button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="ReactivarUsuario" method="post">
+                                            <input type="hidden" name="id" value="@u.Id" />
+                                            <input type="hidden" name="q" value="@Model.Busqueda" />
+                                            <button type="submit" class="boton boton-secundario">Reactivar<span class="visualmente-oculto"> a @u.Nombre</span></button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                            else { <text>—</text> }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<dialog id="dialogo-desactivar" aria-labelledby="titulo-desactivar">
+    <form asp-action="DesactivarUsuario" method="post">
+        <input type="hidden" name="id" value="" />
+        <input type="hidden" name="q" value="@Model.Busqueda" />
+        <h2 id="titulo-desactivar">Desactivar cuenta</h2>
+        <p><strong data-dialogo-texto="nombre"></strong> deja de poder iniciar sesión. No se borra nada: queda registrada con el motivo.</p>
+        <div class="campo">
+            <label for="motivo-desactivar">Motivo</label>
+            <textarea id="motivo-desactivar" name="motivo" rows="3" maxlength="300" required></textarea>
+        </div>
+        <div class="acciones">
+            <button type="submit" class="boton boton-peligro">Sí, desactivar</button>
+            <button type="button" class="boton boton-secundario" data-cerrar-dialogo>No, volver</button>
+        </div>
+    </form>
+</dialog>
+@section Scripts {
+    <script src="~/js/dialogos.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,17 @@
+@{
+    var seccion = ViewData["Seccion"] as string ?? string.Empty;
+    string? Actual(string nombre) => seccion == nombre ? "page" : null;
+}
+<div class="subnav-organizacion">
+    <nav aria-label="Secciones de administración">
+        <ul>
+            <li><a asp-controller="Admin" asp-action="Index" aria-current="@Actual("panel")">Resumen</a></li>
+            <li><a asp-controller="Admin" asp-action="Organizaciones" aria-current="@Actual("organizaciones")">Organizaciones</a></li>
+            <li><a asp-controller="Admin" asp-action="Centros" aria-current="@Actual("centros")">Centros</a></li>
+            <li><a asp-controller="Admin" asp-action="Solicitudes" aria-current="@Actual("solicitudes")">Solicitudes</a></li>
+            <li><a asp-controller="Admin" asp-action="Usuarios" aria-current="@Actual("usuarios")">Usuarios</a></li>
+            <li><a asp-controller="Admin" asp-action="Ciudades" aria-current="@Actual("ciudades")">Ciudades y zonas</a></li>
+            <li><a asp-controller="Admin" asp-action="Auditoria" aria-current="@Actual("auditoria")">Auditoría</a></li>
+        </ul>
+    </nav>
+</div>

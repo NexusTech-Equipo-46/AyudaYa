@@ -1,8 +1,13 @@
 using System.Security.Claims;
+using System.Text;
 using System.Text.RegularExpressions;
 using AyudaYa.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace AyudaYa.Negocio.Servicios;
 
@@ -14,7 +19,23 @@ public sealed record PerfilUsuarioDto(
     string NombreCompleto,
     string Email,
     IReadOnlyList<string> Roles,
-    bool Activo);
+    bool Activo,
+    string? Dni,
+    bool EsVoluntario,
+    bool EmailConfirmado);
+
+/// <summary>
+/// Lo que la navegación necesita saber de quien está logueado: si es
+/// voluntario, si pertenece a organizaciones y si administra. Se calcula por
+/// pedido y no se guarda en la cookie, así los cambios se ven al instante.
+/// </summary>
+public sealed record ContextoUsuarioDto(
+    Guid UsuarioId,
+    string Nombre,
+    bool EsAdministrador,
+    bool EsVoluntario,
+    bool VoluntarioActivo,
+    IReadOnlyList<MembresiaDto> Organizaciones);
 
 /// <summary>
 /// Punto único para crear, autenticar, desactivar y reactivar usuarios.
@@ -30,18 +51,30 @@ public sealed class UsuarioAppService
 
     private static readonly Regex DniValido = new("^[0-9]{6,9}$", RegexOptions.Compiled);
 
+    /// <summary>Espera mínima entre dos correos de confirmación al mismo usuario.</summary>
+    private static readonly TimeSpan EsperaReenvio = TimeSpan.FromMinutes(1);
+
     private readonly UserManager<UsuarioIdentity> _userManager;
     private readonly SignInManager<UsuarioIdentity> _signInManager;
     private readonly AyudaYaDbContext _db;
+    private readonly IEnviadorCorreo _correo;
+    private readonly IMemoryCache _cache;
+    private readonly ILogger<UsuarioAppService> _logger;
 
     public UsuarioAppService(
         UserManager<UsuarioIdentity> userManager,
         SignInManager<UsuarioIdentity> signInManager,
-        AyudaYaDbContext db)
+        AyudaYaDbContext db,
+        IEnviadorCorreo correo,
+        IMemoryCache cache,
+        ILogger<UsuarioAppService> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _db = db;
+        _correo = correo;
+        _cache = cache;
+        _logger = logger;
     }
 
     public static string NormalizarEmail(string email)
@@ -187,11 +220,74 @@ public sealed class UsuarioAppService
         }
 
         var roles = await _userManager.GetRolesAsync(user);
+        var dni = await _db.UsuarioDatosPrivados.AsNoTracking()
+            .Where(datos => datos.UsuarioId == user.Id)
+            .Select(datos => datos.Dni)
+            .SingleOrDefaultAsync();
+        var esVoluntario = await _db.Voluntario.AsNoTracking()
+            .AnyAsync(voluntario => voluntario.UsuarioId == user.Id);
         return new PerfilUsuarioDto(
             user.NombreCompleto,
             user.Email ?? string.Empty,
             roles.ToList(),
-            user.Activo);
+            user.Activo,
+            dni,
+            esVoluntario,
+            user.EmailConfirmed);
+    }
+
+    /// <summary>Actualiza únicamente los datos del usuario autenticado.</summary>
+    public async Task<IdentityResult> ActualizarPerfilAsync(
+        ClaimsPrincipal principal, string nombreCompleto, string? dni,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.GetUserAsync(principal);
+        if (user is null || !user.Activo)
+            return IdentityResult.Failed(new IdentityError { Code = "UsuarioInvalido", Description = "La cuenta no está disponible." });
+
+        nombreCompleto = (nombreCompleto ?? "").Trim();
+        if (nombreCompleto.Length is < 3 or > 150)
+            return IdentityResult.Failed(new IdentityError { Code = "NombreInvalido", Description = "El nombre debe tener entre 3 y 150 caracteres." });
+
+        dni = string.IsNullOrWhiteSpace(dni) ? null : new string(dni.Where(c => c != '.' && !char.IsWhiteSpace(c)).ToArray());
+        if (dni == "") dni = null;
+        if (dni is not null && !DniValido.IsMatch(dni))
+            return IdentityResult.Failed(new IdentityError { Code = "DniInvalido", Description = "El DNI debe tener entre 6 y 9 dígitos." });
+        if (dni is not null && await _db.UsuarioDatosPrivados.AnyAsync(datos => datos.UsuarioId != user.Id && datos.Dni == dni, cancellationToken))
+            return IdentityResult.Failed(new IdentityError { Code = "DniDuplicado", Description = "Ya existe un usuario con ese DNI." });
+
+        var datosPrivados = await _db.UsuarioDatosPrivados.SingleOrDefaultAsync(datos => datos.UsuarioId == user.Id, cancellationToken);
+        if (datosPrivados is null)
+        {
+            datosPrivados = new UsuarioDatosPrivados { UsuarioId = user.Id };
+            _db.UsuarioDatosPrivados.Add(datosPrivados);
+        }
+        datosPrivados.Dni = dni;
+        user.NombreCompleto = nombreCompleto;
+        try
+        {
+            // Identity y los datos privados comparten contexto y SaveChanges.
+            return await _userManager.UpdateAsync(user);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_usuario_datos_privados_dni" })
+        {
+            return IdentityResult.Failed(new IdentityError { Code = "DniDuplicado", Description = "Ya existe un usuario con ese DNI." });
+        }
+    }
+
+    /// <summary>Cambia la clave comprobando la actual y renueva la sesión activa.</summary>
+    public async Task<IdentityResult> CambiarPasswordAsync(
+        ClaimsPrincipal principal, string actual, string nueva)
+    {
+        var user = await _userManager.GetUserAsync(principal);
+        if (user is null || !user.Activo)
+            return IdentityResult.Failed(new IdentityError { Code = "UsuarioInvalido", Description = "La cuenta no está disponible." });
+        if (actual == nueva)
+            return IdentityResult.Failed(new IdentityError { Code = "PasswordIgual", Description = "La contraseña nueva tiene que ser distinta de la actual." });
+
+        var resultado = await _userManager.ChangePasswordAsync(user, actual, nueva);
+        if (resultado.Succeeded) await _signInManager.RefreshSignInAsync(user);
+        return resultado;
     }
 
     /// <summary>
@@ -251,6 +347,139 @@ public sealed class UsuarioAppService
         user.SecurityStamp = Guid.NewGuid().ToString();
 
         return await _userManager.UpdateAsync(user);
+    }
+
+    /// <summary>Contexto de navegación del usuario autenticado, o null si no corresponde.</summary>
+    public async Task<ContextoUsuarioDto?> ObtenerContextoAsync(
+        ClaimsPrincipal principal, CancellationToken cancellationToken = default)
+    {
+        if (principal.Identity?.IsAuthenticated != true
+            || !Guid.TryParse(_userManager.GetUserId(principal), out var usuarioId))
+        {
+            return null;
+        }
+
+        var voluntario = await _db.Voluntario.AsNoTracking()
+            .Where(v => v.UsuarioId == usuarioId)
+            .Select(v => new { v.Activo })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        var organizaciones = await _db.OrganizacionUsuario.AsNoTracking()
+            .Where(ou => ou.UsuarioId == usuarioId && ou.Activo)
+            .OrderByDescending(ou => ou.Rol == "responsable")
+            .ThenBy(ou => ou.Organizacion.Nombre)
+            .Select(ou => new MembresiaDto(
+                ou.OrganizacionId, ou.Organizacion.Nombre, ou.Organizacion.Estado, ou.Rol))
+            .ToListAsync(cancellationToken);
+
+        return new ContextoUsuarioDto(
+            usuarioId,
+            principal.Identity?.Name ?? string.Empty,
+            principal.IsInRole(RolAdministrador),
+            voluntario is not null,
+            voluntario?.Activo ?? false,
+            organizaciones);
+    }
+
+    /// <summary>
+    /// Genera el token de confirmación de email y envía el correo con el enlace.
+    /// <paramref name="construirEnlace"/> arma la URL absoluta a partir del id y
+    /// del token ya codificado para URL. Devuelve el enlace (solo para que la
+    /// capa Web lo muestre en desarrollo). Limita el reenvío a uno por minuto.
+    /// </summary>
+    public async Task<Resultado<string>> EnviarConfirmacionAsync(
+        Guid usuarioId,
+        Func<Guid, string, string> construirEnlace,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByIdAsync(usuarioId.ToString());
+        if (user is null || !user.Activo)
+        {
+            return Resultado<string>.Falla(Codigos.UsuarioInvalido, "El usuario no existe o está inactivo.");
+        }
+
+        if (user.EmailConfirmed)
+        {
+            return Resultado<string>.Falla("YaConfirmado", "Tu correo ya está confirmado.");
+        }
+
+        var clave = $"confirmacion:{usuarioId}";
+        if (_cache.TryGetValue(clave, out _))
+        {
+            return Resultado<string>.Falla(
+                "EsperaReenvio", "Ya te enviamos un correo hace instantes. Esperá un minuto para pedir otro.");
+        }
+
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var tokenCodificado = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+        var enlace = construirEnlace(user.Id, tokenCodificado);
+
+        try
+        {
+            await _correo.EnviarAsync(
+                user.Email!,
+                "Confirmá tu correo en AyudaYa",
+                string.Join(Environment.NewLine,
+                    $"Hola {user.NombreCompleto},",
+                    string.Empty,
+                    "Para confirmar tu correo y poder pedir ayuda o sumarte como voluntario, abrí este enlace:",
+                    enlace,
+                    string.Empty,
+                    "Si no creaste una cuenta en AyudaYa, ignorá este mensaje."),
+                cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Un fallo del proveedor de correo no debe tumbar el alta ni mostrar un error técnico.
+            _logger.LogError(ex, "No se pudo enviar el correo de confirmación al usuario {UsuarioId}.", usuarioId);
+            return Resultado<string>.Falla(
+                "CorreoNoEnviado",
+                "No pudimos enviar el correo en este momento. Probá de nuevo en unos minutos desde tu perfil.");
+        }
+
+        _cache.Set(clave, true, EsperaReenvio);
+        return Resultado<string>.Ok(enlace);
+    }
+
+    public async Task<IdentityResult> ConfirmarEmailAsync(Guid usuarioId, string tokenCodificado)
+    {
+        var user = await _userManager.FindByIdAsync(usuarioId.ToString());
+        if (user is null || !user.Activo)
+        {
+            return IdentityResult.Failed(new IdentityError
+            {
+                Code = "UsuarioNoEncontrado",
+                Description = "El enlace no es válido."
+            });
+        }
+
+        if (user.EmailConfirmed)
+        {
+            return IdentityResult.Success;
+        }
+
+        string token;
+        try
+        {
+            token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(tokenCodificado));
+        }
+        catch (FormatException)
+        {
+            return IdentityResult.Failed(new IdentityError
+            {
+                Code = "TokenInvalido",
+                Description = "El enlace no es válido o venció."
+            });
+        }
+
+        var resultado = await _userManager.ConfirmEmailAsync(user, token);
+        return resultado.Succeeded
+            ? resultado
+            : IdentityResult.Failed(new IdentityError
+            {
+                Code = "TokenInvalido",
+                Description = "El enlace no es válido o venció. Pedí uno nuevo desde tu perfil."
+            });
     }
 
     public Task<UsuarioIdentity?> ObtenerPorEmailAsync(

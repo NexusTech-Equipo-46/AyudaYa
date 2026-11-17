@@ -1,6 +1,8 @@
 using AyudaYa.Data;
 using AyudaYa.Negocio.Identity;
 using AyudaYa.Negocio.Servicios;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -32,8 +34,12 @@ public static class DependencyInjection
                 "Falta la cadena de conexión. Configurá ConnectionStrings:AyudaYa o AYUDAYA_CONN.");
         }
 
+        // Consultas con varias colecciones (Include) en consultas separadas: evita
+        // el producto cartesiano y la advertencia de rendimiento de EF Core.
         services.AddDbContext<AyudaYaDbContext>(options =>
-            options.UseNpgsql(connectionString));
+            options.UseNpgsql(
+                connectionString,
+                npgsql => npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
         services
             .AddIdentity<UsuarioIdentity, RolIdentity>(options =>
@@ -73,12 +79,50 @@ public static class DependencyInjection
             options.LogoutPath = "/Cuenta/Logout";
             options.AccessDeniedPath = "/Cuenta/AccesoDenegado";
             options.Cookie.Name = "AyudaYa.Auth";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = true;
         });
 
+        // En contenedores sin disco persistente, las claves de cookies y tokens se
+        // guardan en la base para que un reinicio no cierre todas las sesiones.
+        if (configuration.GetValue<bool>("DataProtection:PersistirEnBase"))
+        {
+            services.AddDataProtection()
+                .SetApplicationName("AyudaYa")
+                .PersistKeysToDbContext<AyudaYaDbContext>();
+        }
+
+        services.AddMemoryCache();
+
+        // Correo: API de Brevo si hay clave; si no, SMTP si hay host; si no, el mensaje queda en el log.
+        services.Configure<CorreoOptions>(configuration.GetSection(CorreoOptions.Seccion));
+        if (!string.IsNullOrWhiteSpace(configuration[$"{CorreoOptions.Seccion}:ApiKey"]))
+        {
+            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoBrevo>();
+        }
+        else if (!string.IsNullOrWhiteSpace(configuration[$"{CorreoOptions.Seccion}:Host"]))
+        {
+            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoSmtp>();
+        }
+        else
+        {
+            services.AddSingleton<IEnviadorCorreo, EnviadorCorreoRegistro>();
+        }
+
         services.AddScoped<UsuarioAppService>();
         services.AddScoped<SolicitudAppService>();
+        services.AddScoped<SolicitudConsultasAppService>();
+        services.AddScoped<AsignacionAppService>();
+        services.AddScoped<VoluntarioAppService>();
+        services.AddScoped<OrganizacionAppService>();
+        services.AddScoped<AdministracionAppService>();
+        services.AddScoped<CatalogosAppService>();
+        services.AddScoped<CentrosPublicosAppService>();
+        services.AddScoped<MetricasAppService>();
+        services.AddScoped<InicializadorAppService>();
         services.AddAuthorization();
 
         return services;

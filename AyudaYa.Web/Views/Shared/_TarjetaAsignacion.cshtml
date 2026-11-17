@@ -1,0 +1,31 @@
+@model AsignacionResumenDto
+@{
+    var controlador = ViewData["Controlador"] as string ?? "Voluntario";
+    var organizacion = ViewData["OrganizacionId"] as Guid?;
+    var clases = "tarjeta asignacion" + (Model.EsActiva && Model.EsCritica ? " es-critica" : Model.EsActiva ? " necesita-accion" : "");
+    var titulo = $"{Model.RecursoNombre} para {Formato.Plural(Model.Personas, "persona", "personas")}";
+    var siguiente = Model.Estado switch
+    {
+        "asignada" => $"Próximo paso: comunicate con {Model.SolicitanteNombre} y empezá la atención.",
+        "en_atencion" => "Próximo paso: cuando termines, marcala como completada.",
+        "completada" => $"Esperando que {Model.SolicitanteNombre} confirme que recibió la ayuda.",
+        "confirmada" => $"Terminada. {Model.SolicitanteNombre} confirmó la ayuda. ¡Gracias!",
+        "cancelada" => "La solicitud se canceló: no hace falta que hagas nada.",
+        _ => "Liberada: otra persona puede tomarla."
+    };
+}
+<article class="@clases" aria-labelledby="titulo-@Model.Id">
+    <div class="cabeza">
+        <h3 id="titulo-@Model.Id"><a asp-controller="@controlador" asp-action="Asignacion" asp-route-id="@Model.Id" asp-route-org="@organizacion">@titulo</a></h3>
+        <div class="insignias">
+            <partial name="_InsigniaAsignacion" model="Model.Estado" />
+            @if (Model.EsActiva && Model.EsCritica) { <partial name="_InsigniaUrgencia" model="Model.Urgencia" /> }
+        </div>
+    </div>
+    <p class="meta">Solicitud #@Model.SolicitudCodigo · @Model.ZonaNombre · @Formato.Plural(Model.PersonasAfectadas, "persona afectada", "personas afectadas")</p>
+    <p class="siguiente">@siguiente</p>
+    <div class="pie-asignacion">
+        <span>Tomada <time datetime="@Model.AsignadaAt.ToUniversalTime().ToString("O")" title="@Formato.FechaHora(Model.AsignadaAt)">@Formato.HaceCuanto(Model.AsignadaAt)</time>@(controlador == "Organizacion" ? $" · por {Model.AsignadaPor}" : "")</span>
+        <a asp-controller="@controlador" asp-action="Asignacion" asp-route-id="@Model.Id" asp-route-org="@organizacion">Ver detalle<span class="visualmente-oculto"> de @titulo</span></a>
+    </div>
+</article>

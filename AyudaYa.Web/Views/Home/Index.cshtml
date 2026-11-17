@@ -1,8 +1,80 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model InicioViewModel
+@{
+    ViewData["Title"] = "Encontrá ayuda cerca tuyo";
+    var nombresRecursos = new Dictionary<string, string>
+    {
+        ["agua"] = "Agua", ["alimentos"] = "Alimentos", ["abrigo"] = "Abrigo",
+        ["higiene"] = "Higiene", ["medicamentos"] = "Medicamentos", ["alojamiento"] = "Alojamiento",
+        ["traslado"] = "Traslado", ["mano_obra"] = "Mano de obra", ["otros"] = "Otros"
+    };
+    var datosTarjeta = new ViewDataDictionary(ViewData) { ["NombresRecursos"] = nombresRecursos };
 }
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="portada" aria-labelledby="titulo-portada">
+    <div class="contenedor">
+        <div>
+            <h1 id="titulo-portada">Encontrá ayuda cerca tuyo en una emergencia</h1>
+            <p class="bajada">AyudaYa reúne en un solo lugar los refugios, comedores, salitas y puntos de donación de tu ciudad, con lo que tiene disponible cada uno.</p>
+            <div class="acciones">
+                <a class="boton" asp-controller="Centros" asp-action="Index">Ver centros de ayuda</a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a class="boton boton-secundario" asp-controller="Solicitudes" asp-action="Nueva">Pedir ayuda</a>
+                }
+                else
+                {
+                    <a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Login" asp-route-returnUrl="@Url.Action("Nueva", "Solicitudes")">Pedir ayuda</a>
+                }
+            </div>
+            <div class="necesidades">
+                <h2>¿Qué necesitás?</h2>
+                <ul>
+                    @foreach (var recurso in new[] { "agua", "alimentos", "abrigo", "alojamiento", "medicamentos", "higiene" })
+                    {
+                        <li><a asp-controller="Centros" asp-action="Index" asp-route-recurso="@recurso">@nombresRecursos[recurso]</a></li>
+                    }
+                </ul>
+            </div>
+        </div>
+        <aside class="tarjeta emergencia" aria-labelledby="titulo-emergencia">
+            <h2 id="titulo-emergencia">¿Hay riesgo de vida?</h2>
+            <p class="texto-suave">No esperes: llamá directamente a emergencias.</p>
+            <ul>
+                <li><a href="tel:911">911 <span>Emergencias</span></a></li>
+                <li><a href="tel:107">107 <span>SAME · Emergencias médicas</span></a></li>
+                <li><a href="tel:100">100 <span>Bomberos</span></a></li>
+            </ul>
+        </aside>
+    </div>
+</section>
+<section class="seccion" aria-labelledby="titulo-como">
+    <div class="contenedor">
+        <h2 id="titulo-como">Cómo funciona</h2>
+        <ol class="pasos">
+            <li class="tarjeta"><h3>Buscá un centro</h3><p>Mirá en el mapa o en la lista qué centros están abiertos y qué recursos tienen. No hace falta registrarse.</p></li>
+            <li class="tarjeta"><h3>Pedí ayuda</h3><p>Con tu cuenta podés cargar una solicitud. Tu dirección y teléfono solo los ve quien te asista.</p></li>
+            <li class="tarjeta"><h3>Sumate a ayudar</h3><p>Anotate como voluntario o registrá tu organización para atender solicitudes de tu zona.</p></li>
+        </ol>
+    </div>
+</section>
+<section class="seccion" aria-labelledby="titulo-recientes">
+    <div class="contenedor">
+        <div class="encabezado-seccion"><h2 id="titulo-recientes">Actualizados recientemente</h2><a asp-controller="Centros" asp-action="Index">Ver todos los centros</a></div>
+        @if (Model.CentrosNoDisponibles)
+        {
+            <p>No pudimos cargar los centros recientes en este momento. Intentá nuevamente más tarde.</p>
+        }
+        else if (Model.CentrosRecientes.Count == 0)
+        {
+            <p>Todavía no hay centros con disponibilidad actualizada para mostrar.</p>
+        }
+        else
+        {
+            <ul class="grilla-centros" id="centros-recientes">
+                @foreach (var centro in Model.CentrosRecientes)
+                {
+                    <li><partial name="_TarjetaCentro" model="centro" view-data="datosTarjeta" /></li>
+                }
+            </ul>
+        }
+    </div>
+</section>

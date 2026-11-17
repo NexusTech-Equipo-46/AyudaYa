@@ -1,0 +1,9 @@
+@model string
+@if (Model == "critica")
+{
+    <span class="insignia urgencia-critica">@Iconos.Exclamacion<span class="visualmente-oculto">Urgencia: </span>Crítica</span>
+}
+else
+{
+    <span class="insignia urgencia-normal">@Iconos.Guion<span class="visualmente-oculto">Urgencia: </span>Normal</span>
+}

@@ -1,0 +1,104 @@
+@model RecursosCentroViewModel
+@using AyudaYa.Web.Models.Organizacion
+@{
+    var centro = Model.Centro;
+    ViewData["Title"] = $"Recursos de {centro.Nombre}";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    var aprobado = centro.EstadoVerificacion == "aprobado";
+    var niveles = new[] { "alta", "media", "baja", "sin_stock", "no_ofrece" };
+}
+<div class="contenedor">
+    <nav class="migas" aria-label="Estás en">
+        <ol>
+            <li><a asp-action="Panel" asp-route-org="@Model.Contexto.OrganizacionId">Panel</a></li>
+            <li><a asp-action="Centros" asp-route-org="@Model.Contexto.OrganizacionId">Centros</a></li>
+            <li><a asp-action="Recursos" asp-route-id="@centro.Id" aria-current="page">Recursos</a></li>
+        </ol>
+    </nav>
+
+    <div class="detalle-encabezado">
+        <div>
+            <h1>Recursos de @centro.Nombre</h1>
+            <p class="meta">@centro.ZonaNombre · @centro.Direccion</p>
+            <p class="meta">
+                @if (centro.RecursosActualizadoAt is DateTime actualizado)
+                {
+                    <text>Última actualización <time datetime="@actualizado.ToUniversalTime().ToString("O")">@Formato.FechaHora(actualizado)</time></text>
+                }
+                else { <text>Todavía no cargaron la disponibilidad</text> }
+            </p>
+        </div>
+        <div class="insignias"><partial name="_InsigniaVerificacion" model="centro.EstadoVerificacion" /></div>
+    </div>
+
+    @if (!aprobado)
+    {
+        <div class="alerta alerta-info" style="margin-bottom:1.25rem">@Iconos.AlertaInfo<p>Pueden cargar los recursos ahora. Se van a ver en el mapa cuando un administrador apruebe el centro.</p></div>
+    }
+    @if (!string.IsNullOrWhiteSpace(centro.MotivoEstado))
+    {
+        <div class="alerta alerta-peligro" style="margin-bottom:1.25rem">@Iconos.AlertaPeligro<p><strong>Motivo:</strong> @centro.MotivoEstado</p></div>
+    }
+
+    <div class="detalle">
+        <div>
+            <section class="tarjeta" aria-labelledby="t-niveles">
+                <h2 id="t-niveles">Disponibilidad por recurso</h2>
+                <p class="texto-suave">No se carga una cantidad: se elige un nivel. Quienes miran el mapa también ven cuándo se actualizó. Guardar sin cambios también renueva la fecha: sirve para confirmar que todo sigue igual.</p>
+                <form asp-action="Recursos" asp-route-id="@centro.Id" method="post">
+                    <div class="campo">
+                        <label for="estadoOperativo">Estado del centro</label>
+                        <select id="estadoOperativo" name="estadoOperativo">
+                            @foreach (var estado in new[] { "operativo", "saturado", "cerrado" })
+                            {
+                                <option value="@estado" selected="@(estado == centro.EstadoOperativo)">@Textos.EstadoOperativo(estado)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="t-niveles">
+                        <table class="tabla-recursos tabla-edicion">
+                            <thead><tr><th scope="col">Recurso</th><th scope="col">Ahora</th><th scope="col">Cambiar a</th></tr></thead>
+                            <tbody>
+                                @foreach (var tipo in Model.Tipos)
+                                {
+                                    var actual = centro.Recursos.GetValueOrDefault(tipo.Codigo, "no_ofrece");
+                                    <tr>
+                                        <th scope="row"><label for="nivel-@tipo.Codigo">@tipo.Nombre</label></th>
+                                        <td class="actual"><partial name="_InsigniaNivel" model="actual" /></td>
+                                        <td>
+                                            <select id="nivel-@tipo.Codigo" name="niveles[@tipo.Codigo]">
+                                                @foreach (var nivel in niveles)
+                                                {
+                                                    <option value="@nivel" selected="@(nivel == actual)">@Textos.Nivel(nivel)</option>
+                                                }
+                                            </select>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="barra-guardado"><button type="submit" class="boton">Guardar cambios</button></div>
+                </form>
+            </section>
+        </div>
+        <div>
+            <section class="tarjeta" aria-labelledby="t-niveles-ref">
+                <h2 id="t-niveles-ref">Qué significa cada nivel</h2>
+                <ul class="referencias">
+                    @foreach (var nivel in niveles)
+                    {
+                        <li><partial name="_InsigniaNivel" model="nivel" /><span>@Textos.DescripcionNivel(nivel)</span></li>
+                    }
+                </ul>
+            </section>
+            <section class="tarjeta llamado" aria-labelledby="t-consejo">
+                <h2 id="t-consejo">Mantengan la información al día</h2>
+                <p>Si un recurso se agotó, cámbienlo a «Sin stock» en lugar de dejarlo en «Alta». Así nadie se acerca por algo que no hay.</p>
+            </section>
+            <div class="acciones" style="margin-top:0">
+                <a class="boton boton-secundario" asp-action="Centros" asp-route-org="@Model.Contexto.OrganizacionId">Volver a los centros</a>
+            </div>
+        </div>
+    </div>
+</div>

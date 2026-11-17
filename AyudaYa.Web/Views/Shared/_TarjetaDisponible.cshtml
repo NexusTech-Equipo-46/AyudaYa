@@ -1,0 +1,34 @@
+@model SolicitudDisponibleDto
+@{
+    var controlador = ViewData["Controlador"] as string ?? "Voluntario";
+    var organizacion = ViewData["OrganizacionId"] as Guid?;
+    var puedeTomar = ViewData["PuedeTomar"] is not false;
+}
+<article class="tarjeta disponible" aria-labelledby="titulo-@Model.Id">
+    <div class="cabeza">
+        <h3 id="titulo-@Model.Id">Solicitud #@Model.Codigo</h3>
+        <div class="insignias"><partial name="_InsigniaUrgencia" model="Model.Urgencia" /></div>
+    </div>
+    <p class="meta">@Model.ZonaNombre · @Formato.Plural(Model.PersonasAfectadas, "persona afectada", "personas afectadas") · creada @Formato.HaceCuanto(Model.CreadoAt)</p>
+    @if (!string.IsNullOrWhiteSpace(Model.Descripcion))
+    {
+        <p class="descripcion">@Model.Descripcion</p>
+    }
+    <ul class="recursos-tomar" aria-label="Recursos que necesita">
+        @foreach (var recurso in Model.RecursosPendientes)
+        {
+            <li>
+                <span class="que"><strong>@recurso.TipoNombre</strong><span>@Formato.Plural(recurso.Personas, "persona", "personas")@(string.IsNullOrWhiteSpace(recurso.Detalle) ? "" : " · " + recurso.Detalle)</span></span>
+                <form asp-controller="@controlador" asp-action="Tomar" method="post">
+                    <input type="hidden" name="recursoId" value="@recurso.Id" />
+                    @if (organizacion is not null) { <input type="hidden" name="org" value="@organizacion" /> }
+                    <button type="submit" class="boton boton-secundario" disabled="@(!puedeTomar)">Tomar<span class="visualmente-oculto"> @recurso.TipoNombre.ToLowerInvariant() de la solicitud @Model.Codigo</span></button>
+                </form>
+            </li>
+        }
+        @foreach (var tomado in Model.RecursosYaTomados)
+        {
+            <li><span class="que"><strong>@tomado</strong></span><span class="insignia estado-recurso-tomado">@Iconos.Asignada Ya lo atiende alguien</span></li>
+        }
+    </ul>
+</article>

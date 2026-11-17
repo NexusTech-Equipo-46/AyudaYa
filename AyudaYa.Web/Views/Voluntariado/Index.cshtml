@@ -1,0 +1,78 @@
+@model VoluntariadoViewModel
+@using AyudaYa.Web.Models.Voluntario
+@{
+    ViewData["Title"] = Model.YaEsVoluntario ? "Mis datos de voluntario" : "Quiero ser voluntario";
+    ViewData["ClaseMain"] = "pagina-usuario";
+}
+<div class="contenedor">
+    <nav class="migas" aria-label="Estás en">
+        <ol>
+            <li><a asp-controller="Panel" asp-action="Index">Panel</a></li>
+            <li><a asp-action="Index" aria-current="page">@ViewData["Title"]</a></li>
+        </ol>
+    </nav>
+    <div class="formulario-solicitud">
+        <h1>@ViewData["Title"]</h1>
+        <p class="texto-suave">Sumate para atender pedidos de ayuda de tu zona. Podés pausar tu disponibilidad cuando quieras.</p>
+
+        @if (!Model.YaEsVoluntario)
+        {
+            <section class="tarjeta" aria-labelledby="t-como" style="margin-bottom:1.25rem">
+                <h2 id="t-como" style="font-size:1.25rem">Cómo funciona</h2>
+                <ul class="lista-simple">
+                    <li>Ves las solicitudes abiertas de tu ciudad y zona.</li>
+                    <li>Vos elegís cuáles tomar: nadie te asigna sin que lo aceptes.</li>
+                    <li>Al tomar una solicitud, ves la dirección y el teléfono de quien pidió ayuda para poder asistirlo.</li>
+                </ul>
+            </section>
+        }
+
+        <partial name="_ResumenErrores" />
+
+        <form asp-action="Index" method="post" novalidate>
+            <section class="tarjeta" aria-labelledby="t-datos" style="margin-bottom:1.25rem">
+                <h2 id="t-datos" style="font-size:1.25rem">Dónde podés ayudar</h2>
+                <input type="hidden" asp-for="YaEsVoluntario" />
+                <div class="campo">
+                    <label asp-for="CiudadId">Ciudad</label>
+                    <select asp-for="CiudadId" required>
+                        <option value="">Elegí una ciudad</option>
+                        @foreach (var ciudad in Model.Ciudades)
+                        {
+                            <option value="@ciudad.Id" selected="@(ciudad.Id == Model.CiudadId)">@ciudad.Nombre, @ciudad.Provincia</option>
+                        }
+                    </select>
+                    <span asp-validation-for="CiudadId" class="error-campo"></span>
+                </div>
+                <div class="campo">
+                    <label asp-for="ZonaId">Zona <span class="opcional">(opcional)</span></label>
+                    <span class="ayuda" id="ayuda-zona">Si no elegís, ves las solicitudes de toda la ciudad.</span>
+                    <select asp-for="ZonaId" aria-describedby="ayuda-zona">
+                        <option value="">Toda la ciudad</option>
+                        @foreach (var zona in Model.Zonas)
+                        {
+                            <option value="@zona.Id" data-ciudad="@zona.CiudadId" selected="@(zona.Id == Model.ZonaId)">@zona.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="campo">
+                    <label asp-for="Telefono">Teléfono de contacto</label>
+                    <span class="ayuda" id="ayuda-telefono">Lo ven las personas a las que asistas y el equipo administrador. Con característica.</span>
+                    <input asp-for="Telefono" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" required aria-describedby="ayuda-telefono" />
+                    <span asp-validation-for="Telefono" class="error-campo"></span>
+                </div>
+                <div class="campo">
+                    <label class="check"><input asp-for="Acepto" type="checkbox" required> Acepto que compartan mi nombre y teléfono con quien yo asista.</label>
+                    <span asp-validation-for="Acepto" class="error-campo"></span>
+                </div>
+            </section>
+            <div class="acciones" style="margin-top:0">
+                <button type="submit" class="boton">@(Model.YaEsVoluntario ? "Guardar cambios" : "Sumarme como voluntario")</button>
+                <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/solicitud-nueva.js" asp-append-version="true"></script>
+}

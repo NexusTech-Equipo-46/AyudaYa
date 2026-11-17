@@ -1,0 +1,8 @@
+@if (TempData[ControladorAyudaYa.ClaveExito] is string exito)
+{
+    <div class="alerta alerta-exito mensaje-pagina" role="status">@Iconos.AlertaOk<p>@exito</p></div>
+}
+@if (TempData[ControladorAyudaYa.ClaveError] is string error)
+{
+    <div class="alerta alerta-peligro mensaje-pagina" role="alert">@Iconos.AlertaPeligro<p>@error</p></div>
+}

@@ -1,0 +1,76 @@
+@model ListaAdminViewModel<CentroAdminDto>
+@{
+    ViewData["Title"] = "Centros";
+    ViewData["ClaseMain"] = "pagina-usuario";
+    ViewData["Seccion"] = "centros";
+    ViewData["Filtro"] = Model.Filtro == "todas" ? "" : Model.Filtro;
+}
+<div class="contenedor">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Centros</h1>
+            <p class="texto-suave">Un centro aprobado de una organización activa aparece en el mapa público. Revisá que la dirección y el teléfono sean reales.</p>
+        </div>
+    </div>
+    <partial name="_SubnavAdmin" />
+
+    <form method="get" class="filtro-estado" role="group" aria-label="Filtrar por estado" style="margin-bottom:1rem">
+        @foreach (var (valor, texto) in new[] { ("todas", "Todos"), ("pendiente", "Pendientes"), ("aprobado", "Aprobados"), ("rechazado", "Rechazados"), ("suspendido", "Suspendidos") })
+        {
+            <button type="submit" name="estado" value="@valor" aria-pressed="@(Model.Filtro == valor ? "true" : "false")">@texto</button>
+        }
+    </form>
+    <p role="status" class="texto-suave">@Formato.Plural(Model.Elementos.Count, "centro", "centros")</p>
+
+    @if (Model.Elementos.Count == 0)
+    {
+        <div class="tarjeta estado-vacio"><h3>No hay centros con ese estado</h3></div>
+    }
+    else
+    {
+        <ul class="grilla-org">
+            @foreach (var c in Model.Elementos)
+            {
+                <li>
+                    <article class="tarjeta centro-org" aria-labelledby="centro-@c.Id">
+                        <h3 id="centro-@c.Id">@c.Nombre</h3>
+                        <p class="meta">@c.TipoNombre · @c.ZonaNombre, @c.CiudadNombre</p>
+                        <p class="meta">@c.Direccion · @c.Telefono</p>
+                        <p class="meta">De <strong>@c.OrganizacionNombre</strong> (<partial name="_InsigniaVerificacion" model="c.OrganizacionEstado" />) · cargado el @Formato.Fecha(c.CreadoAt)</p>
+                        @if (c.Latitud is double lat && c.Longitud is double lon)
+                        {
+                            <p class="meta"><a href="https://www.openstreetmap.org/?mlat=@Formato.Decimal(lat)&amp;mlon=@Formato.Decimal(lon)#map=17/@Formato.Decimal(lat)/@Formato.Decimal(lon)" target="_blank" rel="noopener noreferrer">Ver ubicación en el mapa<span class="visualmente-oculto"> (se abre en otra pestaña)</span></a></p>
+                        }
+                        else { <p class="meta">Sin ubicación en el mapa.</p> }
+                        @if (!string.IsNullOrWhiteSpace(c.Descripcion)) { <p>@c.Descripcion</p> }
+                        <div class="insignias"><partial name="_InsigniaVerificacion" model="c.Estado" /></div>
+                        @if (!string.IsNullOrWhiteSpace(c.MotivoEstado)) { <div class="alerta alerta-peligro">@Iconos.AlertaPeligro<p><strong>Motivo:</strong> @c.MotivoEstado</p></div> }
+                        <div class="acciones">
+                            @if (c.Estado is "pendiente" or "rechazado" or "suspendido")
+                            {
+                                <form asp-action="EstadoCentro" method="post">
+                                    <input type="hidden" name="id" value="@c.Id" />
+                                    <input type="hidden" name="nuevoEstado" value="aprobado" />
+                                    <input type="hidden" name="filtro" value="@(Model.Filtro == "todas" ? "" : Model.Filtro)" />
+                                    <button type="submit" class="boton">@(c.Estado == "pendiente" ? "Aprobar" : "Reactivar")<span class="visualmente-oculto"> @c.Nombre</span></button>
+                                </form>
+                            }
+                            @if (c.Estado == "pendiente")
+                            {
+                                <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-motivo" data-valores='@System.Text.Json.JsonSerializer.Serialize(new { id = c.Id, nuevoEstado = "rechazado", titulo = "Rechazar centro", nombre = c.Nombre })'>Rechazar<span class="visualmente-oculto"> @c.Nombre</span></button>
+                            }
+                            @if (c.Estado == "aprobado")
+                            {
+                                <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-motivo" data-valores='@System.Text.Json.JsonSerializer.Serialize(new { id = c.Id, nuevoEstado = "suspendido", titulo = "Suspender centro", nombre = c.Nombre })'>Suspender<span class="visualmente-oculto"> @c.Nombre</span></button>
+                            }
+                        </div>
+                    </article>
+                </li>
+            }
+        </ul>
+    }
+</div>
+<partial name="_DialogoMotivo" model='("EstadoCentro", "Admin")' view-data="ViewData" />
+@section Scripts {
+    <script src="~/js/dialogos.js" asp-append-version="true"></script>
+}

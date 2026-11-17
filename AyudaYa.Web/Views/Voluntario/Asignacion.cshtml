@@ -1,0 +1,9 @@
+@model AsignacionDetalleDto
+@{
+    ViewData["Title"] = $"{Model.RecursoNombre} · Solicitud #{Model.SolicitudCodigo}";
+    ViewData["Controlador"] = "Voluntario";
+}
+<partial name="_DetalleAsignacion" model="Model" view-data="ViewData" />
+@section Scripts {
+    <script src="~/js/dialogos.js" asp-append-version="true"></script>
+}
