@@ -39,6 +39,20 @@ public abstract class ServicioBase
                 && ou.Activo,
             cancellationToken);
 
+    /// <summary>
+    /// Miembro activo de una organización que además sigue activa. Se usa para
+    /// datos sensibles: una organización suspendida conserva sus membresías,
+    /// pero no debe ver ubicaciones exactas ni datos de contacto.
+    /// </summary>
+    protected Task<bool> EsMiembroActivoDeOrganizacionActivaAsync(
+        Guid usuarioId, Guid organizacionId, CancellationToken cancellationToken) =>
+        Db.OrganizacionUsuario.AsNoTracking().AnyAsync(
+            ou => ou.OrganizacionId == organizacionId
+                && ou.UsuarioId == usuarioId
+                && ou.Activo
+                && ou.Organizacion.Estado == "activa",
+            cancellationToken);
+
     protected Task<bool> EsResponsableActivoAsync(
         Guid usuarioId, Guid organizacionId, CancellationToken cancellationToken) =>
         Db.OrganizacionUsuario.AsNoTracking().AnyAsync(
