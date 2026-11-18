@@ -1117,6 +1117,24 @@ public sealed class OrganizacionAppService : ServicioBase
             errores.Add(Error("NombreDuplicado", "Ya tienen un centro con ese nombre."));
         }
 
+        // El mismo lugar no se registra dos veces: misma dirección y mismo tipo
+        // en la ciudad, aunque lo cargue otra organización o con otro nombre.
+        // Un centro rechazado no cuenta, así se puede volver a presentar.
+        var direccionMinuscula = direccion!.ToLower();
+        var lugarRepetido = await Db.Centro.AsNoTracking().AnyAsync(
+            c => c.CiudadId == ciudadId
+                && c.Id != centroActualId
+                && c.TipoCentroId == solicitud.TipoCentroId
+                && c.EstadoVerificacion != "rechazado"
+                && c.Direccion.ToLower() == direccionMinuscula,
+            cancellationToken);
+        if (lugarRepetido)
+        {
+            errores.Add(Error(
+                "CentroYaRegistrado",
+                "Ya hay un centro de ese tipo registrado en esa dirección. Si es el mismo lugar, no hace falta cargarlo de nuevo."));
+        }
+
         return new CentroValidado(errores, nombre, direccion, telefono, email, descripcion);
     }
 

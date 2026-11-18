@@ -67,6 +67,18 @@ public sealed class SolicitudesOrganizacionViewModel
     public required IReadOnlyList<SolicitudDisponibleDto> Disponibles { get; init; }
 
     public required OrganizacionDto Organizacion { get; init; }
+
+    public IReadOnlyList<ZonaDto> Zonas { get; init; } = [];
+
+    public IReadOnlyList<TipoCatalogoDto> TiposRecurso { get; init; } = [];
+
+    public Guid? FiltroZona { get; init; }
+
+    public string? FiltroRecurso { get; init; }
+
+    public string? FiltroUrgencia { get; init; }
+
+    public bool HayFiltros => FiltroZona is not null || FiltroRecurso is not null || FiltroUrgencia is not null;
 }
 
 public sealed class AsignacionesOrganizacionViewModel

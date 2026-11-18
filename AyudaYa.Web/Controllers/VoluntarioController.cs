@@ -39,7 +39,7 @@ public sealed class VoluntarioController : ControladorAyudaYa
         var mias = await _asignaciones.ListarDeVoluntarioAsync(UsuarioId, cancellationToken);
         var disponibles = voluntario.Activo
             ? await _consultas.ListarDisponiblesAsync(
-                UsuarioId, voluntario.CiudadId, ampliar ? null : voluntario.ZonaId, cancellationToken)
+                UsuarioId, voluntario.CiudadId, ampliar ? null : voluntario.ZonaId, cancellationToken: cancellationToken)
             : [];
 
         return View(new PanelVoluntarioViewModel

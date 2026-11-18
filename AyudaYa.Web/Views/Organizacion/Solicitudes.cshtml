@@ -20,6 +20,53 @@
     </div>
     <partial name="_SubnavOrganizacion" model="Model.Contexto" view-data="ViewData" />
 
+    <details class="panel-filtros" open>
+        <summary>Filtros</summary>
+        <form method="get" class="filtros" role="search" aria-label="Filtrar solicitudes">
+            <input type="hidden" name="org" value="@Model.Contexto.OrganizacionId" />
+            <div class="campo">
+                <label for="f-zona">Zona</label>
+                <select id="f-zona" name="zona">
+                    <option value="">Todas las zonas</option>
+                    @foreach (var zona in Model.Zonas)
+                    {
+                        <option value="@zona.Id" selected="@(zona.Id == Model.FiltroZona)">@zona.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="campo">
+                <label for="f-recurso">Tipo de ayuda</label>
+                <select id="f-recurso" name="recurso">
+                    <option value="">Cualquier tipo</option>
+                    @foreach (var tipo in Model.TiposRecurso)
+                    {
+                        <option value="@tipo.Codigo" selected="@(tipo.Codigo == Model.FiltroRecurso)">@tipo.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="campo">
+                <label for="f-urgencia">Urgencia</label>
+                <select id="f-urgencia" name="urgencia">
+                    <option value="">Cualquier urgencia</option>
+                    <option value="critica" selected="@(Model.FiltroUrgencia == "critica")">Crítica</option>
+                    <option value="normal" selected="@(Model.FiltroUrgencia == "normal")">Normal</option>
+                </select>
+            </div>
+            <div class="campo">
+                <button type="submit" class="boton">Filtrar</button>
+            </div>
+            @if (Model.HayFiltros)
+            {
+                <div class="filtros-extra">
+                    <a class="boton-texto" asp-action="Solicitudes" asp-route-org="@Model.Contexto.OrganizacionId">Limpiar filtros</a>
+                </div>
+            }
+        </form>
+    </details>
+
+    <div class="barra-resultados">
+        <p role="status" class="texto-suave" style="margin:0">@Formato.Plural(Model.Disponibles.Count, "solicitud", "solicitudes")</p>
+    </div>
     @if (Model.Disponibles.Count > 0)
     {
         <ul class="lista-tarjetas">
@@ -32,8 +79,16 @@
     else
     {
         <div class="tarjeta estado-vacio">
-            <h3>No hay solicitudes para tomar</h3>
-            <p>Por ahora no hay pedidos pendientes en la ciudad. Volvé a revisar más tarde.</p>
+            @if (Model.HayFiltros)
+            {
+                <h3>No hay solicitudes con esos filtros</h3>
+                <p>Probá con otra combinación o <a asp-action="Solicitudes" asp-route-org="@Model.Contexto.OrganizacionId">limpiá los filtros</a> para ver todos los pedidos de la ciudad.</p>
+            }
+            else
+            {
+                <h3>No hay solicitudes para tomar</h3>
+                <p>Por ahora no hay pedidos pendientes en la ciudad. Volvé a revisar más tarde.</p>
+            }
         </div>
     }
 </div>
