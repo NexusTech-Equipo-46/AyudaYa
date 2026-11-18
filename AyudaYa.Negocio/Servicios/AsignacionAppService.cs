@@ -1,6 +1,7 @@
 using AyudaYa.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace AyudaYa.Negocio.Servicios;
 
@@ -242,8 +243,10 @@ public sealed class AsignacionAppService : ServicioBase
                 Codigos.NoAutorizado, "No tenés permiso para ver esta asignación.");
         }
 
+        var organizacionOperativa = a.OrganizacionEstado is null or "activa";
         ContactoAsignacionDto? contacto = null;
-        if (ReglasNegocio.AsignacionDaAccesoAlContacto(a.Estado, a.ConfirmadaAt)
+        if ((esAdmin || organizacionOperativa)
+            && ReglasNegocio.AsignacionDaAccesoAlContacto(a.Estado, a.ConfirmadaAt)
             && a.Contacto is not null)
         {
             contacto = new ContactoAsignacionDto(
@@ -254,7 +257,6 @@ public sealed class AsignacionAppService : ServicioBase
                 a.Contacto.Longitud);
         }
 
-        var organizacionOperativa = a.OrganizacionEstado is null or "activa";
         var solicitudCerrada = a.SolicitudEstado is "resuelta" or "cancelada";
         var puedeOperar = esDestinatario && organizacionOperativa && !solicitudCerrada;
 
@@ -372,6 +374,36 @@ public sealed class AsignacionAppService : ServicioBase
             return ResultadoOperacion.Falla(UsuarioInvalido());
         }
 
+        await using var transaccion = await Db.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // Bloquea la fila antes de leer el estado. Así dos acciones simultáneas
+            // sobre la misma asignación se serializan: la segunda espera y, al
+            // continuar, ve el estado que confirmó la primera.
+            await Db.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 FROM asignacion WHERE id = {asignacionId} FOR UPDATE",
+                cancellationToken);
+
+            return await EjecutarConBloqueoAsync(
+                actor, actorId, asignacionId, accion, motivoLimpio, transaccion, cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            return ResultadoOperacion.Falla(Error(
+                Codigos.ConflictoDeEstado,
+                "La asignación cambió mientras se actualizaba. Actualizá los datos y volvé a intentar."));
+        }
+    }
+
+    private async Task<ResultadoOperacion> EjecutarConBloqueoAsync(
+        UsuarioIdentity actor,
+        Guid actorId,
+        Guid asignacionId,
+        Accion accion,
+        string? motivoLimpio,
+        IDbContextTransaction transaccion,
+        CancellationToken cancellationToken)
+    {
         var asignacion = await Db.Asignacion
             .Include(a => a.Organizacion)
             .Include(a => a.SolicitudRecurso)
@@ -444,86 +476,76 @@ public sealed class AsignacionAppService : ServicioBase
         var estadoSolicitudAnterior = solicitud.Estado;
         string? motivoHistorial = null;
 
-        await using var transaccion = await Db.Database.BeginTransactionAsync(cancellationToken);
-        try
+        switch (accion)
         {
-            switch (accion)
-            {
-                case Accion.Iniciar:
-                    asignacion.Estado = "en_atencion";
-                    asignacion.IniciadaPor = actorId;
-                    asignacion.IniciadaAt = ahora;
-                    asignacion.ActualizadoAt = ahora;
-                    recurso.Estado = "en_atencion";
-                    recurso.ActualizadoAt = ahora;
-                    motivoHistorial = "Se inició la atención de un recurso.";
-                    break;
+            case Accion.Iniciar:
+                asignacion.Estado = "en_atencion";
+                asignacion.IniciadaPor = actorId;
+                asignacion.IniciadaAt = ahora;
+                asignacion.ActualizadoAt = ahora;
+                recurso.Estado = "en_atencion";
+                recurso.ActualizadoAt = ahora;
+                motivoHistorial = "Se inició la atención de un recurso.";
+                break;
 
-                case Accion.Completar:
-                    asignacion.Estado = "completada";
-                    asignacion.CompletadaPor = actorId;
-                    asignacion.CompletadaAt = ahora;
-                    asignacion.ActualizadoAt = ahora;
-                    motivoHistorial = "Se completó la atención de un recurso. Falta la confirmación.";
-                    break;
+            case Accion.Completar:
+                asignacion.Estado = "completada";
+                asignacion.CompletadaPor = actorId;
+                asignacion.CompletadaAt = ahora;
+                asignacion.ActualizadoAt = ahora;
+                motivoHistorial = "Se completó la atención de un recurso. Falta la confirmación.";
+                break;
 
-                case Accion.Confirmar:
-                    asignacion.ConfirmadaPor = actorId;
-                    asignacion.ConfirmadaAt = ahora;
-                    asignacion.ActualizadoAt = ahora;
-                    recurso.Estado = "resuelta";
-                    recurso.ResueltaAt = ahora;
-                    recurso.ActualizadoAt = ahora;
-                    motivoHistorial = "Se confirmó la atención de un recurso.";
-                    break;
+            case Accion.Confirmar:
+                asignacion.ConfirmadaPor = actorId;
+                asignacion.ConfirmadaAt = ahora;
+                asignacion.ActualizadoAt = ahora;
+                recurso.Estado = "resuelta";
+                recurso.ResueltaAt = ahora;
+                recurso.ActualizadoAt = ahora;
+                motivoHistorial = "Se confirmó la atención de un recurso.";
+                break;
 
-                case Accion.Liberar:
-                    asignacion.Estado = "liberada";
-                    asignacion.LiberadaPor = actorId;
-                    asignacion.LiberadaAt = ahora;
-                    asignacion.MotivoLiberacion = motivoLimpio;
-                    asignacion.ActualizadoAt = ahora;
+            case Accion.Liberar:
+                asignacion.Estado = "liberada";
+                asignacion.LiberadaPor = actorId;
+                asignacion.LiberadaAt = ahora;
+                asignacion.MotivoLiberacion = motivoLimpio;
+                asignacion.ActualizadoAt = ahora;
 
-                    // La base no deja volver el recurso a pendiente mientras la
-                    // asignación siga viva: primero se guarda la liberación.
-                    await Db.SaveChangesAsync(cancellationToken);
+                // La base no deja volver el recurso a pendiente mientras la
+                // asignación siga viva: primero se guarda la liberación.
+                await Db.SaveChangesAsync(cancellationToken);
 
-                    recurso.Estado = "pendiente";
-                    recurso.ResueltaAt = null;
-                    recurso.ActualizadoAt = ahora;
-                    motivoHistorial = $"Se liberó un recurso: {motivoLimpio}";
-                    break;
-            }
-
-            var nuevoEstado = ReglasNegocio.CalcularEstadoSolicitud(
-                solicitud.SolicitudRecurso.Select(r => r.Estado));
-
-            if (nuevoEstado != estadoSolicitudAnterior)
-            {
-                solicitud.Estado = nuevoEstado;
-                solicitud.ActualizadoAt = ahora;
-
-                Db.HistorialSolicitud.Add(new HistorialSolicitud
-                {
-                    Id = Guid.NewGuid(),
-                    SolicitudId = solicitud.Id,
-                    EstadoAnterior = estadoSolicitudAnterior,
-                    EstadoNuevo = nuevoEstado,
-                    ActorId = actorId,
-                    Motivo = motivoHistorial,
-                    CreadoAt = ahora
-                });
-            }
-
-            await Db.SaveChangesAsync(cancellationToken);
-            await transaccion.CommitAsync(cancellationToken);
+                recurso.Estado = "pendiente";
+                recurso.ResueltaAt = null;
+                recurso.ActualizadoAt = ahora;
+                motivoHistorial = $"Se liberó un recurso: {motivoLimpio}";
+                break;
         }
-        catch (DbUpdateException)
+
+        var nuevoEstado = ReglasNegocio.CalcularEstadoSolicitud(
+            solicitud.SolicitudRecurso.Select(r => r.Estado));
+
+        if (nuevoEstado != estadoSolicitudAnterior)
         {
-            return ResultadoOperacion.Falla(Error(
-                Codigos.ConflictoDeEstado,
-                "La asignación cambió mientras se actualizaba. Actualizá los datos y volvé a intentar."));
+            solicitud.Estado = nuevoEstado;
+            solicitud.ActualizadoAt = ahora;
+
+            Db.HistorialSolicitud.Add(new HistorialSolicitud
+            {
+                Id = Guid.NewGuid(),
+                SolicitudId = solicitud.Id,
+                EstadoAnterior = estadoSolicitudAnterior,
+                EstadoNuevo = nuevoEstado,
+                ActorId = actorId,
+                Motivo = motivoHistorial,
+                CreadoAt = ahora
+            });
         }
+
+        await Db.SaveChangesAsync(cancellationToken);
+        await transaccion.CommitAsync(cancellationToken);
 
         return ResultadoOperacion.Ok();
     }

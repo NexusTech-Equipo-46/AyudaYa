@@ -477,7 +477,8 @@ public sealed class SolicitudAppService
                             && _db.OrganizacionUsuario.Any(ou =>
                                 ou.OrganizacionId == a.OrganizacionId
                                 && ou.UsuarioId == actorId
-                                && ou.Activo)),
+                                && ou.Activo
+                                && ou.Organizacion.Estado == "activa")),
                     cancellationToken);
 
             if (!tieneAsignacionActiva)
