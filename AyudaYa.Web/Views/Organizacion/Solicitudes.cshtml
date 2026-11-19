@@ -65,7 +65,16 @@
     </details>
 
     <div class="barra-resultados">
-        <p role="status" class="texto-suave" style="margin:0">@Formato.Plural(Model.Disponibles.Count, "solicitud", "solicitudes")</p>
+        <p role="status" class="texto-suave" style="margin:0">
+            @if (Model.ListaRecortada)
+            {
+                <text>Mostrando las primeras @Model.Disponibles.Count: las críticas y después las más recientes. Usá los filtros para encontrar otras.</text>
+            }
+            else
+            {
+                @Formato.Plural(Model.Disponibles.Count, "solicitud", "solicitudes")
+            }
+        </p>
     </div>
     @if (Model.Disponibles.Count > 0)
     {

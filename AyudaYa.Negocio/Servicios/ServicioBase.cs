@@ -62,6 +62,35 @@ public abstract class ServicioBase
                 && ou.Rol == "responsable",
             cancellationToken);
 
+    /// <summary>
+    /// Regla R2: un mismo lugar no se registra dos veces. Busca en la ciudad
+    /// otro centro del mismo tipo con la misma dirección normalizada, de
+    /// cualquier organización. Un centro rechazado no cuenta, así el lugar se
+    /// puede volver a presentar. Se usa al crear, editar y aprobar.
+    /// </summary>
+    protected async Task<bool> ExisteOtroCentroEnElLugarAsync(
+        Guid ciudadId,
+        Guid tipoCentroId,
+        string direccion,
+        Guid? centroActualId,
+        CancellationToken cancellationToken)
+    {
+        // Pocos centros por ciudad y tipo: se comparan en memoria para poder
+        // quitar acentos y espacios igual que en ReglasNegocio.
+        var direcciones = await Db.Centro.AsNoTracking()
+            .Where(c => c.CiudadId == ciudadId
+                && c.TipoCentroId == tipoCentroId
+                && c.Id != centroActualId
+                && c.EstadoVerificacion != "rechazado")
+            .Select(c => c.Direccion)
+            .ToListAsync(cancellationToken);
+
+        var buscada = ReglasNegocio.NormalizarDireccion(direccion);
+        return direcciones.Any(d => ReglasNegocio.NormalizarDireccion(d) == buscada);
+    }
+
+    protected static ErrorNegocio CentroYaRegistrado(string mensaje) => new("CentroYaRegistrado", mensaje);
+
     protected static ErrorNegocio Error(string codigo, string mensaje) => new(codigo, mensaje);
 
     protected static ErrorNegocio UsuarioInvalido() =>

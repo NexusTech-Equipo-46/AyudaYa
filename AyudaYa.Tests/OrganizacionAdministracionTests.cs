@@ -195,9 +195,10 @@ public class OrganizacionAdministracionTests
         var centroId = (await organizaciones.CrearCentroAsync(
             responsable, orgId, Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1"))).Dato;
 
-        // Mismo tipo y dirección: no importa el nombre, las mayúsculas ni la organización.
+        // Mismo tipo y dirección: no importa el nombre, las mayúsculas, los
+        // espacios ni la organización.
         var mismaOrg = await organizaciones.CrearCentroAsync(
-            responsable, orgId, Centro(e, tiposCentro["refugio"], "Refugio B", "calle 1"));
+            responsable, orgId, Centro(e, tiposCentro["refugio"], "Refugio B", "  calle   1 "));
         Assert.Contains(mismaOrg.Errores, x => x.Codigo == "CentroYaRegistrado");
         var otraOrg = await organizaciones.CrearCentroAsync(
             otroResponsable, otraOrgId, Centro(e, tiposCentro["refugio"], "Refugio C", "Calle 1"));
@@ -213,6 +214,11 @@ public class OrganizacionAdministracionTests
         var nuevo = await organizaciones.CrearCentroAsync(
             otroResponsable, otraOrgId, Centro(e, tiposCentro["refugio"], "Refugio C", "Calle 1"));
         Assert.True(nuevo.Exito, nuevo.Mensajes());
+
+        // Reactivar el rechazado duplicaría el lugar: la aprobación también lo impide.
+        var reactivar = await admin.CambiarEstadoCentroAsync(e.AdminId, centroId, "aprobado", null);
+        Assert.False(reactivar.Exito);
+        Assert.Equal("CentroYaRegistrado", reactivar.Errores.Single().Codigo);
     }
 
     [FactBaseDeDatos]

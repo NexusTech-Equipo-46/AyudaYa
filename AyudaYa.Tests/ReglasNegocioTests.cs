@@ -101,4 +101,24 @@ public class ReglasNegocioTests
     {
         Assert.Equal(esperado, ReglasNegocio.Limpiar(entrada));
     }
+
+    [Theory]
+    [InlineData("Calle 1", "calle 1")]
+    [InlineData("  Calle   1  ", "calle 1")]
+    [InlineData("Av. Hipólito Yrigoyen 1450, General Pacheco", "av hipolito yrigoyen 1450 general pacheco")]
+    [InlineData("José Peña 20", "jose pena 20")]
+    [InlineData("", "")]
+    [InlineData(null, "")]
+    public void La_direccion_se_normaliza_para_detectar_un_mismo_lugar(string? entrada, string esperado)
+    {
+        Assert.Equal(esperado, ReglasNegocio.NormalizarDireccion(entrada));
+    }
+
+    [Fact]
+    public void Las_abreviaturas_no_se_expanden()
+    {
+        Assert.NotEqual(
+            ReglasNegocio.NormalizarDireccion("Av. San Martín 100"),
+            ReglasNegocio.NormalizarDireccion("Avenida San Martin 100"));
+    }
 }

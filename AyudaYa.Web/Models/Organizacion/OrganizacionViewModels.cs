@@ -79,6 +79,9 @@ public sealed class SolicitudesOrganizacionViewModel
     public string? FiltroUrgencia { get; init; }
 
     public bool HayFiltros => FiltroZona is not null || FiltroRecurso is not null || FiltroUrgencia is not null;
+
+    /// <summary>La consulta trae hasta un máximo: si lo alcanza, puede haber más.</summary>
+    public bool ListaRecortada => Disponibles.Count >= SolicitudConsultasAppService.MaximoDisponibles;
 }
 
 public sealed class AsignacionesOrganizacionViewModel
