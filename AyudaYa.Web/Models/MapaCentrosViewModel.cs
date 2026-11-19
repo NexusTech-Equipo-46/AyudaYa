@@ -35,6 +35,7 @@ public sealed class MapaCentrosViewModel
 
     public object DatosNecesidades => Necesidades.Select(n => new
     {
+        zonaId = n.ZonaId,
         zona = n.Zona,
         latitud = n.Latitud,
         longitud = n.Longitud,

@@ -26,6 +26,9 @@
     const filtrosActivos = document.getElementById("filtros-activos");
     const resultados = document.getElementById("resultados");
     const panelFiltros = document.getElementById("panel-filtros");
+    const filasNecesidades = document.querySelectorAll("#tabla-pedidos-zona tr[data-zona]");
+    const tablaNecesidades = document.getElementById("tabla-pedidos-zona");
+    const sinPedidosZona = document.getElementById("sin-pedidos-zona");
     const nombreRecurso = (codigo) => {
         const opcion = campos.recurso && [...campos.recurso.options].find((o) => o.value === codigo);
         return opcion ? opcion.textContent : codigo;
@@ -48,6 +51,7 @@
     let mapa = null;
     const marcadores = new Map();
     let capaNecesidades = null;
+    const circulosNecesidades = [];
 
     function popupCentro(c) {
         const caja = document.createElement("div");
@@ -90,7 +94,7 @@
             r.textContent = n.recursos.map((x) => x.nombre).join(", ");
             caja.append(t, p, r);
             circulo.bindPopup(caja);
-            capaNecesidades.addLayer(circulo);
+            circulosNecesidades.push({ zonaId: n.zonaId, circulo });
         });
     } else {
         const contenedor = document.getElementById("mapa");
@@ -149,6 +153,16 @@
         const encontrados = filtrar();
         const recurso = campos.recurso.value;
         const visibles = new Set(encontrados.map((c) => c.id));
+        const necesidadesVisibles = necesidades.filter((n) => !campos.zona.value || n.zonaId === campos.zona.value);
+
+        filasNecesidades.forEach((fila) => {
+            fila.hidden = !!campos.zona.value && fila.dataset.zona !== campos.zona.value;
+        });
+        tablaNecesidades.hidden = necesidadesVisibles.length === 0;
+        sinPedidosZona.hidden = necesidadesVisibles.length > 0;
+        sinPedidosZona.textContent = campos.zona.value
+            ? "No hay pedidos abiertos para mostrar en esta zona."
+            : "No hay pedidos abiertos para mostrar.";
 
         // Reordena y oculta las tarjetas ya renderizadas.
         encontrados.forEach((c) => {
@@ -174,6 +188,10 @@
                 else { m.remove(); }
             });
             if (campos.necesidades) {
+                capaNecesidades.clearLayers();
+                circulosNecesidades.forEach(({ zonaId, circulo }) => {
+                    if (!campos.zona.value || zonaId === campos.zona.value) capaNecesidades.addLayer(circulo);
+                });
                 if (campos.necesidades.checked) capaNecesidades.addTo(mapa); else capaNecesidades.remove();
             }
             encuadrar();
@@ -187,7 +205,9 @@
     function encuadrar() {
         if (!mapa || !mapa.getContainer().offsetWidth) return;
         const puntos = puntosVisibles.slice();
-        if (campos.necesidades && campos.necesidades.checked) necesidades.forEach((n) => puntos.push(L.latLng(n.latitud, n.longitud)));
+        if (campos.necesidades && campos.necesidades.checked) necesidades
+            .filter((n) => !campos.zona.value || n.zonaId === campos.zona.value)
+            .forEach((n) => puntos.push(L.latLng(n.latitud, n.longitud)));
         if (!puntos.length) return;
         mapa.fitBounds(L.latLngBounds(puntos).pad(0.25), { maxZoom: 15 });
     }
