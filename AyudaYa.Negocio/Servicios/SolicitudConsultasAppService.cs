@@ -27,7 +27,11 @@ public sealed record SolicitudResumenDto(
     public bool EstaAbierta => Estado is "pendiente" or "asignada" or "en_atencion" or "parcial";
 }
 
-public sealed record AsignadoDto(string Tipo, string Nombre);
+public sealed record AsignadoDto(
+    string Tipo,
+    string Nombre,
+    string Estado,
+    string? TelefonoContacto);
 
 public sealed record RecursoSolicitudDetalleDto(
     Guid Id,
@@ -228,7 +232,9 @@ public sealed class SolicitudConsultasAppService : ServicioBase
                         a.Estado,
                         a.ConfirmadaAt,
                         Voluntario = a.Voluntario == null ? null : a.Voluntario.Usuario.NombreCompleto,
-                        Organizacion = a.Organizacion == null ? null : a.Organizacion.Nombre
+                        VoluntarioTelefono = a.Voluntario == null ? null : a.Voluntario.TelefonoContacto,
+                        Organizacion = a.Organizacion == null ? null : a.Organizacion.Nombre,
+                        OrganizacionTelefono = a.Organizacion == null ? null : a.Organizacion.TelefonoContacto
                     })
                     .FirstOrDefault()
             })
@@ -239,9 +245,18 @@ public sealed class SolicitudConsultasAppService : ServicioBase
             AsignadoDto? asignado = null;
             if (r.Asignacion is not null)
             {
+                var activa = r.Asignacion.Estado is "asignada" or "en_atencion";
                 asignado = r.Asignacion.Organizacion is not null
-                    ? new AsignadoDto("organizacion", r.Asignacion.Organizacion)
-                    : new AsignadoDto("voluntario", ReglasNegocio.NombreCorto(r.Asignacion.Voluntario));
+                    ? new AsignadoDto(
+                        "organizacion",
+                        r.Asignacion.Organizacion,
+                        r.Asignacion.Estado,
+                        activa ? r.Asignacion.OrganizacionTelefono : null)
+                    : new AsignadoDto(
+                        "voluntario",
+                        ReglasNegocio.NombreCorto(r.Asignacion.Voluntario),
+                        r.Asignacion.Estado,
+                        activa ? r.Asignacion.VoluntarioTelefono : null);
             }
 
             var puedeConfirmar = r.Asignacion is { Estado: "completada", ConfirmadaAt: null };

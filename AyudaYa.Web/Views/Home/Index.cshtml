@@ -24,6 +24,7 @@
                 {
                     <a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Login" asp-route-returnUrl="@Url.Action("Nueva", "Solicitudes")">Pedir ayuda</a>
                 }
+                <a class="boton boton-secundario" asp-controller="Impacto" asp-action="Index">Ver impacto</a>
             </div>
             <div class="necesidades">
                 <h2>¿Qué necesitás?</h2>
@@ -48,11 +49,37 @@
 </section>
 <section class="seccion" aria-labelledby="titulo-como">
     <div class="contenedor">
-        <h2 id="titulo-como">Cómo funciona</h2>
+        <h2 id="titulo-como">Cómo funciona y cómo podés participar</h2>
         <ol class="pasos">
-            <li class="tarjeta"><h3>Buscá un centro</h3><p>Mirá en el mapa o en la lista qué centros están abiertos y qué recursos tienen. No hace falta registrarse.</p></li>
-            <li class="tarjeta"><h3>Pedí ayuda</h3><p>Con tu cuenta podés cargar una solicitud. Tu dirección y teléfono solo los ve quien te asista.</p></li>
-            <li class="tarjeta"><h3>Sumate a ayudar</h3><p>Anotate como voluntario o registrá tu organización para atender solicitudes de tu zona.</p></li>
+            <li class="tarjeta">
+                <h3>1. Buscá un centro o pedí ayuda</h3>
+                <p>Mirá en el mapa qué centros están abiertos sin registrarte, o creá tu cuenta para publicar una solicitud urgente.</p>
+                <p class="mt-2"><a class="boton boton-secundario" asp-controller="Centros" asp-action="Index">Explorar centros</a></p>
+            </li>
+            <li class="tarjeta">
+                <h3>2. Ayudá como voluntario</h3>
+                <p>Registrate, activá tu perfil de voluntario y filtrá pedidos cercanos por zona, tipo de ayuda o urgencia para colaborar.</p>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Voluntario" asp-action="Panel">Ir a voluntariado</a></p>
+                }
+                else
+                {
+                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Registro">Registrarme para ayudar</a></p>
+                }
+            </li>
+            <li class="tarjeta">
+                <h3>3. Creá una organización que ayude</h3>
+                <p>Si representás un comedor, refugio, hospital o grupo solidario, registrá tu organización y publicá tus centros y recursos.</p>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Organizacion" asp-action="Crear">Crear organización</a></p>
+                }
+                else
+                {
+                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Registro" asp-route-returnUrl="@Url.Action("Crear", "Organizacion")">Crear una organización</a></p>
+                }
+            </li>
         </ol>
     </div>
 </section>

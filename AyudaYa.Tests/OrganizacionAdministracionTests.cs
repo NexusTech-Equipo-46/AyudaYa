@@ -252,4 +252,65 @@ public class OrganizacionAdministracionTests
         Assert.Contains(eventos, ev => ev.Entidad == "usuario" && ev.Accion == "reactivar");
         Assert.Contains(eventos, ev => ev.Entidad == "zona" && ev.Accion == "crear");
     }
+
+    [FactBaseDeDatos]
+    public async Task Una_organizacion_suspendida_no_ve_contacto_ni_ubicacion_pero_puede_liberar()
+    {
+        await using var e = new Escenario();
+        await e.PrepararAsync();
+
+        var responsable = await e.CrearUsuarioAsync("Responsable");
+        var miembro = await e.CrearUsuarioAsync("Miembro");
+        var solicitante = await e.CrearUsuarioAsync("Marina");
+        var organizaciones = e.Servicio<OrganizacionAppService>();
+        var admin = e.Servicio<AdministracionAppService>();
+        var solicitudes = e.Servicio<SolicitudAppService>();
+        var asignaciones = e.Servicio<AsignacionAppService>();
+
+        var orgId = (await organizaciones.RegistrarAsync(responsable, new RegistrarOrganizacionRequest(
+            e.CiudadId, $"Red {e.Sufijo}", "comunitaria", $"red.{e.Sufijo}@prueba.test", "011 4000-1001", null))).Dato;
+        Assert.True((await admin.CambiarEstadoOrganizacionAsync(e.AdminId, orgId, "activa", null)).Exito);
+
+        var emailMiembro = (await e.Servicio<Microsoft.AspNetCore.Identity.UserManager<AyudaYa.Data.UsuarioIdentity>>()
+            .FindByIdAsync(miembro.ToString()))!.Email!;
+        Assert.True((await organizaciones.AgregarMiembroAsync(responsable, orgId, emailMiembro, "miembro")).Exito);
+
+        var solicitud = await e.CrearSolicitudAsync(solicitante, null, ("alimentos", 2));
+        var recurso = solicitud.Recursos.Single();
+        Assert.True((await solicitudes.AsignarAsync(responsable, recurso.Id, null, orgId)).Exito);
+        var asignacionId = (await asignaciones.ListarDeOrganizacionAsync(responsable, orgId)).Dato!.Single().Id;
+
+        // Mientras la organización está activa, el miembro ve contacto y ubicación.
+        var antes = await asignaciones.ObtenerAsync(miembro, asignacionId);
+        Assert.True(antes.Exito, antes.Mensajes());
+        Assert.NotNull(antes.Dato!.Contacto);
+        Assert.True((await solicitudes.ObtenerUbicacionExactaAsync(miembro, solicitud.Id)).Exito);
+
+        Assert.True((await admin.CambiarEstadoOrganizacionAsync(
+            e.AdminId, orgId, "suspendida", "Reporte de abuso")).Exito);
+
+        // Sigue viendo la asignación para poder liberarla, pero sin contacto.
+        var despues = await asignaciones.ObtenerAsync(miembro, asignacionId);
+        Assert.True(despues.Exito, despues.Mensajes());
+        Assert.Null(despues.Dato!.Contacto);
+        Assert.False(despues.Dato.PuedeIniciar);
+        Assert.False(despues.Dato.PuedeCompletar);
+        Assert.True(despues.Dato.PuedeLiberar);
+
+        // La ubicación exacta deja de estar disponible para el miembro.
+        var ubicacion = await solicitudes.ObtenerUbicacionExactaAsync(miembro, solicitud.Id);
+        Assert.False(ubicacion.Exito);
+        Assert.Equal("NoAutorizado", ubicacion.Errores.Single().Codigo);
+
+        // Un administrador conserva el acceso completo.
+        Assert.True((await solicitudes.ObtenerUbicacionExactaAsync(e.AdminId, solicitud.Id)).Exito);
+        var adminDetalle = await asignaciones.ObtenerAsync(e.AdminId, asignacionId);
+        Assert.True(adminDetalle.Exito, adminDetalle.Mensajes());
+        Assert.NotNull(adminDetalle.Dato!.Contacto);
+
+        // No puede iniciar, pero sí liberar para no dejar el recurso trabado.
+        Assert.False((await asignaciones.IniciarAsync(miembro, asignacionId)).Exito);
+        var liberar = await asignaciones.LiberarAsync(miembro, asignacionId, "La organización fue suspendida");
+        Assert.True(liberar.Exito, liberar.Mensajes());
+    }
 }
