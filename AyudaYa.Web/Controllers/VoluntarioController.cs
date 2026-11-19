@@ -10,25 +10,32 @@ namespace AyudaYa.Web.Controllers;
 [Authorize]
 public sealed class VoluntarioController : ControladorAyudaYa
 {
-    private readonly VoluntarioAppService _voluntarios;
+   private readonly VoluntarioAppService _voluntarios;
     private readonly SolicitudAppService _solicitudes;
     private readonly SolicitudConsultasAppService _consultas;
     private readonly AsignacionAppService _asignaciones;
+    private readonly CatalogosAppService _catalogos;
 
     public VoluntarioController(
         VoluntarioAppService voluntarios,
         SolicitudAppService solicitudes,
         SolicitudConsultasAppService consultas,
-        AsignacionAppService asignaciones)
+        AsignacionAppService asignaciones,
+        CatalogosAppService catalogos)
     {
         _voluntarios = voluntarios;
         _solicitudes = solicitudes;
         _consultas = consultas;
         _asignaciones = asignaciones;
+        _catalogos = catalogos;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Panel(bool ampliar, CancellationToken cancellationToken)
+    public async Task<IActionResult> Panel(
+        bool ampliar,
+        string? tipoRecurso,
+        string? urgencia,
+        CancellationToken cancellationToken)
     {
         var voluntario = await _voluntarios.ObtenerAsync(UsuarioId, cancellationToken);
         if (voluntario is null)
@@ -37,9 +44,15 @@ public sealed class VoluntarioController : ControladorAyudaYa
         }
 
         var mias = await _asignaciones.ListarDeVoluntarioAsync(UsuarioId, cancellationToken);
+        var tipos = await _catalogos.TiposRecursoActivosAsync(cancellationToken);
         var disponibles = voluntario.Activo
             ? await _consultas.ListarDisponiblesAsync(
-                UsuarioId, voluntario.CiudadId, ampliar ? null : voluntario.ZonaId, cancellationToken)
+                UsuarioId,
+                voluntario.CiudadId,
+                ampliar ? null : voluntario.ZonaId,
+                cancellationToken,
+                tipoRecurso,
+                urgencia)
             : [];
 
         return View(new PanelVoluntarioViewModel
@@ -50,7 +63,10 @@ public sealed class VoluntarioController : ControladorAyudaYa
             CantidadPorConfirmar = mias.Count(a => a.EsPorConfirmar),
             CantidadConfirmadas = mias.Count(a => a.Estado == "confirmada"),
             Disponibles = disponibles,
-            Ampliar = ampliar || voluntario.ZonaId is null
+            Ampliar = ampliar || voluntario.ZonaId is null,
+            TipoRecurso = tipoRecurso,
+            Urgencia = urgencia,
+            TiposRecurso = tipos
         });
     }
 

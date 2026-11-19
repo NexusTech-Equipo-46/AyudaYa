@@ -42,6 +42,12 @@ public sealed class PanelVoluntarioViewModel
     public IReadOnlyList<SolicitudDisponibleDto> Disponibles { get; init; } = [];
 
     public bool Ampliar { get; init; }
+
+    public string? TipoRecurso { get; init; }
+
+    public string? Urgencia { get; init; }
+
+    public IReadOnlyList<TipoCatalogoDto> TiposRecurso { get; init; } = [];
 }
 
 public sealed class ListaAsignacionesViewModel
