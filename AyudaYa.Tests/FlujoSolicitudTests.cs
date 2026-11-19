@@ -173,6 +173,25 @@ public class FlujoSolicitudTests
     }
 
     [FactBaseDeDatos]
+    public async Task Los_disponibles_se_filtran_por_tipo_de_ayuda_y_urgencia()
+    {
+        await using var e = new Escenario();
+        await e.PrepararAsync();
+
+        var solicitante = await e.CrearUsuarioAsync("Marina");
+        var voluntario = await e.CrearVoluntarioAsync("Lucas", null);
+        var consultas = e.Servicio<SolicitudConsultasAppService>();
+
+        // La solicitud de prueba es de urgencia normal.
+        var solicitud = await e.CrearSolicitudAsync(solicitante, null, ("agua", 2));
+
+        Assert.Contains(await consultas.ListarDisponiblesAsync(voluntario, e.CiudadId, null, "agua"), s => s.Id == solicitud.Id);
+        Assert.DoesNotContain(await consultas.ListarDisponiblesAsync(voluntario, e.CiudadId, null, "abrigo"), s => s.Id == solicitud.Id);
+        Assert.Contains(await consultas.ListarDisponiblesAsync(voluntario, e.CiudadId, null, urgencia: "normal"), s => s.Id == solicitud.Id);
+        Assert.DoesNotContain(await consultas.ListarDisponiblesAsync(voluntario, e.CiudadId, null, urgencia: "critica"), s => s.Id == solicitud.Id);
+    }
+
+    [FactBaseDeDatos]
     public async Task Un_usuario_desactivado_o_sin_confirmar_no_puede_pedir_ayuda()
     {
         await using var e = new Escenario();

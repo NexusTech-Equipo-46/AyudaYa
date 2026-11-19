@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace AyudaYa.Negocio;
 
 /// <summary>
@@ -134,4 +137,25 @@ public static class ReglasNegocio
     /// </summary>
     public static string? Limpiar(string? valor) =>
         string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
+
+    /// <summary>
+    /// Forma de comparar direcciones para detectar un mismo lugar: sin
+    /// mayúsculas, acentos, puntos ni comas, y con un solo espacio entre
+    /// palabras. "Av. Hipólito  Yrigoyen 1450" y "av hipolito yrigoyen 1450"
+    /// quedan iguales. No expande abreviaturas ("Av." no equivale a "Avenida").
+    /// </summary>
+    public static string NormalizarDireccion(string? direccion)
+    {
+        var sinAcentos = new StringBuilder();
+        foreach (var c in (direccion ?? string.Empty).Normalize(NormalizationForm.FormD))
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            {
+                sinAcentos.Append(c is '.' or ',' ? ' ' : char.ToLowerInvariant(c));
+            }
+        }
+
+        return string.Join(' ', sinAcentos.ToString()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    }
 }

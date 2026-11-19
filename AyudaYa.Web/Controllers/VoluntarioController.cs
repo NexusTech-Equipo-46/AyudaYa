@@ -50,9 +50,9 @@ public sealed class VoluntarioController : ControladorAyudaYa
                 UsuarioId,
                 voluntario.CiudadId,
                 ampliar ? null : voluntario.ZonaId,
-                cancellationToken,
                 tipoRecurso,
-                urgencia)
+                urgencia,
+                cancellationToken)
             : [];
 
         return View(new PanelVoluntarioViewModel

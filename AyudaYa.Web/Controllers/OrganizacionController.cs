@@ -99,9 +99,14 @@ public sealed class OrganizacionController : ControladorAyudaYa
         });
     }
 
-    /// <summary>Solicitudes de la ciudad de la organización con recursos para tomar.</summary>
+    /// <summary>
+    /// Solicitudes de la ciudad de la organización con recursos para tomar,
+    /// filtrables por zona, tipo de ayuda y urgencia. Un valor que no está en
+    /// los catálogos se ignora.
+    /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Solicitudes(Guid? org, CancellationToken cancellationToken)
+    public async Task<IActionResult> Solicitudes(
+        Guid? org, Guid? zona, string? recurso, string? urgencia, CancellationToken cancellationToken)
     {
         var (contexto, respuesta) = await ResolverAsync(org, cancellationToken);
         if (respuesta is not null) return respuesta;
@@ -111,14 +116,25 @@ public sealed class OrganizacionController : ControladorAyudaYa
         var denegado = RespuestaDeError(organizacion);
         if (denegado is not null) return denegado;
 
+        var zonas = await _catalogos.ZonasActivasAsync(organizacion.Dato!.CiudadId, cancellationToken);
+        var tiposRecurso = await _catalogos.TiposRecursoActivosAsync(cancellationToken);
+        var filtroZona = zonas.Any(z => z.Id == zona) ? zona : null;
+        var filtroRecurso = tiposRecurso.Any(t => t.Codigo == recurso) ? recurso : null;
+        var filtroUrgencia = urgencia is "critica" or "normal" ? urgencia : null;
+
         var disponibles = await _consultas.ListarDisponiblesAsync(
-            UsuarioId, organizacion.Dato!.CiudadId, null, cancellationToken);
+            UsuarioId, organizacion.Dato.CiudadId, filtroZona, filtroRecurso, filtroUrgencia, cancellationToken);
 
         return View(new SolicitudesOrganizacionViewModel
         {
             Contexto = contexto,
             Organizacion = organizacion.Dato,
-            Disponibles = disponibles
+            Disponibles = disponibles,
+            Zonas = zonas,
+            TiposRecurso = tiposRecurso,
+            FiltroZona = filtroZona,
+            FiltroRecurso = filtroRecurso,
+            FiltroUrgencia = filtroUrgencia
         });
     }
 
@@ -272,7 +288,8 @@ public sealed class OrganizacionController : ControladorAyudaYa
             Dias = diasConHorario,
             Abre = primero?.Abre is string abre ? TimeOnly.Parse(abre) : null,
             Cierra = primero?.Cierra is string cierra ? TimeOnly.Parse(cierra) : null,
-            EstadoVerificacion = dto.EstadoVerificacion
+            EstadoVerificacion = dto.EstadoVerificacion,
+            MotivoEstado = dto.MotivoEstado
         };
 
         return View("FormularioCentro", await CompletarCentroAsync(modelo, contexto, cancellationToken));
@@ -292,6 +309,7 @@ public sealed class OrganizacionController : ControladorAyudaYa
         modelo.Id = id;
         modelo.OrganizacionId = contexto!.OrganizacionId;
         modelo.EstadoVerificacion = centro.Dato.EstadoVerificacion;
+        modelo.MotivoEstado = centro.Dato.MotivoEstado;
 
         if (ModelState.IsValid)
         {
@@ -301,9 +319,11 @@ public sealed class OrganizacionController : ControladorAyudaYa
             if (resultado.EsNoAutorizado) return Forbid();
             if (resultado.Exito)
             {
-                Exito(resultado.Dato
-                    ? "Guardamos los cambios. Como cambiaron datos que identifican al centro, vuelve a quedar pendiente de aprobación y no se ve en el mapa hasta que un administrador lo apruebe."
-                    : "Guardamos los cambios del centro.");
+                Exito(modelo.EsRechazado
+                    ? "Volvieron a presentar el centro. Queda pendiente de aprobación hasta que un administrador lo revise."
+                    : resultado.Dato
+                        ? "Guardamos los cambios. Como cambiaron datos que identifican al centro, vuelve a quedar pendiente de aprobación y no se ve en el mapa hasta que un administrador lo apruebe."
+                        : "Guardamos los cambios del centro.");
                 return RedirectToAction(nameof(Centros), new { org = contexto.OrganizacionId });
             }
 

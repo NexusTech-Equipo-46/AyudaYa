@@ -67,6 +67,21 @@ public sealed class SolicitudesOrganizacionViewModel
     public required IReadOnlyList<SolicitudDisponibleDto> Disponibles { get; init; }
 
     public required OrganizacionDto Organizacion { get; init; }
+
+    public IReadOnlyList<ZonaDto> Zonas { get; init; } = [];
+
+    public IReadOnlyList<TipoCatalogoDto> TiposRecurso { get; init; } = [];
+
+    public Guid? FiltroZona { get; init; }
+
+    public string? FiltroRecurso { get; init; }
+
+    public string? FiltroUrgencia { get; init; }
+
+    public bool HayFiltros => FiltroZona is not null || FiltroRecurso is not null || FiltroUrgencia is not null;
+
+    /// <summary>La consulta trae hasta un máximo: si lo alcanza, puede haber más.</summary>
+    public bool ListaRecortada => Disponibles.Count >= SolicitudConsultasAppService.MaximoDisponibles;
 }
 
 public sealed class AsignacionesOrganizacionViewModel
@@ -132,6 +147,11 @@ public sealed class CentroFormularioViewModel
     public TimeOnly? Cierra { get; set; }
 
     public string? EstadoVerificacion { get; set; }
+
+    /// <summary>Motivo del rechazo, para mostrarlo mientras se corrige el centro.</summary>
+    public string? MotivoEstado { get; set; }
+
+    public bool EsRechazado => EsEdicion && EstadoVerificacion == "rechazado";
 
     [ValidateNever]
     public ContextoOrganizacion? Contexto { get; set; }

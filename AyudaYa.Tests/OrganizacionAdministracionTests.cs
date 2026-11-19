@@ -176,6 +176,91 @@ public class OrganizacionAdministracionTests
     }
 
     [FactBaseDeDatos]
+    public async Task Un_mismo_lugar_no_se_registra_dos_veces()
+    {
+        await using var e = new Escenario();
+        await e.PrepararAsync();
+
+        var responsable = await e.CrearUsuarioAsync("Responsable");
+        var otroResponsable = await e.CrearUsuarioAsync("Otro");
+        var organizaciones = e.Servicio<OrganizacionAppService>();
+        var admin = e.Servicio<AdministracionAppService>();
+        var tiposCentro = await e.TiposCentroAsync();
+
+        var orgId = (await organizaciones.RegistrarAsync(responsable, new RegistrarOrganizacionRequest(
+            e.CiudadId, $"Red {e.Sufijo}", "comunitaria", "red@prueba.test", "011 4000-1001", null))).Dato;
+        var otraOrgId = (await organizaciones.RegistrarAsync(otroResponsable, new RegistrarOrganizacionRequest(
+            e.CiudadId, $"Otra {e.Sufijo}", "comunitaria", "otra@prueba.test", "011 4000-1002", null))).Dato;
+
+        var centroId = (await organizaciones.CrearCentroAsync(
+            responsable, orgId, Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1"))).Dato;
+
+        // Mismo tipo y dirección: no importa el nombre, las mayúsculas, los
+        // espacios ni la organización.
+        var mismaOrg = await organizaciones.CrearCentroAsync(
+            responsable, orgId, Centro(e, tiposCentro["refugio"], "Refugio B", "  calle   1 "));
+        Assert.Contains(mismaOrg.Errores, x => x.Codigo == "CentroYaRegistrado");
+        var otraOrg = await organizaciones.CrearCentroAsync(
+            otroResponsable, otraOrgId, Centro(e, tiposCentro["refugio"], "Refugio C", "Calle 1"));
+        Assert.Contains(otraOrg.Errores, x => x.Codigo == "CentroYaRegistrado");
+
+        // Otro tipo en la misma dirección sí se puede (un comedor en la parroquia del refugio).
+        var comedor = await organizaciones.CrearCentroAsync(
+            otroResponsable, otraOrgId, Centro(e, tiposCentro["comedor"], "Comedor", "Calle 1"));
+        Assert.True(comedor.Exito, comedor.Mensajes());
+
+        // Si el primero se rechaza, el lugar se puede volver a presentar.
+        Assert.True((await admin.CambiarEstadoCentroAsync(e.AdminId, centroId, "rechazado", "Datos incompletos")).Exito);
+        var nuevo = await organizaciones.CrearCentroAsync(
+            otroResponsable, otraOrgId, Centro(e, tiposCentro["refugio"], "Refugio C", "Calle 1"));
+        Assert.True(nuevo.Exito, nuevo.Mensajes());
+
+        // Reactivar el rechazado duplicaría el lugar: la aprobación también lo impide.
+        var reactivar = await admin.CambiarEstadoCentroAsync(e.AdminId, centroId, "aprobado", null);
+        Assert.False(reactivar.Exito);
+        Assert.Equal("CentroYaRegistrado", reactivar.Errores.Single().Codigo);
+
+        // Y volver a presentarlo editándolo, tampoco.
+        var editar = await organizaciones.ActualizarCentroAsync(
+            responsable, centroId, Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1"));
+        Assert.Contains(editar.Errores, x => x.Codigo == "CentroYaRegistrado");
+    }
+
+    [FactBaseDeDatos]
+    public async Task Un_centro_rechazado_se_vuelve_a_presentar_editandolo()
+    {
+        await using var e = new Escenario();
+        await e.PrepararAsync();
+
+        var responsable = await e.CrearUsuarioAsync("Responsable");
+        var organizaciones = e.Servicio<OrganizacionAppService>();
+        var admin = e.Servicio<AdministracionAppService>();
+        var tiposCentro = await e.TiposCentroAsync();
+
+        var orgId = (await organizaciones.RegistrarAsync(responsable, new RegistrarOrganizacionRequest(
+            e.CiudadId, $"Red {e.Sufijo}", "comunitaria", "red@prueba.test", "011 4000-1001", null))).Dato;
+        var centroId = (await organizaciones.CrearCentroAsync(
+            responsable, orgId, Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1"))).Dato;
+        Assert.True((await admin.CambiarEstadoCentroAsync(e.AdminId, centroId, "rechazado", "Falta el teléfono del lugar")).Exito);
+
+        // Crearlo de nuevo con el mismo nombre no se puede, pero el mensaje dice qué hacer.
+        var otraVez = await organizaciones.CrearCentroAsync(
+            responsable, orgId, Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1"));
+        var error = Assert.Single(otraVez.Errores, x => x.Codigo == "NombreDuplicado");
+        Assert.Contains("editalo", error.Mensaje);
+
+        // Editarlo lo vuelve a presentar: pendiente y sin el motivo del rechazo.
+        var corregido = Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1") with { Telefono = "011 4000-2222" };
+        var editar = await organizaciones.ActualizarCentroAsync(responsable, centroId, corregido);
+        Assert.True(editar.Exito, editar.Mensajes());
+        Assert.True(editar.Dato);
+
+        var centro = (await organizaciones.ObtenerCentroAsync(responsable, centroId)).Dato!;
+        Assert.Equal("pendiente", centro.EstadoVerificacion);
+        Assert.Null(centro.MotivoEstado);
+    }
+
+    [FactBaseDeDatos]
     public async Task Las_acciones_de_administracion_exigen_rol_y_quedan_auditadas()
     {
         await using var e = new Escenario();
