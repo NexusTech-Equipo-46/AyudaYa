@@ -67,8 +67,21 @@
                                     <td>@recurso.Personas</td>
                                     <td><partial name="_InsigniaSolicitud" model="recurso.Estado" /></td>
                                     <td>
-                                        @if (recurso.Asignado is null) { <text>Sin asignar</text> }
-                                        else { <text>@recurso.Asignado.Nombre (@(recurso.Asignado.Tipo == "organizacion" ? "organización" : "voluntario/a"))</text> }
+                                        @if (recurso.Asignado is null)
+                                        {
+                                            <text>Sin asignar</text>
+                                        }
+                                        else
+                                        {
+                                            <text>@recurso.Asignado.Nombre (@(recurso.Asignado.Tipo == "organizacion" ? "organización" : "voluntario/a"))</text>
+                                            @if (!string.IsNullOrWhiteSpace(recurso.Asignado.TelefonoContacto))
+                                            {
+                                                <span class="detalle-recurso">
+                                                    Tel. de contacto: <a href="tel:@recurso.Asignado.TelefonoContacto"><strong>@recurso.Asignado.TelefonoContacto</strong></a>
+                                                    <span class="texto-suave">(visible mientras la asistencia está en curso)</span>
+                                                </span>
+                                            }
+                                        }
                                         @if (recurso.PuedeConfirmar && Model.EsDelSolicitante)
                                         {
                                             <form asp-action="Confirmar" method="post" class="form-en-linea">

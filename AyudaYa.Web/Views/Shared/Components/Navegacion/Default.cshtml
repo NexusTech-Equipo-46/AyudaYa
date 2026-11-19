@@ -25,12 +25,12 @@
             {
                 <li><a asp-controller="Organizacion" asp-action="Panel" aria-current="@Actual("Organizacion")">Organización</a></li>
             }
+            
             @if (Model.EsAdministrador)
             {
                 <li><a asp-controller="Admin" asp-action="Index" aria-current="@Actual("Admin")">Administración</a></li>
             }
             <li><a asp-controller="Centros" asp-action="Index" aria-current="@Actual("Centros")">Mapa</a></li>
-            <li><a asp-controller="Impacto" asp-action="Index" aria-current="@Actual("Impacto")">Impacto</a></li>
             <li><a asp-controller="Cuenta" asp-action="Perfil" aria-current="@Actual("Cuenta")">Perfil</a></li>
             <li><a class="boton" asp-controller="Solicitudes" asp-action="Nueva">Pedir ayuda</a></li>
             <li>
