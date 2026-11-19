@@ -25,6 +25,13 @@
                 <p>Si cambian el nombre, el tipo, la zona, la dirección o el punto en el mapa, el centro vuelve a quedar <strong>pendiente de aprobación</strong> y deja de verse en el mapa hasta que un administrador lo revise. El resto de los datos se actualiza al instante.</p>
             </div>
         }
+        @if (Model.EsRechazado)
+        {
+            <div class="alerta alerta-peligro" style="margin-bottom:1.25rem">
+                @Iconos.AlertaPeligro
+                <p><strong>Este centro fue rechazado.</strong> @if (!string.IsNullOrWhiteSpace(Model.MotivoEstado)) { <text>Motivo: @Model.MotivoEstado</text> }<br>Corrijan lo que haga falta y guarden: el centro se vuelve a presentar y queda <strong>pendiente de aprobación</strong>.</p>
+            </div>
+        }
         <partial name="_ResumenErrores" />
 
         <form method="post" novalidate asp-action="@(Model.EsEdicion ? "EditarCentro" : "NuevoCentro")" asp-route-id="@Model.Id" asp-route-org="@(Model.EsEdicion ? null : contexto.OrganizacionId)">
@@ -133,7 +140,7 @@
             </section>
 
             <div class="acciones">
-                <button type="submit" class="boton">@(Model.EsEdicion ? "Guardar cambios" : "Enviar para aprobación")</button>
+                <button type="submit" class="boton">@(Model.EsRechazado ? "Guardar y volver a presentar" : Model.EsEdicion ? "Guardar cambios" : "Enviar para aprobación")</button>
                 <a class="boton boton-secundario" asp-action="Centros" asp-route-org="@contexto.OrganizacionId">Cancelar</a>
             </div>
         </form>

@@ -310,27 +310,28 @@ public sealed class SolicitudConsultasAppService : ServicioBase
     /// Solicitudes con al menos un recurso pendiente en una ciudad (y zona,
     /// si se indica), con las críticas primero. No incluye dirección,
     /// teléfono ni coordenadas: eso solo se ve al tomar el recurso.
+    /// Con <paramref name="tipoRecurso"/> solo entran las que tienen pendiente
+    /// ese recurso; con <paramref name="urgencia"/>, las de esa urgencia.
     /// </summary>
     public async Task<List<SolicitudDisponibleDto>> ListarDisponiblesAsync(
         Guid actorId,
         Guid ciudadId,
         Guid? zonaId,
-        CancellationToken cancellationToken = default,
         string? tipoRecurso = null,
-        string? urgencia = null)
+        string? urgencia = null,
+        CancellationToken cancellationToken = default)
     {
         var filas = await Db.Solicitud.AsNoTracking()
             .Where(s => s.CiudadId == ciudadId
                 && (zonaId == null || s.ZonaId == zonaId)
-                && s.SolicitanteId != actorId
-                && (tipoRecurso == null || s.SolicitudRecurso.Any(r =>
-                    r.Estado == "pendiente" && r.TipoRecurso.Codigo == tipoRecurso))
                 && (urgencia == null || s.Urgencia == urgencia)
+                && s.SolicitanteId != actorId
                 && (s.Estado == "pendiente"
                     || s.Estado == "asignada"
                     || s.Estado == "en_atencion"
                     || s.Estado == "parcial")
-                && s.SolicitudRecurso.Any(r => r.Estado == "pendiente"))
+                && s.SolicitudRecurso.Any(r => r.Estado == "pendiente"
+                    && (tipoRecurso == null || r.TipoRecurso.Codigo == tipoRecurso)))
             .OrderByDescending(s => s.Urgencia == "critica")
             .ThenByDescending(s => s.CreadoAt)
             .Take(MaximoDisponibles)

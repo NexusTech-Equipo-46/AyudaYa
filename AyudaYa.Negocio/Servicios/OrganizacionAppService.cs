@@ -454,7 +454,9 @@ public sealed class OrganizacionAppService : ServicioBase
     /// <summary>
     /// Edita los datos del centro. Si estaba aprobado y cambia algo que lo
     /// identifica (nombre, tipo, zona, dirección o ubicación), vuelve a
-    /// pendiente para que un administrador lo revise de nuevo.
+    /// pendiente para que un administrador lo revise de nuevo. Si estaba
+    /// rechazado, guardar lo vuelve a presentar: queda pendiente y sin motivo.
+    /// Devuelve true cuando el centro quedó pendiente por la edición.
     /// </summary>
     public async Task<Resultado<bool>> ActualizarCentroAsync(
         Guid actorId,
@@ -515,6 +517,14 @@ public sealed class OrganizacionAppService : ServicioBase
         if (cambiaIdentidad && centro.EstadoVerificacion == "aprobado")
         {
             centro.EstadoVerificacion = "pendiente";
+            volvioAPendiente = true;
+        }
+        else if (centro.EstadoVerificacion == "rechazado")
+        {
+            // Un rechazado se corrige editándolo: al guardar se vuelve a
+            // presentar. La base no admite motivo en un centro pendiente.
+            centro.EstadoVerificacion = "pendiente";
+            centro.MotivoEstado = null;
             volvioAPendiente = true;
         }
 
@@ -1107,14 +1117,26 @@ public sealed class OrganizacionAppService : ServicioBase
         }
 
         var nombreMinuscula = nombre!.ToLower();
-        var nombreRepetido = await Db.Centro.AsNoTracking().AnyAsync(
-            c => c.OrganizacionId == organizacionId
+        var estadoDelRepetido = await Db.Centro.AsNoTracking()
+            .Where(c => c.OrganizacionId == organizacionId
                 && c.Id != centroActualId
-                && c.Nombre.ToLower() == nombreMinuscula,
-            cancellationToken);
-        if (nombreRepetido)
+                && c.Nombre.ToLower() == nombreMinuscula)
+            .Select(c => c.EstadoVerificacion)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (estadoDelRepetido is not null)
         {
-            errores.Add(Error("NombreDuplicado", "Ya tienen un centro con ese nombre."));
+            // El índice único ux_centro_nombre incluye a los rechazados: para
+            // volver a presentar uno se lo edita en lugar de crearlo de nuevo.
+            errores.Add(Error("NombreDuplicado", estadoDelRepetido == "rechazado"
+                ? "Ya tienen un centro rechazado con ese nombre. Para volver a presentarlo, editalo desde Centros."
+                : "Ya tienen un centro con ese nombre."));
+        }
+
+        if (await ExisteOtroCentroEnElLugarAsync(
+                ciudadId, solicitud.TipoCentroId, direccion!, centroActualId, cancellationToken))
+        {
+            errores.Add(CentroYaRegistrado(
+                "Ya hay un centro de ese tipo registrado en esa dirección. Si es el mismo lugar, no hace falta cargarlo de nuevo."));
         }
 
         return new CentroValidado(errores, nombre, direccion, telefono, email, descripcion);

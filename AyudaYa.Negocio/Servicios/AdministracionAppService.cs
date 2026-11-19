@@ -582,6 +582,16 @@ public sealed class AdministracionAppService : ServicioBase
             }
         }
 
+        // Reactivar un rechazado podría duplicar un lugar que otra organización
+        // cargó mientras tanto: se aplica la misma regla que al crearlo.
+        if (nuevoEstado == "aprobado"
+            && await ExisteOtroCentroEnElLugarAsync(
+                centro.CiudadId, centro.TipoCentroId, centro.Direccion, centro.Id, cancellationToken))
+        {
+            return ResultadoOperacion.Falla(CentroYaRegistrado(
+                "Ya hay otro centro de ese tipo registrado en esa dirección. Revisalo antes de aprobar este."));
+        }
+
         centro.EstadoVerificacion = nuevoEstado;
         centro.MotivoEstado = nuevoEstado == "aprobado" ? null : motivoLimpio;
         if (nuevoEstado == "aprobado")
