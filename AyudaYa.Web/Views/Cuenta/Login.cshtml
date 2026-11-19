@@ -45,9 +45,8 @@
                 </div>
                 <div class="fila">
                     <label class="check"><input asp-for="Recordarme"> Recordarme en este dispositivo</label>
-                    <a href="#" id="olvide">¿Olvidaste tu contraseña?</a>
+                    <a asp-action="OlvideClave" id="olvide">¿Olvidaste tu contraseña?</a>
                 </div>
-                <p id="nota-olvide" class="texto-suave" role="status"></p>
                 <button type="submit" class="boton">Iniciar sesión</button>
             </form>
             <p class="alternativa">¿Todavía no tenés cuenta? <a asp-action="Registro" id="enlace-registro">Creá una</a></p>

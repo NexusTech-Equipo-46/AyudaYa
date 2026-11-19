@@ -50,6 +50,19 @@ La app necesita enviar un correo para confirmar cada cuenta nueva. Render (plan 
 | `Correo__Remitente` | remitente verificado en Brevo |
 | `Correo__NombreRemitente` | `AyudaYa` |
 
+Además de la confirmación de cuenta, la app envía por correo:
+
+- **Avisos a quien pidió ayuda**: cuando alguien toma un recurso de su solicitud y cuando lo marca como completado (para que lo confirme). No incluyen teléfono ni dirección. Si el correo falla, la operación igual se completa y el fallo queda en el log.
+- **Recuperar contraseña**: desde *¿Olvidaste tu contraseña?* en el inicio de sesión. El enlace vale **1 hora** y se usa una sola vez; al cambiarla se cierran las sesiones abiertas y se avisa por correo.
+
+Para que los enlaces de los correos apunten siempre al sitio real (y no a lo que diga el encabezado `Host` del pedido), definí la dirección pública:
+
+| Variable | Valor |
+|---|---|
+| `App__UrlBase` | `https://ayudaya.onrender.com` (sin barra final) |
+
+Sin `App__UrlBase`, los enlaces de confirmar y recuperar contraseña usan la dirección del pedido y los avisos de solicitudes salen sin enlace. **En Render conviene definirla.**
+
 Sin `Correo__ApiKey` la app no envía nada: el mensaje solo queda en el log del servidor y las cuentas nuevas no pueden confirmarse. Con un remitente de Gmail, Brevo reemplaza la dirección de envío y los mensajes pueden caer en spam; con un dominio propio verificado llegan mejor.
 
 ## App en la nube (Render, plan gratuito)

@@ -4,6 +4,7 @@ using AyudaYa.Web.Models.Cuenta;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace AyudaYa.Web.Controllers;
 
@@ -11,11 +12,19 @@ public sealed class CuentaController : ControladorAyudaYa
 {
     private readonly UsuarioAppService _usuarios;
     private readonly IWebHostEnvironment _entorno;
+    private readonly AppOptions _app;
+    private readonly ILogger<CuentaController> _logger;
 
-    public CuentaController(UsuarioAppService usuarios, IWebHostEnvironment entorno)
+    public CuentaController(
+        UsuarioAppService usuarios,
+        IWebHostEnvironment entorno,
+        IOptions<AppOptions> app,
+        ILogger<CuentaController> logger)
     {
         _usuarios = usuarios;
         _entorno = entorno;
+        _app = app.Value;
+        _logger = logger;
     }
 
     [AllowAnonymous]
@@ -182,6 +191,116 @@ public sealed class CuentaController : ControladorAyudaYa
         return RedirectToAction(nameof(Perfil));
     }
 
+    /// <summary>Pantalla para pedir el enlace de recuperación de contraseña.</summary>
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult OlvideClave()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction(nameof(Perfil));
+        }
+
+        return View(new OlvideClaveViewModel());
+    }
+
+    /// <summary>
+    /// Siempre responde lo mismo, exista o no la cuenta, para no revelar qué
+    /// correos están registrados.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost]
+    [EnableRateLimiting("autenticacion")]
+    public async Task<IActionResult> OlvideClave(OlvideClaveViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        // Sin la dirección pública configurada el enlace dependería del encabezado Host, que
+        // quien pide la recuperación puede falsear para llevar el token a otro sitio. Fuera de
+        // desarrollo, en ese caso no se envía nada (la respuesta sigue siendo la misma).
+        if (_app.UrlBaseNormalizada is null && !_entorno.IsDevelopment())
+        {
+            _logger.LogError("Recuperar contraseña desactivado: falta configurar App:UrlBase (dirección pública del sitio).");
+        }
+        else
+        {
+            await _usuarios.SolicitarRestablecimientoAsync(
+                model.Email,
+                (id, token) => EnlaceAbsoluto(nameof(RestablecerClave), new { userId = id, token }),
+                cancellationToken);
+        }
+
+        return View(nameof(OlvideClave), new OlvideClaveViewModel { Email = model.Email, Enviado = true });
+    }
+
+    /// <summary>Destino del enlace del correo: formulario para elegir la contraseña nueva.</summary>
+    [AllowAnonymous]
+    [HttpGet]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult RestablecerClave(Guid userId, string? token)
+    {
+        if (userId == Guid.Empty || string.IsNullOrWhiteSpace(token))
+        {
+            return View("RestablecerClaveInvalido");
+        }
+
+        return View(new RestablecerClaveViewModel { UserId = userId, Token = token });
+    }
+
+    [AllowAnonymous]
+    [HttpPost]
+    [EnableRateLimiting("autenticacion")]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public async Task<IActionResult> RestablecerClave(RestablecerClaveViewModel model, CancellationToken cancellationToken)
+    {
+        if (model.UserId == Guid.Empty || string.IsNullOrWhiteSpace(model.Token))
+        {
+            return View("RestablecerClaveInvalido");
+        }
+
+        if (ModelState.IsValid)
+        {
+            var resultado = await _usuarios.RestablecerClaveAsync(
+                model.UserId, model.Token, model.Nueva, cancellationToken);
+
+            if (resultado.Succeeded)
+            {
+                Exito("Listo, cambiaste tu contraseña. Ya podés iniciar sesión con la nueva.");
+                return RedirectToAction(nameof(Login));
+            }
+
+            if (resultado.Errors.Any(e => e.Code == "TokenInvalido"))
+            {
+                return View("RestablecerClaveInvalido");
+            }
+
+            foreach (var error in resultado.Errors)
+            {
+                ModelState.AddModelError(nameof(model.Nueva), error.Code switch
+                {
+                    "PasswordTooShort" => "La contraseña debe tener al menos 8 caracteres.",
+                    "PasswordRequiresUpper" => "La contraseña necesita al menos una letra mayúscula.",
+                    "PasswordRequiresLower" => "La contraseña necesita al menos una letra minúscula.",
+                    "PasswordRequiresDigit" => "La contraseña necesita al menos un número.",
+                    _ => "La contraseña no cumple los requisitos."
+                });
+            }
+        }
+
+        // No se vuelven a enviar las contraseñas a la vista después de un error.
+        foreach (var campo in new[] { nameof(model.Nueva), nameof(model.Confirmacion) })
+        {
+            if (ModelState.ContainsKey(campo)) ModelState.SetModelValue(campo, rawValue: null, attemptedValue: null);
+        }
+
+        model.Nueva = string.Empty;
+        model.Confirmacion = string.Empty;
+        return View(model);
+    }
+
     [Authorize]
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -285,11 +404,24 @@ public sealed class CuentaController : ControladorAyudaYa
         };
     }
 
+    /// <summary>
+    /// URL absoluta para los correos. Usa la dirección pública configurada
+    /// (App:UrlBase) y, solo si falta, la del pedido: así un encabezado Host
+    /// manipulado no puede llevar a quien recibe el correo a otro sitio.
+    /// </summary>
+    private string EnlaceAbsoluto(string accion, object valores)
+    {
+        var ruta = Url.Action(accion, "Cuenta", valores)!;
+        return _app.UrlBaseNormalizada is { } baseUrl
+            ? baseUrl + ruta
+            : $"{Request.Scheme}://{Request.Host}{ruta}";
+    }
+
     private async Task<Resultado<string>> EnviarConfirmacionAsync(Guid usuarioId, CancellationToken cancellationToken)
     {
         var resultado = await _usuarios.EnviarConfirmacionAsync(
             usuarioId,
-            (id, token) => Url.Action(nameof(ConfirmarEmail), "Cuenta", new { userId = id, token }, Request.Scheme)!,
+            (id, token) => EnlaceAbsoluto(nameof(ConfirmarEmail), new { userId = id, token }),
             cancellationToken);
 
         // En desarrollo sin SMTP el enlace se muestra en pantalla para poder probar el flujo.

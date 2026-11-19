@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Mail;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -140,15 +141,19 @@ public sealed class EnviadorCorreoBrevo : IEnviadorCorreo
 
 /// <summary>
 /// Sin SMTP configurado: escribe el correo en el log (útil en desarrollo,
-/// donde el enlace de confirmación se copia desde la consola).
+/// donde el enlace de confirmación se copia desde la consola). Fuera de
+/// desarrollo no escribe el cuerpo, porque incluye enlaces con tokens de un solo
+/// uso (confirmar correo, recuperar contraseña) que no deben quedar en los logs.
 /// </summary>
 public sealed class EnviadorCorreoRegistro : IEnviadorCorreo
 {
     private readonly ILogger<EnviadorCorreoRegistro> _logger;
+    private readonly bool _esDesarrollo;
 
-    public EnviadorCorreoRegistro(ILogger<EnviadorCorreoRegistro> logger)
+    public EnviadorCorreoRegistro(ILogger<EnviadorCorreoRegistro> logger, IHostEnvironment? entorno = null)
     {
         _logger = logger;
+        _esDesarrollo = entorno?.IsDevelopment() == true;
     }
 
     public Task EnviarAsync(
@@ -157,12 +162,23 @@ public sealed class EnviadorCorreoRegistro : IEnviadorCorreo
         string cuerpo,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogWarning(
-            "SMTP no configurado. Correo para {Destinatario} — {Asunto}{NuevaLinea}{Cuerpo}",
-            destinatario,
-            asunto,
-            Environment.NewLine,
-            cuerpo);
+        if (_esDesarrollo)
+        {
+            _logger.LogWarning(
+                "SMTP no configurado. Correo para {Destinatario} — {Asunto}{NuevaLinea}{Cuerpo}",
+                destinatario,
+                asunto,
+                Environment.NewLine,
+                cuerpo);
+        }
+        else
+        {
+            _logger.LogError(
+                "Correo no configurado (Correo:ApiKey o Correo:Host): no se envió «{Asunto}» a {Destinatario}.",
+                asunto,
+                destinatario);
+        }
+
         return Task.CompletedTask;
     }
 }

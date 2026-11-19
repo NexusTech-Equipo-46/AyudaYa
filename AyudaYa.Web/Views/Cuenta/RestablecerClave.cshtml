@@ -1,0 +1,36 @@
+@model AyudaYa.Web.Models.Cuenta.RestablecerClaveViewModel
+@{
+    ViewData["Title"] = "Elegir contraseña nueva";
+    string? ErrorDe(string campo) => ViewData.ModelState.TryGetValue(campo, out var estado) ? estado.Errors.FirstOrDefault()?.ErrorMessage : null;
+    var errorNueva = ErrorDe(nameof(Model.Nueva));
+    var errorConfirmacion = ErrorDe(nameof(Model.Confirmacion));
+}
+<div class="pagina-cuenta">
+    <div class="contenedor">
+        <div class="tarjeta" id="tarjeta-restablecer">
+            <h1>Elegir contraseña nueva</h1>
+            <form asp-action="RestablecerClave" method="post" novalidate>
+                <input asp-for="UserId" type="hidden" />
+                <input asp-for="Token" type="hidden" />
+                <div class="campo">
+                    <label for="nueva">Contraseña nueva</label>
+                    <span class="ayuda" id="ayuda-nueva">Al menos 8 caracteres, con mayúscula, minúscula y número.</span>
+                    <div class="con-boton">
+                        <input asp-for="Nueva" type="password" id="nueva" autocomplete="new-password" required aria-describedby="ayuda-nueva error-nueva" aria-invalid="@(errorNueva is null ? null : "true")">
+                        <button type="button" class="boton-texto" data-mostrar="nueva" aria-pressed="false">Mostrar<span class="visualmente-oculto"> contraseña</span></button>
+                    </div>
+                    <p class="error-campo" id="error-nueva" role="alert">@errorNueva</p>
+                </div>
+                <div class="campo">
+                    <label for="confirmacion">Repetí la contraseña nueva</label>
+                    <input asp-for="Confirmacion" type="password" id="confirmacion" autocomplete="new-password" required aria-describedby="error-confirmacion" aria-invalid="@(errorConfirmacion is null ? null : "true")">
+                    <p class="error-campo" id="error-confirmacion" role="alert">@errorConfirmacion</p>
+                </div>
+                <button type="submit" class="boton">Cambiar contraseña</button>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/mostrar-clave.js" asp-append-version="true"></script>
+}

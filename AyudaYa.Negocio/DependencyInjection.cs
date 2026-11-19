@@ -61,10 +61,21 @@ public static class DependencyInjection
 
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+
+                // El enlace para recuperar la contraseña vence antes que el de
+                // confirmación de correo (ver ProveedorTokenRestablecerClave).
+                options.Tokens.PasswordResetTokenProvider = ProveedorTokenRestablecerClave.Nombre;
             })
             .AddEntityFrameworkStores<AyudaYaDbContext>()
             .AddSignInManager<AyudaYaSignInManager>()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddTokenProvider<ProveedorTokenRestablecerClave>(ProveedorTokenRestablecerClave.Nombre);
+
+        services.Configure<TokenRestablecerClaveOptions>(options =>
+        {
+            options.Name = ProveedorTokenRestablecerClave.Nombre;
+            options.TokenLifespan = TimeSpan.FromHours(1);
+        });
 
         // La cookie se revalida cada minuto contra SecurityStamp. Al desactivar
         // un usuario se regenera el stamp y la sesión vigente deja de ser válida.
@@ -99,6 +110,7 @@ public static class DependencyInjection
 
         // Correo: API de Brevo si hay clave; si no, SMTP si hay host; si no, el mensaje queda en el log.
         services.Configure<CorreoOptions>(configuration.GetSection(CorreoOptions.Seccion));
+        services.Configure<AppOptions>(configuration.GetSection(AppOptions.Seccion));
         if (!string.IsNullOrWhiteSpace(configuration[$"{CorreoOptions.Seccion}:ApiKey"]))
         {
             services.AddSingleton<IEnviadorCorreo, EnviadorCorreoBrevo>();
@@ -112,6 +124,7 @@ public static class DependencyInjection
             services.AddSingleton<IEnviadorCorreo, EnviadorCorreoRegistro>();
         }
 
+        services.AddScoped<NotificacionesAppService>();
         services.AddScoped<UsuarioAppService>();
         services.AddScoped<SolicitudAppService>();
         services.AddScoped<SolicitudConsultasAppService>();

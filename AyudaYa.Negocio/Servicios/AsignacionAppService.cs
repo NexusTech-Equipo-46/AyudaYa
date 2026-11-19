@@ -83,11 +83,15 @@ public sealed class AsignacionAppService : ServicioBase
 {
     public const int LargoMaximoMotivo = 300;
 
+    private readonly NotificacionesAppService _notificaciones;
+
     public AsignacionAppService(
         AyudaYaDbContext db,
-        UserManager<UsuarioIdentity> userManager)
+        UserManager<UsuarioIdentity> userManager,
+        NotificacionesAppService notificaciones)
         : base(db, userManager)
     {
+        _notificaciones = notificaciones;
     }
 
     // ------------------------------------------------------------------
@@ -374,25 +378,36 @@ public sealed class AsignacionAppService : ServicioBase
             return ResultadoOperacion.Falla(UsuarioInvalido());
         }
 
-        await using var transaccion = await Db.Database.BeginTransactionAsync(cancellationToken);
-        try
+        ResultadoOperacion resultado;
+        await using (var transaccion = await Db.Database.BeginTransactionAsync(cancellationToken))
         {
-            // Bloquea la fila antes de leer el estado. Así dos acciones simultáneas
-            // sobre la misma asignación se serializan: la segunda espera y, al
-            // continuar, ve el estado que confirmó la primera.
-            await Db.Database.ExecuteSqlInterpolatedAsync(
-                $"SELECT 1 FROM asignacion WHERE id = {asignacionId} FOR UPDATE",
-                cancellationToken);
+            try
+            {
+                // Bloquea la fila antes de leer el estado. Así dos acciones simultáneas
+                // sobre la misma asignación se serializan: la segunda espera y, al
+                // continuar, ve el estado que confirmó la primera.
+                await Db.Database.ExecuteSqlInterpolatedAsync(
+                    $"SELECT 1 FROM asignacion WHERE id = {asignacionId} FOR UPDATE",
+                    cancellationToken);
 
-            return await EjecutarConBloqueoAsync(
-                actor, actorId, asignacionId, accion, motivoLimpio, transaccion, cancellationToken);
+                resultado = await EjecutarConBloqueoAsync(
+                    actor, actorId, asignacionId, accion, motivoLimpio, transaccion, cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                return ResultadoOperacion.Falla(Error(
+                    Codigos.ConflictoDeEstado,
+                    "La asignación cambió mientras se actualizaba. Actualizá los datos y volvé a intentar."));
+            }
         }
-        catch (DbUpdateException)
+
+        // Con la transacción ya confirmada, se avisa a quien pidió ayuda (mejor esfuerzo).
+        if (resultado.Exito && accion == Accion.Completar)
         {
-            return ResultadoOperacion.Falla(Error(
-                Codigos.ConflictoDeEstado,
-                "La asignación cambió mientras se actualizaba. Actualizá los datos y volvé a intentar."));
+            await _notificaciones.AvisarRecursoCompletadoAsync(asignacionId, actorId, cancellationToken);
         }
+
+        return resultado;
     }
 
     private async Task<ResultadoOperacion> EjecutarConBloqueoAsync(

@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Enlace no válido";
+}
+<div class="pagina-cuenta">
+    <div class="contenedor">
+        <div class="tarjeta">
+            <h1>Enlace no válido</h1>
+            <div class="alerta alerta-peligro" role="alert">@Iconos.AlertaPeligro<p>El enlace no es válido o venció. Los enlaces valen por 1 hora y se pueden usar una sola vez.</p></div>
+            <div class="acciones" style="margin-top:0">
+                <a class="boton" asp-action="OlvideClave">Pedir un enlace nuevo</a>
+            </div>
+        </div>
+    </div>
+</div>
