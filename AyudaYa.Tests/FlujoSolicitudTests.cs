@@ -173,6 +173,39 @@ public class FlujoSolicitudTests
     }
 
     [FactBaseDeDatos]
+    public async Task Las_urgencias_se_guardan_filtran_y_ordenan_por_prioridad()
+    {
+        await using var e = new Escenario();
+        await e.PrepararAsync();
+        var solicitante = await e.CrearUsuarioAsync("Marina");
+        var voluntario = await e.CrearVoluntarioAsync("Lucas", e.ZonaId);
+        var solicitudes = e.Servicio<SolicitudAppService>();
+        var consultas = e.Servicio<SolicitudConsultasAppService>();
+        var agua = (await e.TiposRecursoAsync())["agua"];
+        var ids = new Dictionary<string, Guid>();
+
+        foreach (var urgencia in new[] { "normal", "critica" })
+        {
+            var pedido = new CrearSolicitudRequest(
+                e.CiudadId, e.ZonaId, urgencia, 1, null, "Calle 1", "011 5555-0123", -34.4, -58.6,
+                [new RecursoSolicitadoRequest(agua, 1, null)]);
+            var resultado = await solicitudes.CrearAsync(solicitante, pedido);
+            Assert.True(resultado.Exito, string.Join(" ", resultado.Errores.Select(error => error.Mensaje)));
+            ids[urgencia] = resultado.SolicitudId!.Value;
+        }
+
+        var disponibles = await consultas.ListarDisponiblesAsync(voluntario, e.CiudadId, e.ZonaId);
+        Assert.Equal(new[] { "critica", "normal" }, disponibles.Select(s => s.Urgencia));
+
+        foreach (var urgencia in ids.Keys)
+        {
+            var filtradas = await consultas.ListarDisponiblesAsync(
+                voluntario, e.CiudadId, e.ZonaId, urgencia: urgencia);
+            Assert.Equal(ids[urgencia], Assert.Single(filtradas).Id);
+        }
+    }
+
+    [FactBaseDeDatos]
     public async Task Un_usuario_desactivado_o_sin_confirmar_no_puede_pedir_ayuda()
     {
         await using var e = new Escenario();

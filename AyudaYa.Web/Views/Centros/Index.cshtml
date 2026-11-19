@@ -100,29 +100,27 @@
             </section>
         </div>
 
-        @if (Model.Necesidades.Count > 0)
-        {
-            <details class="tarjeta necesidades-zona">
-                <summary>Pedidos de ayuda abiertos por zona</summary>
-                <p class="texto-suave">Son cantidades aproximadas por zona: nunca se muestran direcciones ni ubicaciones exactas.</p>
-                <div class="tabla-scroll" tabindex="0" role="region" aria-label="Pedidos de ayuda abiertos por zona">
-                    <table class="tabla-recursos">
-                        <thead><tr><th scope="col">Zona</th><th scope="col">Pedidos abiertos</th><th scope="col">Personas</th><th scope="col">Recursos más pedidos</th></tr></thead>
-                        <tbody>
-                            @foreach (var n in Model.Necesidades.OrderByDescending(n => n.SolicitudesAbiertas))
-                            {
-                                <tr>
-                                    <th scope="row">@n.Zona</th>
-                                    <td>@n.SolicitudesAbiertas</td>
-                                    <td>@n.PersonasAfectadas</td>
-                                    <td>@string.Join(", ", n.Recursos.OrderByDescending(r => r.Personas).Take(3).Select(r => r.Nombre))</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </details>
-        }
+        <details class="tarjeta necesidades-zona">
+            <summary>Pedidos de ayuda abiertos por zona</summary>
+            <p class="texto-suave">Son cantidades aproximadas por zona: nunca se muestran direcciones ni ubicaciones exactas.</p>
+            <p id="sin-pedidos-zona" role="status" hidden="@(Model.Necesidades.Count > 0)">No hay pedidos abiertos para mostrar.</p>
+            <div class="tabla-scroll" id="tabla-pedidos-zona" tabindex="0" role="region" aria-label="Pedidos de ayuda abiertos por zona" hidden="@(Model.Necesidades.Count == 0)">
+                <table class="tabla-recursos">
+                    <thead><tr><th scope="col">Zona</th><th scope="col">Pedidos abiertos</th><th scope="col">Personas</th><th scope="col">Recursos más pedidos</th></tr></thead>
+                    <tbody>
+                        @foreach (var n in Model.Necesidades.OrderByDescending(n => n.SolicitudesAbiertas))
+                        {
+                            <tr data-zona="@n.ZonaId">
+                                <th scope="row">@n.Zona</th>
+                                <td>@n.SolicitudesAbiertas</td>
+                                <td>@n.PersonasAfectadas</td>
+                                <td>@string.Join(", ", n.Recursos.OrderByDescending(r => r.Personas).Take(3).Select(r => r.Nombre))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </details>
     </div>
 </div>
 

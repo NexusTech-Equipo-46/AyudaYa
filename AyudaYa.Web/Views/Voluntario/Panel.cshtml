@@ -70,9 +70,7 @@
                         <select id="filtro-urgencia" name="urgencia">
                             <option value="">Todas las urgencias</option>
                             <option value="critica" selected="@(Model.Urgencia == "critica")">Crítica</option>
-                            <option value="alta" selected="@(Model.Urgencia == "alta")">Alta</option>
-                            <option value="media" selected="@(Model.Urgencia == "media")">Media</option>
-                            <option value="baja" selected="@(Model.Urgencia == "baja")">Baja</option>
+                            <option value="normal" selected="@(Model.Urgencia == "normal")">Normal</option>
                         </select>
                     </div>
                     @if (v.ZonaId is not null)
@@ -101,7 +99,7 @@
                 {
                     <div class="tarjeta estado-vacio">
                         <h3>No se encontraron solicitudes que coincidan con los criterios de búsqueda</h3>
-                        <p>@(v.Activo ? "Probá cambiar los filtros de tipo de ayuda, urgencia o ampliar la búsqueda a toda la ciudad." : "Estás en pausa: volvé a estar disponible para ver pedidos.")</p>
+                        <p>@(v.Activo ? (Model.Ampliar ? "Probá cambiar los filtros de tipo de ayuda o urgencia." : "Probá cambiar los filtros de tipo de ayuda, urgencia o ampliar la búsqueda a toda la ciudad.") : "Estás en pausa: volvé a estar disponible para ver pedidos.")</p>
                     </div>
                 }
             </section>
