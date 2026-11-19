@@ -148,6 +148,11 @@ public sealed class CentroFormularioViewModel
 
     public string? EstadoVerificacion { get; set; }
 
+    /// <summary>Motivo del rechazo, para mostrarlo mientras se corrige el centro.</summary>
+    public string? MotivoEstado { get; set; }
+
+    public bool EsRechazado => EsEdicion && EstadoVerificacion == "rechazado";
+
     [ValidateNever]
     public ContextoOrganizacion? Contexto { get; set; }
 

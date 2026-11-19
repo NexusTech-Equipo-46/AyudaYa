@@ -219,6 +219,45 @@ public class OrganizacionAdministracionTests
         var reactivar = await admin.CambiarEstadoCentroAsync(e.AdminId, centroId, "aprobado", null);
         Assert.False(reactivar.Exito);
         Assert.Equal("CentroYaRegistrado", reactivar.Errores.Single().Codigo);
+
+        // Y volver a presentarlo editándolo, tampoco.
+        var editar = await organizaciones.ActualizarCentroAsync(
+            responsable, centroId, Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1"));
+        Assert.Contains(editar.Errores, x => x.Codigo == "CentroYaRegistrado");
+    }
+
+    [FactBaseDeDatos]
+    public async Task Un_centro_rechazado_se_vuelve_a_presentar_editandolo()
+    {
+        await using var e = new Escenario();
+        await e.PrepararAsync();
+
+        var responsable = await e.CrearUsuarioAsync("Responsable");
+        var organizaciones = e.Servicio<OrganizacionAppService>();
+        var admin = e.Servicio<AdministracionAppService>();
+        var tiposCentro = await e.TiposCentroAsync();
+
+        var orgId = (await organizaciones.RegistrarAsync(responsable, new RegistrarOrganizacionRequest(
+            e.CiudadId, $"Red {e.Sufijo}", "comunitaria", "red@prueba.test", "011 4000-1001", null))).Dato;
+        var centroId = (await organizaciones.CrearCentroAsync(
+            responsable, orgId, Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1"))).Dato;
+        Assert.True((await admin.CambiarEstadoCentroAsync(e.AdminId, centroId, "rechazado", "Falta el teléfono del lugar")).Exito);
+
+        // Crearlo de nuevo con el mismo nombre no se puede, pero el mensaje dice qué hacer.
+        var otraVez = await organizaciones.CrearCentroAsync(
+            responsable, orgId, Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1"));
+        var error = Assert.Single(otraVez.Errores, x => x.Codigo == "NombreDuplicado");
+        Assert.Contains("editalo", error.Mensaje);
+
+        // Editarlo lo vuelve a presentar: pendiente y sin el motivo del rechazo.
+        var corregido = Centro(e, tiposCentro["refugio"], "Refugio A", "Calle 1") with { Telefono = "011 4000-2222" };
+        var editar = await organizaciones.ActualizarCentroAsync(responsable, centroId, corregido);
+        Assert.True(editar.Exito, editar.Mensajes());
+        Assert.True(editar.Dato);
+
+        var centro = (await organizaciones.ObtenerCentroAsync(responsable, centroId)).Dato!;
+        Assert.Equal("pendiente", centro.EstadoVerificacion);
+        Assert.Null(centro.MotivoEstado);
     }
 
     [FactBaseDeDatos]

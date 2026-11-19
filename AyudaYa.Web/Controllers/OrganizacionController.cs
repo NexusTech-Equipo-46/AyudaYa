@@ -288,7 +288,8 @@ public sealed class OrganizacionController : ControladorAyudaYa
             Dias = diasConHorario,
             Abre = primero?.Abre is string abre ? TimeOnly.Parse(abre) : null,
             Cierra = primero?.Cierra is string cierra ? TimeOnly.Parse(cierra) : null,
-            EstadoVerificacion = dto.EstadoVerificacion
+            EstadoVerificacion = dto.EstadoVerificacion,
+            MotivoEstado = dto.MotivoEstado
         };
 
         return View("FormularioCentro", await CompletarCentroAsync(modelo, contexto, cancellationToken));
@@ -308,6 +309,7 @@ public sealed class OrganizacionController : ControladorAyudaYa
         modelo.Id = id;
         modelo.OrganizacionId = contexto!.OrganizacionId;
         modelo.EstadoVerificacion = centro.Dato.EstadoVerificacion;
+        modelo.MotivoEstado = centro.Dato.MotivoEstado;
 
         if (ModelState.IsValid)
         {
@@ -317,9 +319,11 @@ public sealed class OrganizacionController : ControladorAyudaYa
             if (resultado.EsNoAutorizado) return Forbid();
             if (resultado.Exito)
             {
-                Exito(resultado.Dato
-                    ? "Guardamos los cambios. Como cambiaron datos que identifican al centro, vuelve a quedar pendiente de aprobación y no se ve en el mapa hasta que un administrador lo apruebe."
-                    : "Guardamos los cambios del centro.");
+                Exito(modelo.EsRechazado
+                    ? "Volvieron a presentar el centro. Queda pendiente de aprobación hasta que un administrador lo revise."
+                    : resultado.Dato
+                        ? "Guardamos los cambios. Como cambiaron datos que identifican al centro, vuelve a quedar pendiente de aprobación y no se ve en el mapa hasta que un administrador lo apruebe."
+                        : "Guardamos los cambios del centro.");
                 return RedirectToAction(nameof(Centros), new { org = contexto.OrganizacionId });
             }
 
