@@ -123,13 +123,16 @@ public sealed class SolicitudAppService
 
     private readonly AyudaYaDbContext _db;
     private readonly UserManager<UsuarioIdentity> _userManager;
+    private readonly NotificacionesAppService _notificaciones;
 
     public SolicitudAppService(
         AyudaYaDbContext db,
-        UserManager<UsuarioIdentity> userManager)
+        UserManager<UsuarioIdentity> userManager,
+        NotificacionesAppService notificaciones)
     {
         _db = db;
         _userManager = userManager;
+        _notificaciones = notificaciones;
     }
 
     /// <summary>
@@ -717,11 +720,12 @@ public sealed class SolicitudAppService
         await using var transaccion = await _db.Database
             .BeginTransactionAsync(cancellationToken);
 
+        var asignacionId = Guid.NewGuid();
         try
         {
             _db.Asignacion.Add(new Asignacion
             {
-                Id = Guid.NewGuid(),
+                Id = asignacionId,
                 SolicitudRecursoId = solicitudRecursoId,
                 VoluntarioId = voluntarioId,
                 OrganizacionId = organizacionId,
@@ -763,6 +767,9 @@ public sealed class SolicitudAppService
                 "ConflictoDeEstado",
                 "La solicitud cambió mientras se asignaba. Actualizá los datos y volvé a intentar."));
         }
+
+        // Ya confirmada la asignación: el aviso a quien pidió ayuda es de mejor esfuerzo.
+        await _notificaciones.AvisarRecursoTomadoAsync(asignacionId, actorId, cancellationToken);
 
         return ResultadoOperacion.Ok();
     }

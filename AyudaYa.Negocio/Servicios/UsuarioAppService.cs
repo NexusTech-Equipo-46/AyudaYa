@@ -54,6 +54,10 @@ public sealed class UsuarioAppService
     /// <summary>Espera mínima entre dos correos de confirmación al mismo usuario.</summary>
     private static readonly TimeSpan EsperaReenvio = TimeSpan.FromMinutes(1);
 
+    /// <summary>Tope de correos de recuperación por cuenta y por hora, y en total por hora.</summary>
+    private const int MaximoRecuperacionesPorCuentaPorHora = 3;
+    private const int MaximoRecuperacionesPorHora = 60;
+
     private readonly UserManager<UsuarioIdentity> _userManager;
     private readonly SignInManager<UsuarioIdentity> _signInManager;
     private readonly AyudaYaDbContext _db;
@@ -439,6 +443,153 @@ public sealed class UsuarioAppService
 
         _cache.Set(clave, true, EsperaReenvio);
         return Resultado<string>.Ok(enlace);
+    }
+
+    /// <summary>
+    /// Pide recuperar la contraseña. Si el correo pertenece a una cuenta activa,
+    /// le envía un enlace de un solo uso que vence en una hora. No informa si
+    /// el correo existe (siempre termina igual para quien lo pide) y limita a
+    /// un correo por minuto por cuenta. <paramref name="construirEnlace"/> arma
+    /// la URL absoluta con el id y el token ya codificado para URL.
+    /// </summary>
+    public async Task SolicitarRestablecimientoAsync(
+        string? email,
+        Func<Guid, string, string> construirEnlace,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(email) || email.Length > 256)
+        {
+            return;
+        }
+
+        var user = await _userManager.FindByEmailAsync(NormalizarEmail(email));
+        if (user is null || !user.Activo)
+        {
+            return;
+        }
+
+        var clave = $"restablecer:{user.Id}";
+        if (_cache.TryGetValue(clave, out _))
+        {
+            return;
+        }
+
+        // Topes para que nadie use la función para llenar un buzón ni agotar el cupo diario de correos.
+        if (!ReservarCupo($"restablecer-hora:{user.Id}", MaximoRecuperacionesPorCuentaPorHora)
+            || !ReservarCupo("restablecer-hora:global", MaximoRecuperacionesPorHora))
+        {
+            return;
+        }
+
+        // Se reserva el cupo antes de enviar: aunque el envío falle, no se puede insistir en bucle.
+        _cache.Set(clave, true, EsperaReenvio);
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var enlace = construirEnlace(user.Id, WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token)));
+
+        try
+        {
+            await _correo.EnviarAsync(
+                user.Email!,
+                "Recuperá tu contraseña de AyudaYa",
+                string.Join(Environment.NewLine,
+                    $"Hola {user.NombreCompleto},",
+                    string.Empty,
+                    "Pediste cambiar tu contraseña. Para elegir una nueva, abrí este enlace (vale por 1 hora y se puede usar una sola vez):",
+                    enlace,
+                    string.Empty,
+                    "Si no lo pediste vos, ignorá este mensaje: tu contraseña actual sigue siendo la misma."),
+                cancellationToken);
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError(ex, "No se pudo enviar el correo de recuperación al usuario {UsuarioId}.", user.Id);
+        }
+    }
+
+    private sealed record CupoHora(int Usados, DateTimeOffset Vence);
+
+    /// <summary>Cuenta un uso en una ventana fija de una hora. Devuelve false si ya se alcanzó el tope.</summary>
+    private bool ReservarCupo(string clave, int maximo)
+    {
+        lock (_cache)
+        {
+            var ahora = DateTimeOffset.UtcNow;
+            var actual = _cache.TryGetValue(clave, out CupoHora? guardado) && guardado!.Vence > ahora
+                ? guardado
+                : new CupoHora(0, ahora.AddHours(1));
+
+            if (actual.Usados >= maximo)
+            {
+                return false;
+            }
+
+            _cache.Set(clave, actual with { Usados = actual.Usados + 1 }, actual.Vence);
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Fija la contraseña nueva con el enlace recibido por correo. El token es de
+    /// un solo uso: al cambiar la contraseña se renueva el SecurityStamp, lo que
+    /// también cierra las sesiones abiertas. Quien demuestra ser dueño del correo
+    /// recupera además el acceso si la cuenta estaba bloqueada por intentos.
+    /// </summary>
+    public async Task<IdentityResult> RestablecerClaveAsync(
+        Guid usuarioId, string tokenCodificado, string nuevaClave, CancellationToken cancellationToken = default)
+    {
+        var enlaceInvalido = IdentityResult.Failed(new IdentityError
+        {
+            Code = "TokenInvalido",
+            Description = "El enlace no es válido o venció. Pedí uno nuevo."
+        });
+
+        var user = await _userManager.FindByIdAsync(usuarioId.ToString());
+        if (user is null || !user.Activo)
+        {
+            return enlaceInvalido;
+        }
+
+        string token;
+        try
+        {
+            token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(tokenCodificado));
+        }
+        catch (FormatException)
+        {
+            return enlaceInvalido;
+        }
+
+        var resultado = await _userManager.ResetPasswordAsync(user, token, nuevaClave);
+        if (!resultado.Succeeded)
+        {
+            // Los errores de la política de contraseña se muestran; cualquier otro es un enlace malo.
+            return resultado.Errors.Any(e => e.Code.StartsWith("Password", StringComparison.Ordinal))
+                ? resultado
+                : enlaceInvalido;
+        }
+
+        await _userManager.SetLockoutEndDateAsync(user, null);
+        await _userManager.ResetAccessFailedCountAsync(user);
+
+        try
+        {
+            await _correo.EnviarAsync(
+                user.Email!,
+                "Cambiaste tu contraseña de AyudaYa",
+                string.Join(Environment.NewLine,
+                    $"Hola {user.NombreCompleto},",
+                    string.Empty,
+                    "Te avisamos que la contraseña de tu cuenta de AyudaYa se cambió hace instantes y se cerraron las sesiones abiertas.",
+                    "Si no fuiste vos, pedí otra recuperación de contraseña desde la pantalla de inicio de sesión."),
+                cancellationToken);
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "No se pudo enviar el aviso de cambio de contraseña al usuario {UsuarioId}.", user.Id);
+        }
+
+        return resultado;
     }
 
     public async Task<IdentityResult> ConfirmarEmailAsync(Guid usuarioId, string tokenCodificado)

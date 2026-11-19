@@ -29,7 +29,7 @@ public static class EntornoBaseDeDatos
         return string.IsNullOrWhiteSpace(conexion) ? null : conexion;
     }
 
-    public static ServiceProvider CrearProveedor()
+    public static ServiceProvider CrearProveedor(IEnviadorCorreo? correo = null)
     {
         var servicios = new ServiceCollection();
         servicios.AddLogging();
@@ -39,11 +39,19 @@ public static class EntornoBaseDeDatos
         var configuracion = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:AyudaYa"] = Conexion
+                ["ConnectionStrings:AyudaYa"] = Conexion,
+                ["App:UrlBase"] = "https://ayudaya.test"
             })
             .Build();
 
         servicios.AddAyudaYa(configuracion);
+
+        // Para comprobar los correos sin enviarlos: el último registro gana.
+        if (correo is not null)
+        {
+            servicios.AddSingleton(correo);
+        }
+
         return servicios.BuildServiceProvider();
     }
 }
@@ -68,9 +76,9 @@ public sealed class Escenario : IAsyncDisposable
     private readonly ServiceProvider _proveedor;
     private readonly AsyncServiceScope _alcance;
 
-    public Escenario()
+    public Escenario(IEnviadorCorreo? correo = null)
     {
-        _proveedor = EntornoBaseDeDatos.CrearProveedor();
+        _proveedor = EntornoBaseDeDatos.CrearProveedor(correo);
         _alcance = _proveedor.CreateAsyncScope();
         Sufijo = Guid.NewGuid().ToString("N")[..8];
     }

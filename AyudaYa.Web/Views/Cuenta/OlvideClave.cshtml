@@ -1,0 +1,32 @@
+@model AyudaYa.Web.Models.Cuenta.OlvideClaveViewModel
+@{
+    ViewData["Title"] = "Recuperar contraseña";
+    var errorEmail = ViewData.ModelState.TryGetValue(nameof(Model.Email), out var estadoEmail) ? estadoEmail.Errors.FirstOrDefault()?.ErrorMessage : null;
+}
+<div class="pagina-cuenta">
+    <div class="contenedor">
+        <div class="tarjeta" id="tarjeta-olvide">
+            <h1>Recuperar contraseña</h1>
+            @if (Model.Enviado)
+            {
+                <div class="alerta alerta-exito" role="status">@Iconos.AlertaOk<p>Si hay una cuenta con ese correo, te enviamos un enlace para elegir una contraseña nueva. Revisá la bandeja de entrada y la carpeta de spam. El enlace vale por 1 hora.</p></div>
+                <div class="acciones" style="margin-top:0">
+                    <a class="boton" asp-action="Login">Volver a iniciar sesión</a>
+                </div>
+            }
+            else
+            {
+                <p class="texto-suave">Escribí el correo con el que te registraste y te enviamos un enlace para cambiar tu contraseña.</p>
+                <form asp-action="OlvideClave" method="post" novalidate>
+                    <div class="campo">
+                        <label for="email">Correo electrónico</label>
+                        <input asp-for="Email" type="email" id="email" autocomplete="email" inputmode="email" required aria-describedby="error-email" aria-invalid="@(errorEmail is null ? null : "true")">
+                        <p class="error-campo" id="error-email" role="alert">@errorEmail</p>
+                    </div>
+                    <button type="submit" class="boton">Enviar enlace</button>
+                </form>
+                <p class="alternativa"><a asp-action="Login">Volver a iniciar sesión</a></p>
+            }
+        </div>
+    </div>
+</div>

@@ -14,11 +14,6 @@
         mostrar.setAttribute("aria-pressed", String(visible));
         mostrar.firstChild.textContent = visible ? "Ocultar" : "Mostrar";
     });
-    document.getElementById("olvide").addEventListener("click", (evento) => {
-        evento.preventDefault();
-        document.getElementById("nota-olvide").textContent = "La recuperación de contraseña todavía no está disponible.";
-    });
-
     function validar() {
         const errores = [];
         const valor = email.value.trim();
