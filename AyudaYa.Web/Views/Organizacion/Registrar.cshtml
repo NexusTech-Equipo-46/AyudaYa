@@ -15,6 +15,22 @@
         <h1>Registrar una organización</h1>
         <p class="texto-suave">Una organización puede publicar centros (refugios, comedores, puntos de donación…) y tomar solicitudes de ayuda. Un administrador la revisa antes de activarla.</p>
 
+        @if (!Model.EmailConfirmado)
+        {
+            @* El registro exige el correo confirmado: se avisa antes de que completen el formulario. *@
+            <div class="alerta alerta-advertencia" role="status" style="margin-bottom:1.25rem">
+                @Iconos.AlertaPeligro
+                <p><strong>Primero confirmá tu correo.</strong> Para registrar una organización necesitamos que confirmes tu dirección. Te mandamos un enlace al crear la cuenta: revisá tu bandeja de entrada y la carpeta de spam, y después volvé a esta página.</p>
+            </div>
+            <div class="acciones">
+                <form asp-controller="Cuenta" asp-action="ReenviarConfirmacion" method="post">
+                    <button type="submit" class="boton">Reenviarme el correo de confirmación</button>
+                </form>
+                <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Ir al panel</a>
+            </div>
+        }
+        else
+        {
         <partial name="_ResumenErrores" />
 
         <form asp-action="Registrar" method="post" novalidate>
@@ -86,5 +102,6 @@
                 <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Cancelar</a>
             </div>
         </form>
+        }
     </div>
 </div>

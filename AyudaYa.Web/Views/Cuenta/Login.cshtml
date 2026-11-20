@@ -49,7 +49,7 @@
                 </div>
                 <button type="submit" class="boton">Iniciar sesión</button>
             </form>
-            <p class="alternativa">¿Todavía no tenés cuenta? <a asp-action="Registro" id="enlace-registro">Creá una</a></p>
+            <p class="alternativa">¿Todavía no tenés cuenta? <a asp-action="Registro" asp-route-returnUrl="@Model.ReturnUrl" id="enlace-registro">Creá una</a></p>
         </div>
     </div>
 </div>

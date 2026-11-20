@@ -29,14 +29,14 @@ public sealed class CuentaController : ControladorAyudaYa
 
     [AllowAnonymous]
     [HttpGet]
-    public IActionResult Registro()
+    public IActionResult Registro(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction("Index", "Panel");
+            return VolverA(returnUrl);
         }
 
-        return View(new RegistroViewModel());
+        return View(new RegistroViewModel { ReturnUrl = returnUrl });
     }
 
     [AllowAnonymous]
@@ -84,7 +84,7 @@ public sealed class CuentaController : ControladorAyudaYa
 
         if (!login.Succeeded)
         {
-            return RedirectToAction(nameof(Login));
+            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl });
         }
 
         if (correoEnviado)
@@ -96,7 +96,7 @@ public sealed class CuentaController : ControladorAyudaYa
             Error("Cuenta creada, pero no pudimos enviarte el correo de confirmación. Pedilo de nuevo desde tu perfil en unos minutos.");
         }
 
-        return RedirectToAction("Index", "Panel");
+        return VolverA(model.ReturnUrl);
     }
 
     [AllowAnonymous]
@@ -105,7 +105,7 @@ public sealed class CuentaController : ControladorAyudaYa
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction("Index", "Panel");
+            return VolverA(returnUrl);
         }
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
@@ -128,12 +128,7 @@ public sealed class CuentaController : ControladorAyudaYa
 
         if (result.Succeeded)
         {
-            if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-            {
-                return Redirect(model.ReturnUrl);
-            }
-
-            return RedirectToAction("Index", "Panel");
+            return VolverA(model.ReturnUrl);
         }
 
         if (result.IsNotAllowed)
@@ -156,6 +151,16 @@ public sealed class CuentaController : ControladorAyudaYa
 
         return View(model);
     }
+
+    /// <summary>
+    /// Después de entrar o registrarse, vuelve a donde la persona quería ir
+    /// (por ejemplo, registrar una organización). Solo acepta direcciones de
+    /// la propia app, para que un enlace armado no redirija a otro sitio.
+    /// </summary>
+    private IActionResult VolverA(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? Redirect(returnUrl)
+            : RedirectToAction("Index", "Panel");
 
     /// <summary>Destino del enlace del correo. Confirma la dirección y muestra el resultado.</summary>
     [AllowAnonymous]

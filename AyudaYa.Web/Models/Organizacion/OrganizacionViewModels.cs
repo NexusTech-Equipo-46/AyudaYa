@@ -31,6 +31,9 @@ public sealed class RegistrarOrganizacionViewModel
 
     [ValidateNever]
     public IReadOnlyList<CiudadDto> Ciudades { get; set; } = [];
+
+    [ValidateNever]
+    public bool EmailConfirmado { get; set; } = true;
 }
 
 /// <summary>Contexto común de las pantallas de organización (menú y selector).</summary>

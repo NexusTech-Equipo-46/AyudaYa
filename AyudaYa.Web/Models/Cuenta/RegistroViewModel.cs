@@ -27,6 +27,9 @@ public sealed class RegistroViewModel
     [Display(Name = "Repetir contraseña")]
     public string ConfirmarPassword { get; set; } = string.Empty;
 
+    /// <summary>A dónde volver después de crear la cuenta (solo direcciones de la app).</summary>
+    public string? ReturnUrl { get; set; }
+
     [RegularExpression(@"^[0-9]{6,9}$", ErrorMessage = "El DNI debe tener entre 6 y 9 dígitos.")]
     [Display(Name = "DNI (opcional)")]
     public string? Dni
