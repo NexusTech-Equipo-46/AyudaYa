@@ -234,6 +234,7 @@ public sealed class SolicitudConsultasAppService : ServicioBase
                         Voluntario = a.Voluntario == null ? null : a.Voluntario.Usuario.NombreCompleto,
                         VoluntarioTelefono = a.Voluntario == null ? null : a.Voluntario.TelefonoContacto,
                         Organizacion = a.Organizacion == null ? null : a.Organizacion.Nombre,
+                        OrganizacionEstado = a.Organizacion == null ? null : a.Organizacion.Estado,
                         OrganizacionTelefono = a.Organizacion == null ? null : a.Organizacion.TelefonoContacto
                     })
                     .FirstOrDefault()
@@ -245,18 +246,23 @@ public sealed class SolicitudConsultasAppService : ServicioBase
             AsignadoDto? asignado = null;
             if (r.Asignacion is not null)
             {
-                var activa = r.Asignacion.Estado is "asignada" or "en_atencion";
+                // Misma regla que en sentido inverso: el teléfono se muestra hasta que
+                // quien pidió ayuda confirma la recepción (y nunca de una organización suspendida).
+                var accesoAlTelefono = ReglasNegocio.AsignacionDaAccesoAlContacto(
+                    r.Asignacion.Estado, r.Asignacion.ConfirmadaAt);
                 asignado = r.Asignacion.Organizacion is not null
                     ? new AsignadoDto(
                         "organizacion",
                         r.Asignacion.Organizacion,
                         r.Asignacion.Estado,
-                        activa ? r.Asignacion.OrganizacionTelefono : null)
+                        accesoAlTelefono && r.Asignacion.OrganizacionEstado == "activa"
+                            ? r.Asignacion.OrganizacionTelefono
+                            : null)
                     : new AsignadoDto(
                         "voluntario",
                         ReglasNegocio.NombreCorto(r.Asignacion.Voluntario),
                         r.Asignacion.Estado,
-                        activa ? r.Asignacion.VoluntarioTelefono : null);
+                        accesoAlTelefono ? r.Asignacion.VoluntarioTelefono : null);
             }
 
             var puedeConfirmar = r.Asignacion is { Estado: "completada", ConfirmadaAt: null };

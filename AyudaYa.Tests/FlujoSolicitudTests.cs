@@ -41,15 +41,20 @@ public class FlujoSolicitudTests
         Assert.Equal("en_atencion", (await e.DetalleAsync(solicitante, solicitud.Id)).Estado);
         Assert.True((await asignaciones.CompletarAsync(voluntario, asignacionId)).Exito);
 
+        // Mientras falta la confirmación, quien pidió ayuda sigue viendo el teléfono del voluntario.
+        var antesDeConfirmar = await e.DetalleAsync(solicitante, solicitud.Id);
+        Assert.NotNull(antesDeConfirmar.Recursos.Single(r => r.TipoCodigo == "abrigo").Asignado?.TelefonoContacto);
+
         // El voluntario no puede confirmar; solo quien pidió ayuda.
         var intruso = await asignaciones.ConfirmarAsync(voluntario, asignacionId);
         Assert.False(intruso.Exito);
         Assert.True((await asignaciones.ConfirmarAsync(solicitante, asignacionId)).Exito);
 
-        // Un recurso resuelto y otro pendiente: atención parcial.
+        // Un recurso resuelto y otro pendiente: atención parcial, y se corta el teléfono de ambos lados.
         var tras = await e.DetalleAsync(solicitante, solicitud.Id);
         Assert.Equal("parcial", tras.Estado);
         Assert.Equal("resuelta", tras.Recursos.Single(r => r.TipoCodigo == "abrigo").Estado);
+        Assert.Null(tras.Recursos.Single(r => r.TipoCodigo == "abrigo").Asignado?.TelefonoContacto);
 
         // Confirmada la atención, el voluntario deja de ver el contacto.
         var cortado = await solicitudes.ObtenerUbicacionExactaAsync(voluntario, solicitud.Id);

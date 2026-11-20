@@ -475,8 +475,7 @@ public sealed class UsuarioAppService
         }
 
         // Topes para que nadie use la función para llenar un buzón ni agotar el cupo diario de correos.
-        if (!ReservarCupo($"restablecer-hora:{user.Id}", MaximoRecuperacionesPorCuentaPorHora)
-            || !ReservarCupo("restablecer-hora:global", MaximoRecuperacionesPorHora))
+        if (!ReservarCuposRecuperacion(user.Id))
         {
             return;
         }
@@ -509,23 +508,74 @@ public sealed class UsuarioAppService
 
     private sealed record CupoHora(int Usados, DateTimeOffset Vence);
 
-    /// <summary>Cuenta un uso en una ventana fija de una hora. Devuelve false si ya se alcanzó el tope.</summary>
-    private bool ReservarCupo(string clave, int maximo)
+    /// <summary>
+    /// Verifica y descuenta de forma atómica el cupo horario por cuenta y el global.
+    /// Si cualquiera de los dos llegó al límite, no consume ninguno.
+    /// </summary>
+    private bool ReservarCuposRecuperacion(Guid usuarioId)
     {
+        var claveCuenta = $"restablecer-hora:{usuarioId}";
+        const string claveGlobal = "restablecer-hora:global";
+
         lock (_cache)
         {
             var ahora = DateTimeOffset.UtcNow;
-            var actual = _cache.TryGetValue(clave, out CupoHora? guardado) && guardado!.Vence > ahora
-                ? guardado
-                : new CupoHora(0, ahora.AddHours(1));
+            var cuenta = LeerCupoHora(claveCuenta, ahora);
+            var global = LeerCupoHora(claveGlobal, ahora);
 
-            if (actual.Usados >= maximo)
+            if (cuenta.Usados >= MaximoRecuperacionesPorCuentaPorHora
+                || global.Usados >= MaximoRecuperacionesPorHora)
             {
                 return false;
             }
 
-            _cache.Set(clave, actual with { Usados = actual.Usados + 1 }, actual.Vence);
+            _cache.Set(claveCuenta, cuenta with { Usados = cuenta.Usados + 1 }, cuenta.Vence);
+            _cache.Set(claveGlobal, global with { Usados = global.Usados + 1 }, global.Vence);
             return true;
+        }
+    }
+
+    private CupoHora LeerCupoHora(string clave, DateTimeOffset ahora) =>
+        _cache.TryGetValue(clave, out CupoHora? guardado) && guardado!.Vence > ahora
+            ? guardado
+            : new CupoHora(0, ahora.AddHours(1));
+
+    /// <summary>
+    /// Comprueba si un enlace de recuperación sigue vigente (sin consumirlo).
+    /// Permite avisar enseguida si el enlace venció o ya se usó, antes de pedir
+    /// al usuario que escriba y valide una contraseña nueva.
+    /// </summary>
+    public async Task<bool> EsEnlaceRestablecimientoValidoAsync(Guid usuarioId, string tokenCodificado)
+    {
+        var user = await _userManager.FindByIdAsync(usuarioId.ToString());
+        if (user is null || !user.Activo)
+        {
+            return false;
+        }
+
+        if (!IntentarDecodificarToken(tokenCodificado, out var token))
+        {
+            return false;
+        }
+
+        return await _userManager.VerifyUserTokenAsync(
+            user,
+            _userManager.Options.Tokens.PasswordResetTokenProvider,
+            UserManager<UsuarioIdentity>.ResetPasswordTokenPurpose,
+            token);
+    }
+
+    private static bool IntentarDecodificarToken(string tokenCodificado, out string token)
+    {
+        try
+        {
+            token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(tokenCodificado));
+            return true;
+        }
+        catch (FormatException)
+        {
+            token = string.Empty;
+            return false;
         }
     }
 
@@ -550,12 +600,19 @@ public sealed class UsuarioAppService
             return enlaceInvalido;
         }
 
-        string token;
-        try
+        if (!IntentarDecodificarToken(tokenCodificado, out var token))
         {
-            token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(tokenCodificado));
+            return enlaceInvalido;
         }
-        catch (FormatException)
+
+        // Se valida el enlace antes de la política de contraseñas para no pedir
+        // correcciones de formato sobre un enlace vencido o ya usado.
+        var tokenValido = await _userManager.VerifyUserTokenAsync(
+            user,
+            _userManager.Options.Tokens.PasswordResetTokenProvider,
+            UserManager<UsuarioIdentity>.ResetPasswordTokenPurpose,
+            token);
+        if (!tokenValido)
         {
             return enlaceInvalido;
         }
