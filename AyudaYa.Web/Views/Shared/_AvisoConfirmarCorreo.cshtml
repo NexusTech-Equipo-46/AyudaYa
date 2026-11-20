@@ -1,0 +1,26 @@
+@model string
+@* Se muestra en lugar de un formulario que exige el correo confirmado (registrar una
+   organización, sumarse como voluntario, pedir ayuda), así nadie lo completa para que
+   lo rechacen al enviar. El modelo es lo que la persona quiere hacer: "pedir ayuda".
+   UserName es el correo (lo exige la base), por eso se muestra User.Identity.Name. *@
+@{
+    var estaPagina = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+<div class="alerta alerta-advertencia" role="status" style="margin-bottom:1.25rem">
+    @Iconos.AlertaPeligro
+    <div>
+        <p><strong>Confirmá tu correo para continuar.</strong> Para @Model primero necesitamos confirmar tu dirección (<strong>@User.Identity?.Name</strong>). Revisá tu bandeja de entrada y la carpeta de spam, y abrí el enlace que te enviamos.</p>
+        @if (TempData["EnlaceDesarrollo"] is string enlaceDesarrollo)
+        {
+            <p class="texto-suave" style="margin-top:.75rem">Solo en desarrollo, como no hay SMTP configurado: <a href="@enlaceDesarrollo">confirmar ahora</a>.</p>
+        }
+    </div>
+</div>
+<div class="acciones">
+    @* Recarga esta misma página: si ya abrió el enlace del correo, aparece el formulario. *@
+    <a class="boton" href="@estaPagina">Ya confirmé mi correo</a>
+    <form asp-controller="Cuenta" asp-action="ReenviarConfirmacion" method="post">
+        <input type="hidden" name="returnUrl" value="@estaPagina" />
+        <button type="submit" class="boton boton-secundario">Reenviar correo de confirmación</button>
+    </form>
+</div>

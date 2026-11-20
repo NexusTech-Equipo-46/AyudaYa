@@ -15,6 +15,12 @@
         <h1>Registrar una organización</h1>
         <p class="texto-suave">Una organización puede publicar centros (refugios, comedores, puntos de donación…) y tomar solicitudes de ayuda. Un administrador la revisa antes de activarla.</p>
 
+        @if (!Model.EmailConfirmado)
+        {
+            <partial name="_AvisoConfirmarCorreo" model='"registrar una organización"' />
+        }
+        else
+        {
         <partial name="_ResumenErrores" />
 
         <form asp-action="Registrar" method="post" novalidate>
@@ -86,5 +92,6 @@
                 <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Cancelar</a>
             </div>
         </form>
+        }
     </div>
 </div>

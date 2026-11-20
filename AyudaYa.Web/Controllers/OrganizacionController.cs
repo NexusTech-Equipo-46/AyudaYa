@@ -19,19 +19,22 @@ public sealed class OrganizacionController : ControladorAyudaYa
     private readonly SolicitudConsultasAppService _consultas;
     private readonly AsignacionAppService _asignaciones;
     private readonly CatalogosAppService _catalogos;
+    private readonly UsuarioAppService _usuarios;
 
     public OrganizacionController(
         OrganizacionAppService organizaciones,
         SolicitudAppService solicitudes,
         SolicitudConsultasAppService consultas,
         AsignacionAppService asignaciones,
-        CatalogosAppService catalogos)
+        CatalogosAppService catalogos,
+        UsuarioAppService usuarios)
     {
         _organizaciones = organizaciones;
         _solicitudes = solicitudes;
         _consultas = consultas;
         _asignaciones = asignaciones;
         _catalogos = catalogos;
+        _usuarios = usuarios;
     }
 
     // ------------------------------------------------------------------
@@ -450,6 +453,8 @@ public sealed class OrganizacionController : ControladorAyudaYa
             modelo.CiudadId = modelo.Ciudades[0].Id;
         }
 
+        // Sin el correo confirmado el registro se rechaza: se avisa antes de mostrar el formulario.
+        modelo.EmailConfirmado = (await _usuarios.ObtenerPerfilAsync(User))?.EmailConfirmado ?? false;
         return modelo;
     }
 

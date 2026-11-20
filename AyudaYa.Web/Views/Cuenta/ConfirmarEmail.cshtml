@@ -10,7 +10,15 @@
             {
                 <div class="alerta alerta-exito" role="status">@Iconos.AlertaOk<p>@Model.Mensaje</p></div>
                 <div class="acciones" style="margin-top:0">
-                    <a class="boton" asp-controller="Panel" asp-action="Index">Ir a mi panel</a>
+                    @if (Model.ReturnUrl is not null)
+                    {
+                        <a class="boton" href="@Model.ReturnUrl">@Model.TextoContinuar</a>
+                        <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Ir a mi panel</a>
+                    }
+                    else
+                    {
+                        <a class="boton" asp-controller="Panel" asp-action="Index">Ir a mi panel</a>
+                    }
                 </div>
             }
             else

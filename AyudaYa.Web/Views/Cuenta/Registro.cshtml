@@ -37,6 +37,7 @@
                 }
             </div>
             <form id="form-registro" asp-action="Registro" method="post" novalidate>
+                <input asp-for="ReturnUrl" type="hidden" />
                 <div class="campo">
                     <label for="nombre">Nombre y apellido</label>
                     <input asp-for="NombreCompleto" type="text" id="nombre" autocomplete="name" required aria-describedby="error-nombre" aria-invalid="@(errorNombre is null ? null : "true")">
@@ -75,7 +76,7 @@
                 </div>
                 <button type="submit" class="boton">Crear cuenta</button>
             </form>
-            <p class="alternativa">¿Ya tenés cuenta? <a asp-action="Login" id="enlace-login">Iniciá sesión</a></p>
+            <p class="alternativa">¿Ya tenés cuenta? <a asp-action="Login" asp-route-returnUrl="@Model.ReturnUrl" id="enlace-login">Iniciá sesión</a></p>
         </div>
     </div>
 </div>

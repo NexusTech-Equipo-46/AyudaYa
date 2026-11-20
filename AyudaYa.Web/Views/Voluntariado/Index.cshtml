@@ -27,6 +27,12 @@
             </section>
         }
 
+        @if (!Model.EmailConfirmado)
+        {
+            <partial name="_AvisoConfirmarCorreo" model='"sumarte como voluntario"' />
+        }
+        else
+        {
         <partial name="_ResumenErrores" />
 
         <form asp-action="Index" method="post" novalidate>
@@ -71,8 +77,12 @@
                 <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Cancelar</a>
             </div>
         </form>
+        }
     </div>
 </div>
 @section Scripts {
-    <script src="~/js/solicitud-nueva.js" asp-append-version="true"></script>
+    @if (Model.EmailConfirmado)
+    {
+        <script src="~/js/solicitud-nueva.js" asp-append-version="true"></script>
+    }
 }

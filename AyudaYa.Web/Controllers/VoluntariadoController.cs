@@ -12,11 +12,14 @@ public sealed class VoluntariadoController : ControladorAyudaYa
 {
     private readonly VoluntarioAppService _voluntarios;
     private readonly CatalogosAppService _catalogos;
+    private readonly UsuarioAppService _usuarios;
 
-    public VoluntariadoController(VoluntarioAppService voluntarios, CatalogosAppService catalogos)
+    public VoluntariadoController(
+        VoluntarioAppService voluntarios, CatalogosAppService catalogos, UsuarioAppService usuarios)
     {
         _voluntarios = voluntarios;
         _catalogos = catalogos;
+        _usuarios = usuarios;
     }
 
     [HttpGet]
@@ -70,6 +73,8 @@ public sealed class VoluntariadoController : ControladorAyudaYa
             modelo.CiudadId = modelo.Ciudades[0].Id;
         }
 
+        // Sin el correo confirmado la inscripción se rechaza: se avisa antes de mostrar el formulario.
+        modelo.EmailConfirmado = (await _usuarios.ObtenerPerfilAsync(User))?.EmailConfirmado ?? false;
         return modelo;
     }
 }
