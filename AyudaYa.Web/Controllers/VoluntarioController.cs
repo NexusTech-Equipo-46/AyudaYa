@@ -10,7 +10,7 @@ namespace AyudaYa.Web.Controllers;
 [Authorize]
 public sealed class VoluntarioController : ControladorAyudaYa
 {
-   private readonly VoluntarioAppService _voluntarios;
+    private readonly VoluntarioAppService _voluntarios;
     private readonly SolicitudAppService _solicitudes;
     private readonly SolicitudConsultasAppService _consultas;
     private readonly AsignacionAppService _asignaciones;
@@ -45,13 +45,15 @@ public sealed class VoluntarioController : ControladorAyudaYa
 
         var mias = await _asignaciones.ListarDeVoluntarioAsync(UsuarioId, cancellationToken);
         var tipos = await _catalogos.TiposRecursoActivosAsync(cancellationToken);
+        var filtroRecurso = tipos.Any(t => t.Codigo == tipoRecurso) ? tipoRecurso : null;
+        var filtroUrgencia = urgencia is "critica" or "normal" ? urgencia : null;
         var disponibles = voluntario.Activo
             ? await _consultas.ListarDisponiblesAsync(
                 UsuarioId,
                 voluntario.CiudadId,
                 ampliar ? null : voluntario.ZonaId,
-                tipoRecurso,
-                urgencia,
+                filtroRecurso,
+                filtroUrgencia,
                 cancellationToken)
             : [];
 
@@ -64,8 +66,8 @@ public sealed class VoluntarioController : ControladorAyudaYa
             CantidadConfirmadas = mias.Count(a => a.Estado == "confirmada"),
             Disponibles = disponibles,
             Ampliar = ampliar || voluntario.ZonaId is null,
-            TipoRecurso = tipoRecurso,
-            Urgencia = urgencia,
+            TipoRecurso = filtroRecurso,
+            Urgencia = filtroUrgencia,
             TiposRecurso = tipos
         });
     }

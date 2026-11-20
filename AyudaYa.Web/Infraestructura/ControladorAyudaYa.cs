@@ -36,7 +36,7 @@ public abstract class ControladorAyudaYa : Controller
             return null;
         }
 
-        if (resultado.EsNoAutorizado)
+        if (resultado.EsNoAutorizado || resultado.EsUsuarioInvalido)
         {
             return Forbid();
         }
@@ -46,7 +46,8 @@ public abstract class ControladorAyudaYa : Controller
             return NotFound();
         }
 
-        return null;
+        Error(resultado.Mensajes());
+        return RedirectToAction("Index", "Panel");
     }
 
     /// <summary>Guarda el resultado en TempData y vuelve al destino indicado.</summary>
