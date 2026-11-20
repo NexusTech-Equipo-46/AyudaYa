@@ -1,0 +1,14 @@
+@model string
+@* Se muestra en lugar de un formulario que exige el correo confirmado (registrar una
+   organización, sumarse como voluntario, pedir ayuda), así nadie lo completa para que
+   lo rechacen al enviar. El modelo es lo que la persona quiere hacer: "pedir ayuda". *@
+<div class="alerta alerta-advertencia" role="status" style="margin-bottom:1.25rem">
+    @Iconos.AlertaPeligro
+    <p><strong>Primero confirmá tu correo.</strong> Para @Model necesitamos que confirmes tu dirección. Te mandamos un enlace al crear la cuenta: revisá tu bandeja de entrada y la carpeta de spam, y después volvé a esta página.</p>
+</div>
+<div class="acciones">
+    <form asp-controller="Cuenta" asp-action="ReenviarConfirmacion" method="post">
+        <button type="submit" class="boton">Reenviarme el correo de confirmación</button>
+    </form>
+    <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Ir al panel</a>
+</div>

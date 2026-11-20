@@ -24,6 +24,12 @@
             <p><strong>Si hay riesgo de vida, llamá al <a href="tel:911">911</a>.</strong> AyudaYa no reemplaza a los servicios de emergencia.</p>
         </div>
 
+        @if (!Model.EmailConfirmado)
+        {
+            <partial name="_AvisoConfirmarCorreo" model='"pedir ayuda"' />
+        }
+        else
+        {
         <partial name="_ResumenErrores" />
 
         <form asp-action="Nueva" method="post" novalidate>
@@ -173,11 +179,15 @@
                 <a class="boton boton-secundario" asp-controller="Panel" asp-action="Index">Cancelar</a>
             </div>
         </form>
+        }
     </div>
 </div>
 @section Scripts {
-    <script src="~/lib/leaflet/leaflet.js"></script>
-    <script src="~/js/mapa-comun.js" asp-append-version="true"></script>
-    <script src="~/js/selector-ubicacion.js" asp-append-version="true"></script>
-    <script src="~/js/solicitud-nueva.js" asp-append-version="true"></script>
+    @if (Model.EmailConfirmado)
+    {
+        <script src="~/lib/leaflet/leaflet.js"></script>
+        <script src="~/js/mapa-comun.js" asp-append-version="true"></script>
+        <script src="~/js/selector-ubicacion.js" asp-append-version="true"></script>
+        <script src="~/js/solicitud-nueva.js" asp-append-version="true"></script>
+    }
 }

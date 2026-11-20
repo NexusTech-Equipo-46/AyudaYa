@@ -15,19 +15,22 @@ public sealed class SolicitudesController : ControladorAyudaYa
     private readonly AsignacionAppService _asignaciones;
     private readonly AdministracionAppService _admin;
     private readonly CatalogosAppService _catalogos;
+    private readonly UsuarioAppService _usuarios;
 
     public SolicitudesController(
         SolicitudAppService solicitudes,
         SolicitudConsultasAppService consultas,
         AsignacionAppService asignaciones,
         AdministracionAppService admin,
-        CatalogosAppService catalogos)
+        CatalogosAppService catalogos,
+        UsuarioAppService usuarios)
     {
         _solicitudes = solicitudes;
         _consultas = consultas;
         _asignaciones = asignaciones;
         _admin = admin;
         _catalogos = catalogos;
+        _usuarios = usuarios;
     }
 
     [HttpGet]
@@ -169,6 +172,9 @@ public sealed class SolicitudesController : ControladorAyudaYa
 
         modelo.Ciudades = ciudades;
         modelo.Zonas = zonas;
+
+        // Sin el correo confirmado la solicitud se rechaza: se avisa antes de mostrar el formulario.
+        modelo.EmailConfirmado = (await _usuarios.ObtenerPerfilAsync(User))?.EmailConfirmado ?? false;
 
         // Con una sola ciudad no hace falta elegirla.
         if (modelo.CiudadId is null && ciudades.Count == 1)

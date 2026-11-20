@@ -64,4 +64,7 @@ public sealed class NuevaSolicitudViewModel
 
     [ValidateNever]
     public IReadOnlyList<ZonaDto> Zonas { get; set; } = [];
+
+    [ValidateNever]
+    public bool EmailConfirmado { get; set; } = true;
 }
