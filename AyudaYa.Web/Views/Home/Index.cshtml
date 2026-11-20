@@ -73,11 +73,13 @@
                 <p>Si representás un comedor, refugio, hospital o grupo solidario, registrá tu organización y publicá tus centros y recursos.</p>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Organizacion" asp-action="Crear">Crear organización</a></p>
+                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Organizacion" asp-action="Registrar">Crear organización</a></p>
                 }
                 else
                 {
-                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Registro" asp-route-returnUrl="@Url.Action("Crear", "Organizacion")">Crear una organización</a></p>
+                    @* Sin returnUrl: recién registrada, la persona todavía no confirmó el correo y no podría
+                       enviar el formulario. El panel le pide confirmarlo y ofrece registrar la organización. *@
+                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Registro">Crear una organización</a></p>
                 }
             </li>
         </ol>
