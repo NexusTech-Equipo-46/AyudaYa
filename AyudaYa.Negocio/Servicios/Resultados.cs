@@ -20,6 +20,8 @@ public sealed record Resultado<T>(T? Dato, IReadOnlyList<ErrorNegocio> Errores)
 
     public bool EsNoAutorizado => Errores.Any(e => e.Codigo == Codigos.NoAutorizado);
 
+    public bool EsUsuarioInvalido => Errores.Any(e => e.Codigo == Codigos.UsuarioInvalido);
+
     public bool EsNoEncontrado => Errores.Any(e => e.Codigo.EndsWith("NoEncontrada", StringComparison.Ordinal)
         || e.Codigo.EndsWith("NoEncontrado", StringComparison.Ordinal));
 }

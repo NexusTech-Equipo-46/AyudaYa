@@ -481,6 +481,7 @@ input[aria-invalid="true"] { border-color: var(--peligro); border-width: 3px; }
     gap: 0 1rem;
     align-items: end;
 }
+.filtros-voluntario { grid-template-columns: 1fr 1fr auto; }
 .filtros .campo { margin-bottom: 1rem; }
 .filtros-extra { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1.5rem; grid-column: 1 / -1; }
 .filtros-extra .boton-texto { margin-left: auto; }
