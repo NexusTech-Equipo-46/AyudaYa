@@ -33,10 +33,32 @@
             @switch (Model.Estado)
             {
                 case "asignada":
-                    <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>Asignada.</strong> Comunicate con @quien y, cuando empieces, tocá “@(enOrganizacion ? "Empezar la atención" : "Iniciar atención")”.</p></div>
+                    @if (Model.PuedeIniciar)
+                    {
+                        <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>Asignada.</strong> Comunicate con @quien y, cuando empieces, tocá “@(enOrganizacion ? "Empezar la atención" : "Iniciar atención")”.</p></div>
+                    }
+                    else if (Model.PuedeLiberar)
+                    {
+                        <div class="alerta alerta-advertencia">@Iconos.AlertaPeligro<p><strong>Asignada.</strong> @(enOrganizacion ? "No se puede iniciar mientras la organización no esté activa;" : "No podés iniciarla;") podés liberar la asignación para que otra persona la tome.</p></div>
+                    }
+                    else
+                    {
+                        <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>Asignada.</strong></p></div>
+                    }
                     break;
                 case "en_atencion":
-                    <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>En atención.</strong> Cuando termines, marcala como completada.</p></div>
+                    @if (Model.PuedeCompletar)
+                    {
+                        <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>En atención.</strong> Cuando termines, marcala como completada.</p></div>
+                    }
+                    else if (Model.PuedeLiberar)
+                    {
+                        <div class="alerta alerta-advertencia">@Iconos.AlertaPeligro<p><strong>En atención.</strong> @(enOrganizacion ? "No se puede continuar mientras la organización no esté activa;" : "No podés completarla;") podés liberar la asignación para que otra persona la tome.</p></div>
+                    }
+                    else
+                    {
+                        <div class="alerta alerta-info">@Iconos.AlertaInfo<p><strong>En atención.</strong></p></div>
+                    }
                     break;
                 case "completada":
                     <div class="alerta alerta-advertencia">@Iconos.AlertaPeligro<p><strong>Falta la confirmación.</strong> Esperamos que @quien confirme que recibió la ayuda. Mientras tanto seguís viendo sus datos de contacto.</p></div>
@@ -104,7 +126,16 @@
                 }
                 else
                 {
-                    <div class="contacto-oculto"><p>@Iconos.Candado Ya no tenés acceso a la dirección ni al teléfono de @Model.SolicitanteNombre. Se muestran solo mientras la asignación está activa o sin confirmar.</p></div>
+                    <div class="contacto-oculto">
+                        @if (activa || Model.Estado == "completada")
+                        {
+                            <p>@Iconos.Candado No tenés acceso a la dirección ni al teléfono de @Model.SolicitanteNombre mientras la organización no esté activa.</p>
+                        }
+                        else
+                        {
+                            <p>@Iconos.Candado Ya no tenés acceso a la dirección ni al teléfono de @Model.SolicitanteNombre. Se muestran solo mientras la asignación está activa o sin confirmar.</p>
+                        }
+                    </div>
                 }
             </section>
 
@@ -128,6 +159,13 @@
                     <div class="acciones">
                         <button type="button" class="boton" data-abrir-dialogo="dialogo-completar">Marcar como completada</button>
                         @if (Model.PuedeLiberar) { <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-liberar">Liberar asignación</button> }
+                    </div>
+                }
+                else if (Model.PuedeLiberar)
+                {
+                    <p class="texto-suave">No podés avanzar esta asignación en su estado actual, pero podés liberarla para que otra persona la tome.</p>
+                    <div class="acciones">
+                        <button type="button" class="boton boton-secundario" data-abrir-dialogo="dialogo-liberar">Liberar asignación</button>
                     </div>
                 }
                 else if (Model.Estado == "completada")

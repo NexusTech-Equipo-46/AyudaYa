@@ -358,4 +358,40 @@ public class OrganizacionAdministracionTests
         var liberar = await asignaciones.LiberarAsync(miembro, asignacionId, "La organización fue suspendida");
         Assert.True(liberar.Exito, liberar.Mensajes());
     }
+
+    [FactBaseDeDatos]
+    public async Task El_panel_de_la_organizacion_cuenta_solo_las_completadas_sin_confirmar()
+    {
+        await using var e = new Escenario();
+        await e.PrepararAsync();
+
+        var responsable = await e.CrearUsuarioAsync("Responsable");
+        var solicitante = await e.CrearUsuarioAsync("Marina");
+        var organizaciones = e.Servicio<OrganizacionAppService>();
+        var admin = e.Servicio<AdministracionAppService>();
+        var solicitudes = e.Servicio<SolicitudAppService>();
+        var asignaciones = e.Servicio<AsignacionAppService>();
+
+        var orgId = (await organizaciones.RegistrarAsync(responsable, new RegistrarOrganizacionRequest(
+            e.CiudadId, $"Red {e.Sufijo}", "comunitaria", $"red.{e.Sufijo}@prueba.test", "011 4000-1001", null))).Dato;
+        Assert.True((await admin.CambiarEstadoOrganizacionAsync(e.AdminId, orgId, "activa", null)).Exito);
+
+        var solicitud = await e.CrearSolicitudAsync(solicitante, null, ("alimentos", 2));
+        var recurso = solicitud.Recursos.Single();
+        Assert.True((await solicitudes.AsignarAsync(responsable, recurso.Id, null, orgId)).Exito);
+        var asignacionId = (await asignaciones.ListarDeOrganizacionAsync(responsable, orgId)).Dato!.Single().Id;
+
+        Assert.True((await asignaciones.IniciarAsync(responsable, asignacionId)).Exito);
+        Assert.True((await asignaciones.CompletarAsync(responsable, asignacionId)).Exito);
+
+        var antesDeConfirmar = await organizaciones.ObtenerPanelAsync(responsable, orgId);
+        Assert.True(antesDeConfirmar.Exito, antesDeConfirmar.Mensajes());
+        Assert.Equal(1, antesDeConfirmar.Dato!.AsignacionesCompletadas);
+
+        Assert.True((await asignaciones.ConfirmarAsync(solicitante, asignacionId)).Exito);
+
+        var despuesDeConfirmar = await organizaciones.ObtenerPanelAsync(responsable, orgId);
+        Assert.True(despuesDeConfirmar.Exito, despuesDeConfirmar.Mensajes());
+        Assert.Equal(0, despuesDeConfirmar.Dato!.AsignacionesCompletadas);
+    }
 }

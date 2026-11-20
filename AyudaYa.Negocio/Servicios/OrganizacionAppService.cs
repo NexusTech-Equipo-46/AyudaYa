@@ -308,8 +308,10 @@ public sealed class OrganizacionAppService : ServicioBase
             a => a.OrganizacionId == organizacionId
                 && (a.Estado == "asignada" || a.Estado == "en_atencion"),
             cancellationToken);
-        var completadas = await Db.Asignacion.AsNoTracking().CountAsync(
-            a => a.OrganizacionId == organizacionId && a.Estado == "completada",
+        var porConfirmar = await Db.Asignacion.AsNoTracking().CountAsync(
+            a => a.OrganizacionId == organizacionId
+                && a.Estado == "completada"
+                && a.ConfirmadaAt == null,
             cancellationToken);
         var miembros = await Db.OrganizacionUsuario.AsNoTracking().CountAsync(
             ou => ou.OrganizacionId == organizacionId && ou.Activo,
@@ -318,7 +320,7 @@ public sealed class OrganizacionAppService : ServicioBase
         var centros = await ConsultarCentros(c => c.OrganizacionId == organizacionId, cancellationToken);
 
         return Resultado<PanelOrganizacionDto>.Ok(new PanelOrganizacionDto(
-            organizacion, acceso.Rol!, activas, completadas, miembros, centros));
+            organizacion, acceso.Rol!, activas, porConfirmar, miembros, centros));
     }
 
     public async Task<Resultado<OrganizacionDto>> ObtenerOrganizacionAsync(
