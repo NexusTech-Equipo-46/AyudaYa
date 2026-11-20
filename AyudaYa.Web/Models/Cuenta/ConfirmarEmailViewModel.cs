@@ -4,7 +4,7 @@ namespace AyudaYa.Web.Models.Cuenta;
 public sealed record ConfirmarEmailViewModel(bool Exito, string Mensaje, string? ReturnUrl = null)
 {
     /// <summary>Texto del botón para seguir donde estaba la persona.</summary>
-    public string TextoContinuar => (ReturnUrl?.Split('?')[0].ToLowerInvariant()) switch
+    public string TextoContinuar => (ReturnUrl?.Split('?')[0].TrimEnd('/').ToLowerInvariant()) switch
     {
         "/organizacion/registrar" => "Continuar a registrar la organización",
         "/solicitudes/nueva" => "Continuar a pedir ayuda",

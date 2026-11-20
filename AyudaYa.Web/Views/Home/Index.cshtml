@@ -54,18 +54,18 @@
             <li class="tarjeta">
                 <h3>1. Buscá un centro o pedí ayuda</h3>
                 <p>Mirá en el mapa qué centros están abiertos sin registrarte, o creá tu cuenta para publicar una solicitud urgente.</p>
-                <p class="mt-2"><a class="boton boton-secundario" asp-controller="Centros" asp-action="Index">Explorar centros</a></p>
+                <div class="acciones"><a class="boton boton-secundario" asp-controller="Centros" asp-action="Index">Explorar centros</a></div>
             </li>
             <li class="tarjeta">
                 <h3>2. Ayudá como voluntario</h3>
                 <p>Registrate, activá tu perfil de voluntario y filtrá pedidos cercanos por zona, tipo de ayuda o urgencia para colaborar.</p>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Voluntario" asp-action="Panel">Ir a voluntariado</a></p>
+                    <div class="acciones"><a class="boton boton-secundario" asp-controller="Voluntario" asp-action="Panel">Ir a voluntariado</a></div>
                 }
                 else
                 {
-                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Registro">Registrarme para ayudar</a></p>
+                    <div class="acciones"><a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Registro" asp-route-returnUrl="@Url.Action("Index", "Voluntariado")">Registrarme para ayudar</a></div>
                 }
             </li>
             <li class="tarjeta">
@@ -73,13 +73,13 @@
                 <p>Si representás un comedor, refugio, hospital o grupo solidario, registrá tu organización y publicá tus centros y recursos.</p>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Organizacion" asp-action="Registrar">Crear organización</a></p>
+                    <div class="acciones"><a class="boton boton-secundario" asp-controller="Organizacion" asp-action="Registrar">Crear organización</a></div>
                 }
                 else
                 {
                     @* Después de crear la cuenta (o de iniciar sesión desde ahí) vuelve al formulario. Si el
                        correo todavía no está confirmado, el formulario lo avisa en lugar de mostrarse. *@
-                    <p class="mt-2"><a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Registro" asp-route-returnUrl="@Url.Action("Registrar", "Organizacion")">Crear una organización</a></p>
+                    <div class="acciones"><a class="boton boton-secundario" asp-controller="Cuenta" asp-action="Registro" asp-route-returnUrl="@Url.Action("Registrar", "Organizacion")">Crear una organización</a></div>
                 }
             </li>
         </ol>

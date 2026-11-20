@@ -166,15 +166,19 @@ public sealed class SolicitudesController : ControladorAyudaYa
     private async Task<NuevaSolicitudViewModel> ArmarFormularioAsync(
         NuevaSolicitudViewModel modelo, CancellationToken cancellationToken)
     {
+        // Sin el correo confirmado la solicitud se rechaza: se avisa antes de mostrar el formulario.
+        modelo.EmailConfirmado = (await _usuarios.ObtenerPerfilAsync(User))?.EmailConfirmado ?? false;
+        if (!modelo.EmailConfirmado)
+        {
+            return modelo;
+        }
+
         var ciudades = await _catalogos.CiudadesActivasAsync(cancellationToken);
         var zonas = await _catalogos.ZonasActivasAsync(null, cancellationToken);
         var tipos = await _catalogos.TiposRecursoActivosAsync(cancellationToken);
 
         modelo.Ciudades = ciudades;
         modelo.Zonas = zonas;
-
-        // Sin el correo confirmado la solicitud se rechaza: se avisa antes de mostrar el formulario.
-        modelo.EmailConfirmado = (await _usuarios.ObtenerPerfilAsync(User))?.EmailConfirmado ?? false;
 
         // Con una sola ciudad no hace falta elegirla.
         if (modelo.CiudadId is null && ciudades.Count == 1)
