@@ -420,7 +420,7 @@ input[aria-invalid="true"] { border-color: var(--peligro); border-width: 3px; }
 
 .seccion { padding: 2.5rem 0 0; }
 .pasos { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(3, 1fr); counter-reset: paso; }
-.pasos li { counter-increment: paso; }
+.pasos li { counter-increment: paso; display: flex; flex-direction: column; }
 .pasos li::before {
     content: counter(paso);
     display: inline-grid; place-items: center;
@@ -433,6 +433,7 @@ input[aria-invalid="true"] { border-color: var(--peligro); border-width: 3px; }
 }
 .pasos h3 { margin-bottom: .35rem; }
 .pasos p { margin: 0; }
+.pasos .acciones { margin: auto 0 0; padding-top: 1rem; }
 
 .encabezado-seccion { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1rem; margin-bottom: 1rem; }
 .encabezado-seccion h2 { margin: 0; }

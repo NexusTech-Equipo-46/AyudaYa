@@ -66,6 +66,13 @@ public sealed class VoluntariadoController : ControladorAyudaYa
     private async Task<VoluntariadoViewModel> CompletarCatalogosAsync(
         VoluntariadoViewModel modelo, CancellationToken cancellationToken)
     {
+        // Sin el correo confirmado la inscripción se rechaza: se avisa antes de mostrar el formulario.
+        modelo.EmailConfirmado = (await _usuarios.ObtenerPerfilAsync(User))?.EmailConfirmado ?? false;
+        if (!modelo.EmailConfirmado)
+        {
+            return modelo;
+        }
+
         modelo.Ciudades = await _catalogos.CiudadesActivasAsync(cancellationToken);
         modelo.Zonas = await _catalogos.ZonasActivasAsync(null, cancellationToken);
         if (modelo.CiudadId is null && modelo.Ciudades.Count == 1)
@@ -73,8 +80,6 @@ public sealed class VoluntariadoController : ControladorAyudaYa
             modelo.CiudadId = modelo.Ciudades[0].Id;
         }
 
-        // Sin el correo confirmado la inscripción se rechaza: se avisa antes de mostrar el formulario.
-        modelo.EmailConfirmado = (await _usuarios.ObtenerPerfilAsync(User))?.EmailConfirmado ?? false;
         return modelo;
     }
 }

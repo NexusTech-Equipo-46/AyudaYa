@@ -524,8 +524,8 @@ public sealed class SolicitudAppService
     /// Reglas:
     /// - el recurso debe seguir pendiente y la solicitud no debe estar cerrada;
     /// - se indica exactamente un destinatario;
-    /// - el voluntario debe estar activo y pertenecer a la ciudad (y a su zona,
-    ///   si eligió una) de la solicitud;
+    /// - el voluntario debe estar activo y pertenecer a la ciudad de la solicitud
+    ///   (la zona elegida funciona como filtro inicial, no como restricción);
     /// - la organización debe estar activa y ser de la misma ciudad;
     /// - un voluntario solo puede tomar el recurso para sí mismo, salvo que lo
     ///   haga un administrador;
@@ -623,7 +623,6 @@ public sealed class SolicitudAppService
                 {
                     v.Activo,
                     v.CiudadId,
-                    v.ZonaId,
                     UsuarioActivo = v.Usuario.Activo
                 })
                 .SingleOrDefaultAsync(cancellationToken);
@@ -647,14 +646,6 @@ public sealed class SolicitudAppService
                 return ResultadoOperacion.Falla(Error(
                     "VoluntarioOtraCiudad",
                     "El voluntario no pertenece a la ciudad de la solicitud."));
-            }
-
-            if (voluntario.ZonaId.HasValue
-                && voluntario.ZonaId != recurso.Solicitud.ZonaId)
-            {
-                return ResultadoOperacion.Falla(Error(
-                    "VoluntarioOtraZona",
-                    "El voluntario eligió otra zona para voluntariado."));
             }
 
             if (!esAdministrador && actorId != voluntarioId.Value)

@@ -447,14 +447,19 @@ public sealed class OrganizacionController : ControladorAyudaYa
     private async Task<RegistrarOrganizacionViewModel> CompletarRegistroAsync(
         RegistrarOrganizacionViewModel modelo, CancellationToken cancellationToken)
     {
+        // Sin el correo confirmado el registro se rechaza: se avisa antes de mostrar el formulario.
+        modelo.EmailConfirmado = (await _usuarios.ObtenerPerfilAsync(User))?.EmailConfirmado ?? false;
+        if (!modelo.EmailConfirmado)
+        {
+            return modelo;
+        }
+
         modelo.Ciudades = await _catalogos.CiudadesActivasAsync(cancellationToken);
         if (modelo.CiudadId is null && modelo.Ciudades.Count == 1)
         {
             modelo.CiudadId = modelo.Ciudades[0].Id;
         }
 
-        // Sin el correo confirmado el registro se rechaza: se avisa antes de mostrar el formulario.
-        modelo.EmailConfirmado = (await _usuarios.ObtenerPerfilAsync(User))?.EmailConfirmado ?? false;
         return modelo;
     }
 

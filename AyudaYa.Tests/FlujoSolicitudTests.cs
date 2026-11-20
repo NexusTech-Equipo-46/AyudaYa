@@ -124,10 +124,21 @@ public class FlujoSolicitudTests
         Assert.False(propia.Exito);
         Assert.Equal("SolicitudPropia", propia.Errores.Single().Codigo);
 
-        // Un voluntario de otra zona no la toma.
-        var otraZona = await solicitudes.AsignarAsync(deOtraZona, recurso.Id, deOtraZona, null);
-        Assert.False(otraZona.Exito);
-        Assert.Equal("VoluntarioOtraZona", otraZona.Errores.Single().Codigo);
+        // Un voluntario de otra ciudad no la toma.
+        var otraCiudadId = (await e.Servicio<AdministracionAppService>()
+            .CrearCiudadAsync(e.AdminId, $"Otra Ciudad {e.Sufijo}", "Provincia Prueba")).Dato;
+        var deOtraCiudad = await e.CrearUsuarioAsync("Otra Ciudad");
+        Assert.True((await voluntarios.InscribirAsync(
+            deOtraCiudad, new InscribirVoluntarioRequest(otraCiudadId, null, "011 4444-7777", true))).Exito);
+        var otraCiudad = await solicitudes.AsignarAsync(deOtraCiudad, recurso.Id, deOtraCiudad, null);
+        Assert.False(otraCiudad.Exito);
+        Assert.Equal("VoluntarioOtraCiudad", otraCiudad.Errores.Single().Codigo);
+
+        // Un voluntario de otra zona de la misma ciudad sí puede tomarla (ej. al ampliar la búsqueda).
+        var solicitudOtraZona = await e.CrearSolicitudAsync(solicitante, null, ("agua", 1));
+        var otraZona = await solicitudes.AsignarAsync(
+            deOtraZona, solicitudOtraZona.Recursos.Single().Id, deOtraZona, null);
+        Assert.True(otraZona.Exito, otraZona.Mensajes());
 
         // Un voluntario sin zona (toda la ciudad) sí, salvo que esté en pausa.
         var sinZona = await e.CrearVoluntarioAsync("Sin Zona", null);
