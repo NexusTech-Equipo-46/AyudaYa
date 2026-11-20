@@ -73,7 +73,7 @@ public sealed class CuentaController : ControladorAyudaYa
         var correoEnviado = true;
         if (usuario is not null)
         {
-            correoEnviado = (await EnviarConfirmacionAsync(usuario.Id, cancellationToken)).Exito;
+            correoEnviado = (await EnviarConfirmacionAsync(usuario.Id, model.ReturnUrl, cancellationToken)).Exito;
         }
 
         // Si el alta salió bien, se intenta dejar la sesión iniciada.
@@ -89,7 +89,7 @@ public sealed class CuentaController : ControladorAyudaYa
 
         if (correoEnviado)
         {
-            Exito("Cuenta creada. Te enviamos un correo para confirmar tu dirección: lo necesitás para pedir ayuda o sumarte como voluntario.");
+            Exito("Cuenta creada. Te enviamos un correo para confirmar tu dirección: lo necesitás para pedir ayuda, sumarte como voluntario o registrar una organización.");
         }
         else
         {
@@ -158,14 +158,18 @@ public sealed class CuentaController : ControladorAyudaYa
     /// la propia app, para que un enlace armado no redirija a otro sitio.
     /// </summary>
     private IActionResult VolverA(string? returnUrl) =>
-        !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
-            ? Redirect(returnUrl)
-            : RedirectToAction("Index", "Panel");
+        EsDireccionLocal(returnUrl) ? Redirect(returnUrl!) : RedirectToAction("Index", "Panel");
 
-    /// <summary>Destino del enlace del correo. Confirma la dirección y muestra el resultado.</summary>
+    private bool EsDireccionLocal(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl);
+
+    /// <summary>
+    /// Destino del enlace del correo. Confirma la dirección y muestra el resultado.
+    /// Si el enlace trae a dónde quería ir la persona (returnUrl), ofrece continuar ahí.
+    /// </summary>
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> ConfirmarEmail(Guid userId, string? token)
+    public async Task<IActionResult> ConfirmarEmail(Guid userId, string? token, string? returnUrl = null)
     {
         if (userId == Guid.Empty || string.IsNullOrWhiteSpace(token))
         {
@@ -174,16 +178,23 @@ public sealed class CuentaController : ControladorAyudaYa
 
         var resultado = await _usuarios.ConfirmarEmailAsync(userId, token);
         return View(resultado.Succeeded
-            ? new ConfirmarEmailViewModel(true, "Listo, confirmamos tu correo. Ya podés pedir ayuda o sumarte como voluntario.")
+            ? new ConfirmarEmailViewModel(
+                true,
+                "Listo, confirmamos tu correo. Ya podés pedir ayuda, sumarte como voluntario o registrar una organización.",
+                EsDireccionLocal(returnUrl) ? returnUrl : null)
             : new ConfirmarEmailViewModel(false, string.Join(" ", resultado.Errors.Select(e => e.Description))));
     }
 
+    /// <summary>
+    /// Reenvía el correo de confirmación. Con returnUrl (el aviso de las pantallas que
+    /// exigen el correo confirmado) vuelve a esa página; si no, al perfil.
+    /// </summary>
     [Authorize]
     [HttpPost]
     [EnableRateLimiting("autenticacion")]
-    public async Task<IActionResult> ReenviarConfirmacion(CancellationToken cancellationToken)
+    public async Task<IActionResult> ReenviarConfirmacion(string? returnUrl, CancellationToken cancellationToken)
     {
-        var resultado = await EnviarConfirmacionAsync(UsuarioId, cancellationToken);
+        var resultado = await EnviarConfirmacionAsync(UsuarioId, returnUrl, cancellationToken);
         if (resultado.Exito)
         {
             Exito("Te enviamos un correo nuevo. Revisá tu bandeja de entrada y la carpeta de spam.");
@@ -193,7 +204,7 @@ public sealed class CuentaController : ControladorAyudaYa
             Error(resultado.Mensajes());
         }
 
-        return RedirectToAction(nameof(Perfil));
+        return EsDireccionLocal(returnUrl) ? Redirect(returnUrl!) : RedirectToAction(nameof(Perfil));
     }
 
     /// <summary>Pantalla para pedir el enlace de recuperación de contraseña.</summary>
@@ -422,11 +433,17 @@ public sealed class CuentaController : ControladorAyudaYa
             : $"{Request.Scheme}://{Request.Host}{ruta}";
     }
 
-    private async Task<Resultado<string>> EnviarConfirmacionAsync(Guid usuarioId, CancellationToken cancellationToken)
+    /// <summary>
+    /// Envía el correo de confirmación. El enlace lleva returnUrl (solo si es de la app)
+    /// para que, al confirmar, la persona pueda seguir donde quería ir.
+    /// </summary>
+    private async Task<Resultado<string>> EnviarConfirmacionAsync(
+        Guid usuarioId, string? returnUrl, CancellationToken cancellationToken)
     {
+        var destino = EsDireccionLocal(returnUrl) ? returnUrl : null;
         var resultado = await _usuarios.EnviarConfirmacionAsync(
             usuarioId,
-            (id, token) => EnlaceAbsoluto(nameof(ConfirmarEmail), new { userId = id, token }),
+            (id, token) => EnlaceAbsoluto(nameof(ConfirmarEmail), new { userId = id, token, returnUrl = destino }),
             cancellationToken);
 
         // En desarrollo sin SMTP el enlace se muestra en pantalla para poder probar el flujo.
