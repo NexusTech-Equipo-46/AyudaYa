@@ -256,9 +256,11 @@ public sealed class CuentaController : ControladorAyudaYa
     [AllowAnonymous]
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult RestablecerClave(Guid userId, string? token)
+    public async Task<IActionResult> RestablecerClave(Guid userId, string? token)
     {
-        if (userId == Guid.Empty || string.IsNullOrWhiteSpace(token))
+        if (userId == Guid.Empty
+            || string.IsNullOrWhiteSpace(token)
+            || !await _usuarios.EsEnlaceRestablecimientoValidoAsync(userId, token))
         {
             return View("RestablecerClaveInvalido");
         }
@@ -277,7 +279,14 @@ public sealed class CuentaController : ControladorAyudaYa
             return View("RestablecerClaveInvalido");
         }
 
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
+        {
+            if (!await _usuarios.EsEnlaceRestablecimientoValidoAsync(model.UserId, model.Token))
+            {
+                return View("RestablecerClaveInvalido");
+            }
+        }
+        else
         {
             var resultado = await _usuarios.RestablecerClaveAsync(
                 model.UserId, model.Token, model.Nueva, cancellationToken);

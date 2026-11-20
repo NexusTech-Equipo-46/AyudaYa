@@ -174,13 +174,17 @@ public class AvisosYRecuperacionTests
 
         var token = TokenDelEnlace(mensaje.Cuerpo, out var usuarioId);
         Assert.Equal(id, usuarioId);
+        Assert.True(await usuarios.EsEnlaceRestablecimientoValidoAsync(id, token));
 
         // Una contraseña débil se rechaza sin gastar el enlace.
         var debil = await usuarios.RestablecerClaveAsync(id, token, "abc");
         Assert.False(debil.Succeeded);
         Assert.DoesNotContain(debil.Errors, x => x.Code == "TokenInvalido");
 
-        // Un token alterado no sirve.
+        // Un token alterado no sirve, incluso si la contraseña también es débil.
+        var alteradoDebil = await usuarios.RestablecerClaveAsync(id, token + "x", "abc");
+        Assert.Contains(alteradoDebil.Errors, x => x.Code == "TokenInvalido");
+
         var alterado = await usuarios.RestablecerClaveAsync(id, token + "x", "Nueva1234");
         Assert.Contains(alterado.Errors, x => x.Code == "TokenInvalido");
 
@@ -202,9 +206,12 @@ public class AvisosYRecuperacionTests
         Assert.Equal(2, correo.Enviados.Count);
         Assert.Contains("Cambiaste tu contraseña", correo.Enviados[1].Asunto);
 
-        // El enlace no se puede reutilizar.
+        // El enlace no se puede reutilizar (ni siquiera con clave débil muestra error de formato).
+        Assert.False(await usuarios.EsEnlaceRestablecimientoValidoAsync(id, token));
         var reuso = await usuarios.RestablecerClaveAsync(id, token, "Otra12345");
         Assert.Contains(reuso.Errors, x => x.Code == "TokenInvalido");
+        var reusoDebil = await usuarios.RestablecerClaveAsync(id, token, "abc");
+        Assert.Contains(reusoDebil.Errors, x => x.Code == "TokenInvalido");
     }
 
     [FactBaseDeDatos]
