@@ -26,8 +26,9 @@
     const resumen = document.getElementById("resumen-errores");
     const reglas = {
         largo: (v) => v.length >= 8,
-        mayuscula: (v) => /[A-ZÁÉÍÓÚÑ]/.test(v),
-        minuscula: (v) => /[a-záéíóúñ]/.test(v),
+        // Como ASP.NET Core Identity: solo cuentan A-Z y a-z (una tilde o la ñ no cumplen).
+        mayuscula: (v) => /[A-Z]/.test(v),
+        minuscula: (v) => /[a-z]/.test(v),
         numero: (v) => /\d/.test(v)
     };
 

@@ -14,7 +14,7 @@
                 <input asp-for="Token" type="hidden" />
                 <div class="campo">
                     <label for="nueva">Contraseña nueva</label>
-                    <span class="ayuda" id="ayuda-nueva">Al menos 8 caracteres, con mayúscula, minúscula y número.</span>
+                    <span class="ayuda" id="ayuda-nueva">Al menos 8 caracteres, con mayúscula, minúscula (sin tildes: A-Z y a-z) y número.</span>
                     <div class="con-boton">
                         <input asp-for="Nueva" type="password" id="nueva" autocomplete="new-password" required aria-describedby="ayuda-nueva error-nueva" aria-invalid="@(errorNueva is null ? null : "true")">
                         <button type="button" class="boton-texto" data-mostrar="nueva" aria-pressed="false">Mostrar<span class="visualmente-oculto"> contraseña</span></button>

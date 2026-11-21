@@ -14,6 +14,13 @@
             const dialogo = document.getElementById(abrir.dataset.abrirDialogo);
             if (!dialogo || typeof dialogo.showModal !== "function") return;
 
+            // El mismo diálogo se reusa para distintas personas, organizaciones o centros:
+            // un motivo escrito y cancelado no tiene que quedar cargado para el siguiente.
+            dialogo.querySelectorAll("textarea, input:not([type=hidden])").forEach((campo) => {
+                campo.value = campo.defaultValue;
+                if (campo.type === "checkbox" || campo.type === "radio") campo.checked = campo.defaultChecked;
+            });
+
             let valores = {};
             try { valores = JSON.parse(abrir.dataset.valores || "{}"); } catch (_) { valores = {}; }
             Object.entries(valores).forEach(([clave, valor]) => {
