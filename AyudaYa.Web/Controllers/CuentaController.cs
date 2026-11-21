@@ -348,6 +348,7 @@ public sealed class CuentaController : ControladorAyudaYa
     {
         var perfil = await _usuarios.ObtenerPerfilAsync(User);
         if (perfil is null) return Challenge();
+        TempData.Remove("PerfilExito");
         if (ModelState.IsValid)
         {
             var resultado = await _usuarios.ActualizarPerfilAsync(User, datos.NombreCompleto, datos.Dni, cancellationToken);

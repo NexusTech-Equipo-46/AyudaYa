@@ -11,6 +11,14 @@
     function iniciar(form, opciones) {
         const resumen = document.getElementById(opciones.resumen);
         let intentado = false;
+        let enviando = false;
+        window.addEventListener("pageshow", (evento) => {
+            if (!evento.persisted || !enviando) return;
+            enviando = false;
+            form.querySelectorAll('button[type="submit"], button:not([type]), input[type="submit"], input[type="image"]').forEach((boton) => {
+                boton.disabled = false;
+            });
+        });
 
         function errorDe(input) {
             return document.getElementById("error-" + input.id);
@@ -59,6 +67,8 @@
 
         form.addEventListener("submit", (e) => {
             e.preventDefault();
+            if (enviando) return;
+
             intentado = true;
             const errores = opciones.validar();
             aplicar(errores);
@@ -66,6 +76,10 @@
                 mostrarResumen(errores);
             } else {
                 resumen.hidden = true;
+                enviando = true;
+                form.querySelectorAll('button[type="submit"], button:not([type]), input[type="submit"], input[type="image"]').forEach((boton) => {
+                    boton.disabled = true;
+                });
                 opciones.alEnviar();
             }
         });

@@ -15,6 +15,22 @@
         return String(texto ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     }
 
+    // Bloquea envíos repetidos en formularios nativos de toda la app.
+    // Los formularios con validación propia gestionan su bloqueo en formularios.js.
+    let formulariosEnviando = new WeakSet();
+    document.addEventListener("submit", (evento) => {
+        const formulario = evento.target;
+        if (!(formulario instanceof HTMLFormElement) || evento.defaultPrevented || formulario.method === "dialog") return;
+        if (formulariosEnviando.has(formulario)) {
+            evento.preventDefault();
+            return;
+        }
+        formulariosEnviando.add(formulario);
+    });
+    window.addEventListener("pageshow", (evento) => {
+        if (evento.persisted) formulariosEnviando = new WeakSet();
+    });
+
     function iniciarMenu() {
         const boton = document.querySelector(".boton-menu");
         const nav = document.getElementById("nav-principal");
@@ -38,7 +54,7 @@
     // Controles que reenvían su formulario al cambiar (el CSP no permite onchange en línea).
     document.addEventListener("change", (e) => {
         const control = e.target.closest("[data-autoenviar]");
-        if (control && control.form) control.form.submit();
+        if (control && control.form) control.form.requestSubmit();
     });
 
     document.addEventListener("DOMContentLoaded", iniciarMenu);
