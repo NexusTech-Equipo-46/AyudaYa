@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using AyudaYa.Negocio.Servicios;
+using AyudaYa.Web.Validaciones;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AyudaYa.Web.Models.Solicitudes;
@@ -47,6 +48,7 @@ public sealed class NuevaSolicitudViewModel
     [Required(ErrorMessage = "Escribí un teléfono de contacto.")]
     [StringLength(SolicitudAppService.LargoMaximoTelefono,
         ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
+    [TelefonoValido]
     public string? Telefono { get; set; }
 
     [Required(ErrorMessage = "Marcá en el mapa dónde estás (o usá tu ubicación).")]

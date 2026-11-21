@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using AyudaYa.Negocio.Servicios;
+using AyudaYa.Web.Validaciones;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AyudaYa.Web.Models.Voluntario;
@@ -13,6 +14,7 @@ public sealed class VoluntariadoViewModel
 
     [Required(ErrorMessage = "Escribí un teléfono de contacto.")]
     [StringLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
+    [TelefonoValido]
     public string? Telefono { get; set; }
 
     [Range(typeof(bool), "true", "true", ErrorMessage = "Tenés que aceptar para poder sumarte.")]

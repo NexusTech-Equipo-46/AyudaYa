@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using AyudaYa.Negocio.Servicios;
+using AyudaYa.Web.Validaciones;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AyudaYa.Web.Models.Organizacion;
@@ -23,6 +24,7 @@ public sealed class RegistrarOrganizacionViewModel
 
     [Required(ErrorMessage = "Escribí un teléfono de contacto.")]
     [StringLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
+    [TelefonoValido]
     public string? TelefonoContacto { get; set; }
 
     [StringLength(OrganizacionAppService.LargoMaximoDescripcion,
