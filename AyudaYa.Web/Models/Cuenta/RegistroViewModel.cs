@@ -30,6 +30,15 @@ public sealed class RegistroViewModel
     /// <summary>A dónde volver después de crear la cuenta (solo direcciones de la app).</summary>
     public string? ReturnUrl { get; set; }
 
+    /// <summary>Mensaje orientativo cuando la persona llegó al registro desde un flujo puntual.</summary>
+    public string? AvisoDestino => (ReturnUrl?.Split('?')[0].TrimEnd('/').ToLowerInvariant()) switch
+    {
+        "/organizacion/registrar" => "Primero creá tu cuenta y confirmá tu correo. Después te llevamos directo a registrar tu organización.",
+        "/voluntariado" or "/voluntariado/index" => "Primero creá tu cuenta y confirmá tu correo. Después te llevamos directo a completar tus datos de voluntario.",
+        "/solicitudes/nueva" => "Primero creá tu cuenta y confirmá tu correo. Después te llevamos directo a cargar tu pedido de ayuda.",
+        _ => null
+    };
+
     [RegularExpression(@"^[0-9]{6,9}$", ErrorMessage = "El DNI debe tener entre 6 y 9 dígitos.")]
     [Display(Name = "DNI (opcional)")]
     public string? Dni

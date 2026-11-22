@@ -47,8 +47,9 @@ public static class DependencyInjection
                 // La base exige Email en minúsculas y UserName = Email.
                 options.User.RequireUniqueEmail = true;
 
-                // El MVP no envía correos todavía. Si se implementa confirmación
-                // por email, cambiar a true y completar el flujo.
+                // Se permite iniciar sesión antes de confirmar el correo para mostrar el
+                // aviso y permitir reenviar el enlace; las acciones sensibles exigen
+                // EmailConfirmed en los servicios de Negocio.
                 options.SignIn.RequireConfirmedAccount = false;
 
                 // Alineado con el prototipo: 8 caracteres, mayúscula, minúscula

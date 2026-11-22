@@ -8,9 +8,10 @@ namespace AyudaYa.Negocio.Servicios;
 /// <summary>
 /// Datos generales de la aplicación (sección "App"). <see cref="UrlBase"/> es la
 /// dirección pública (por ejemplo https://ayudaya.onrender.com) que se usa para
-/// armar los enlaces de los correos. Si no se configura, los enlaces que dependen
-/// de la dirección del pedido (confirmar y recuperar contraseña) la toman del
-/// pedido, y los avisos de solicitudes salen sin enlace.
+/// armar los enlaces de los correos. Sin ella, los avisos de solicitudes salen
+/// sin enlace, los correos de confirmación usan la dirección del pedido y la
+/// recuperación de contraseña solo se envía en Development (fuera de desarrollo
+/// exige <see cref="UrlBase"/> para evitar envenenamiento del encabezado Host).
 /// </summary>
 public sealed class AppOptions
 {

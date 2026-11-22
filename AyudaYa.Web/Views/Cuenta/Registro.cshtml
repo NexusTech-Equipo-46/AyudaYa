@@ -21,7 +21,10 @@
         <div class="tarjeta" id="tarjeta-registro">
             <h1>Crear cuenta</h1>
             <p class="texto-suave">Con una sola cuenta podés pedir ayuda, sumarte como voluntario o representar a una organización. Eso lo elegís después, desde tu panel.</p>
-            <div class="alerta alerta-info" id="aviso-destino" hidden></div>
+            @if (Model.AvisoDestino is not null)
+            {
+                <div class="alerta alerta-info" id="aviso-destino" role="status">@Iconos.AlertaInfo<p>@Model.AvisoDestino</p></div>
+            }
             <div class="alerta alerta-peligro resumen-errores" id="resumen-errores" tabindex="-1" aria-labelledby="titulo-resumen" @(errores.Count == 0 ? "hidden" : null)>
                 @if (errores.Count > 0)
                 {
