@@ -11,7 +11,7 @@
             <h1>Centros</h1>
             <p class="texto-suave">Los lugares donde la organización ofrece o recibe ayuda. Un administrador tiene que aprobar cada centro antes de que aparezca en el mapa.</p>
         </div>
-        @if (Model.Contexto.EsResponsable && Model.Contexto.Estado is "pendiente" or "activa")
+        @if (Model.Contexto.EsResponsable && Model.Contexto.PuedeGestionar)
         {
             <a class="boton" asp-action="NuevoCentro" asp-route-org="@Model.Contexto.OrganizacionId">Nuevo centro</a>
         }
@@ -54,7 +54,7 @@
                         }
                         <div class="acciones">
                             <a class="boton boton-secundario" asp-action="Recursos" asp-route-id="@centro.Id">Recursos<span class="visualmente-oculto"> de @centro.Nombre</span></a>
-                            @if (Model.Contexto.EsResponsable)
+                            @if (Model.Contexto.EsResponsable && Model.Contexto.PuedeGestionar)
                             {
                                 <a class="boton boton-secundario" asp-action="EditarCentro" asp-route-id="@centro.Id">Editar<span class="visualmente-oculto"> @centro.Nombre</span></a>
                             }

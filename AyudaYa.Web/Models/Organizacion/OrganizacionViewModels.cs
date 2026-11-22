@@ -54,6 +54,9 @@ public sealed class ContextoOrganizacion
     public bool EsResponsable => Rol == "responsable";
 
     public bool EstaActiva => Estado == "activa";
+
+    /// <summary>Solo una organización pendiente o activa puede cargar centros, recursos y miembros.</summary>
+    public bool PuedeGestionar => Estado is "pendiente" or "activa";
 }
 
 public sealed class PanelOrganizacionViewModel

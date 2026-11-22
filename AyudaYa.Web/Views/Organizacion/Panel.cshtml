@@ -15,7 +15,10 @@
             <h1>@org.Nombre</h1>
             <p class="texto-suave">@Textos.TipoOrganizacion(org.Tipo) · @org.CiudadNombre</p>
         </div>
-        <a class="boton" asp-action="Solicitudes" asp-route-org="@org.Id">Buscar solicitudes para tomar</a>
+        @if (Model.Contexto.EstaActiva)
+        {
+            <a class="boton" asp-action="Solicitudes" asp-route-org="@org.Id">Buscar solicitudes para tomar</a>
+        }
     </div>
 
     <partial name="_SubnavOrganizacion" model="Model.Contexto" view-data="ViewData" />
@@ -54,7 +57,10 @@
                     <div class="tarjeta estado-vacio">
                         <h3>No tienen asignaciones activas</h3>
                         <p>Cuando alguien de la organización tome una solicitud, la van a ver acá para seguirla hasta el final.</p>
-                        <div class="acciones"><a class="boton" asp-action="Solicitudes" asp-route-org="@org.Id">Buscar solicitudes para tomar</a></div>
+                        @if (Model.Contexto.EstaActiva)
+                        {
+                            <div class="acciones"><a class="boton" asp-action="Solicitudes" asp-route-org="@org.Id">Buscar solicitudes para tomar</a></div>
+                        }
                     </div>
                 }
             </section>

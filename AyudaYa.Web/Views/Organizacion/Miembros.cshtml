@@ -55,7 +55,7 @@
         </div>
 
         <div>
-            @if (Model.Contexto.EsResponsable)
+            @if (Model.Contexto.EsResponsable && Model.Contexto.PuedeGestionar)
             {
                 <section class="tarjeta" aria-labelledby="t-sumar">
                     <h2 id="t-sumar">Sumar a alguien</h2>
@@ -75,6 +75,13 @@
                         </div>
                         <button type="submit" class="boton">Agregar</button>
                     </form>
+                </section>
+            }
+            @if (Model.Contexto.EsResponsable && !Model.Contexto.PuedeGestionar)
+            {
+                <section class="tarjeta" aria-labelledby="t-sumar">
+                    <h2 id="t-sumar">Sumar a alguien</h2>
+                    <p class="texto-suave">Mientras la organización esté @(Model.Contexto.Estado == "rechazada" ? "rechazada" : "suspendida") no se pueden sumar personas.</p>
                 </section>
             }
             <section class="tarjeta llamado" aria-labelledby="t-reglas">
