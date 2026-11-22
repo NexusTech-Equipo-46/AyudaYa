@@ -5,6 +5,7 @@
     ViewData["Title"] = $"Recursos de {centro.Nombre}";
     ViewData["ClaseMain"] = "pagina-usuario";
     var aprobado = centro.EstadoVerificacion == "aprobado";
+    var puedeGestionar = Model.Contexto.PuedeGestionar;
     var niveles = new[] { "alta", "media", "baja", "sin_stock", "no_ofrece" };
 }
 <div class="contenedor">
@@ -31,9 +32,17 @@
         <div class="insignias"><partial name="_InsigniaVerificacion" model="centro.EstadoVerificacion" /></div>
     </div>
 
-    @if (!aprobado)
+    @if (!puedeGestionar)
+    {
+        <div class="alerta alerta-advertencia" style="margin-bottom:1.25rem">@Iconos.AlertaPeligro<p>La organización está @(Model.Contexto.Estado == "rechazada" ? "rechazada" : "suspendida"): por ahora no se pueden modificar los recursos.</p></div>
+    }
+    else if (centro.EstadoVerificacion == "pendiente")
     {
         <div class="alerta alerta-info" style="margin-bottom:1.25rem">@Iconos.AlertaInfo<p>Pueden cargar los recursos ahora. Se van a ver en el mapa cuando un administrador apruebe el centro.</p></div>
+    }
+    else if (!aprobado)
+    {
+        <div class="alerta alerta-info" style="margin-bottom:1.25rem">@Iconos.AlertaInfo<p>Este centro no se muestra en el mapa porque está @Textos.Verificacion(centro.EstadoVerificacion).ToLowerInvariant().</p></div>
     }
     @if (!string.IsNullOrWhiteSpace(centro.MotivoEstado))
     {
@@ -45,6 +54,8 @@
             <section class="tarjeta" aria-labelledby="t-niveles">
                 <h2 id="t-niveles">Disponibilidad por recurso</h2>
                 <p class="texto-suave">No se carga una cantidad: se elige un nivel. Quienes miran el mapa también ven cuándo se actualizó. Guardar sin cambios también renueva la fecha: sirve para confirmar que todo sigue igual.</p>
+                @if (puedeGestionar)
+                {
                 <form asp-action="Recursos" asp-route-id="@centro.Id" method="post">
                     <div class="campo">
                         <label for="estadoOperativo">Estado del centro</label>
@@ -80,6 +91,18 @@
                     </div>
                     <div class="barra-guardado"><button type="submit" class="boton">Guardar cambios</button></div>
                 </form>
+                }
+                else
+                {
+                    <p><strong>Estado del centro:</strong> @Textos.EstadoOperativo(centro.EstadoOperativo)</p>
+                    <ul class="referencias">
+                        @foreach (var tipo in Model.Tipos)
+                        {
+                            var nivelActual = centro.Recursos.GetValueOrDefault(tipo.Codigo, "no_ofrece");
+                            <li><span>@tipo.Nombre</span><partial name="_InsigniaNivel" model="nivelActual" /></li>
+                        }
+                    </ul>
+                }
             </section>
         </div>
         <div>
