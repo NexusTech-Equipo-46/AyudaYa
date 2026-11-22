@@ -1,21 +1,6 @@
 (function () {
     "use strict";
-    const A = window.AyudaYa;
     const F = window.Formularios;
-    const para = new URLSearchParams(location.search).get("para");
-    const avisos = {
-        voluntario: "Primero creá tu cuenta. Después, desde tu panel, completás “Quiero ser voluntario” con tu ciudad, zona y teléfono.",
-        solicitar: "Primero creá tu cuenta. Después vas a poder cargar tu pedido de ayuda."
-    };
-    if (avisos[para]) {
-        const aviso = document.getElementById("aviso-destino");
-        aviso.innerHTML = A.iconos.info + "<p>" + avisos[para] + "</p>";
-        aviso.hidden = false;
-        const login = document.getElementById("enlace-login");
-        const destino = new URL(login.href);
-        destino.searchParams.set("volver", para === "voluntario" ? "voluntario" : "nueva-solicitud");
-        login.href = destino.href;
-    }
 
     const nombre = document.getElementById("nombre");
     const email = document.getElementById("email");

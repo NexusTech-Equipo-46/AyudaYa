@@ -61,7 +61,9 @@ Para que los enlaces de los correos apunten siempre al sitio real (y no a lo que
 |---|---|
 | `App__UrlBase` | `https://ayudaya.onrender.com` (sin barra final) |
 
-Sin `App__UrlBase`, los enlaces de confirmar y recuperar contraseña usan la dirección del pedido y los avisos de solicitudes salen sin enlace. **En Render conviene definirla.**
+Sin `App__UrlBase`:
+- En **producción (Render)**, la recuperación de contraseña queda **desactivada** (no se envía ningún correo, para evitar enlaces con un encabezado `Host` manipulado), el correo de confirmación usa la dirección del pedido y los avisos de solicitudes salen sin enlace. **En Render hay que definirla.**
+- En **desarrollo (`Development`)**, los enlaces de confirmación y recuperación usan la dirección del pedido local y los avisos salen sin enlace.
 
 Sin `Correo__ApiKey` la app no envía nada: el mensaje solo queda en el log del servidor y las cuentas nuevas no pueden confirmarse. Con un remitente de Gmail, Brevo reemplaza la dirección de envío y los mensajes pueden caer en spam; con un dominio propio verificado llegan mejor.
 

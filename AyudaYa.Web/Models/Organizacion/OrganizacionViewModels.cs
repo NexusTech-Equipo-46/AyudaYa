@@ -132,6 +132,7 @@ public sealed class CentroFormularioViewModel
 
     [Required(ErrorMessage = "Ingresá un teléfono de contacto.")]
     [StringLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
+    [TelefonoValido]
     public string? Telefono { get; set; }
 
     [EmailAddress(ErrorMessage = "El correo del centro no parece válido.")]

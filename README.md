@@ -75,22 +75,24 @@ Para que todos usen la misma base (sin instalar PostgreSQL) mirá [docs/base-com
 | `ConnectionStrings:AyudaYa` (o `AYUDAYA_CONN`) | Conexión a PostgreSQL |
 | `Admin:Email`, `Admin:Password`, `Admin:Nombre` | Primer administrador (solo si todavía no hay ninguno) |
 | `Seed:Demo` = `true`, `Seed:PasswordDemo` | Datos de ejemplo (solo en `Development`) |
-| `Correo:Host`, `Correo:Puerto`, `Correo:Usuario`, `Correo:Clave`, `Correo:Remitente` | SMTP para el correo de confirmación. Sin host, el correo queda en el log y, en desarrollo, el enlace se muestra en el perfil |
+| `Correo:ApiKey`, `Correo:Remitente`, `Correo:NombreRemitente` | API HTTPS de Brevo para enviar correos (confirmación, avisos y recuperación de clave). Recomendado en hostings que bloquean SMTP |
+| `Correo:Host`, `Correo:Puerto`, `Correo:Usuario`, `Correo:Clave`, `Correo:Remitente` | Alternativa por SMTP si no hay `Correo:ApiKey`. Sin clave ni host, el correo queda en el log (y en `Development`, el enlace de confirmación se muestra en pantalla) |
+| `App:UrlBase` | Dirección pública del sitio sin barra final (ej. `https://ayudaya.onrender.com`) para armar enlaces en los correos. Obligatoria fuera de `Development` para recuperar contraseña |
 
 Ninguna credencial va en el repositorio.
 
 ## Seguridad
 
 - Contraseñas con ASP.NET Core Identity (hash + bloqueo tras 5 intentos); cookie `HttpOnly`, `SameSite=Lax`; la sesión se revalida cada minuto, así que desactivar a alguien la corta.
-- Antiforgery obligatorio en todos los `POST`; límite de intentos en login/registro/reenvío.
+- Recuperación de contraseña con enlace de un solo uso que vence en 1 hora, respuesta neutra exista o no la cuenta, topes por cuenta/globales y cierre de sesiones activas al cambiar la clave.
+- Antiforgery obligatorio en todos los `POST`; límite de intentos en login, registro, reenvío y recuperación de contraseña.
 - Cabeceras: CSP (`script-src 'self'`, sin scripts en línea), `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`.
 - Correo confirmado obligatorio para pedir ayuda, ser voluntario o registrar una organización.
-- En producción configurá `AllowedHosts` con tu dominio (los enlaces de los correos se arman con el host de la petición) y servilo siempre por HTTPS.
+- En producción configurá `AllowedHosts` y `App:UrlBase` con tu dominio y servilo siempre por HTTPS.
 
 ## Límites conocidos
 
-- No hay recuperación de contraseña por correo (el enlace "¿Olvidaste tu contraseña?" lo avisa).
 - Las solicitudes no se pueden editar una vez creadas: se cancelan y se vuelven a cargar.
-- El envío de correo usa `System.Net.Mail` (SMTP con STARTTLS); para volumen alto conviene un proveedor transaccional.
+- En plan gratuito de Brevo el límite diario es de 300 correos; como alternativa existe SMTP con `System.Net.Mail`.
 - El mapa usa los mosaicos públicos de OpenStreetMap (sujetos a su política de uso); para producción conviene un proveedor propio.
 
