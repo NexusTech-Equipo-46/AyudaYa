@@ -77,8 +77,7 @@
                                             @if (!string.IsNullOrWhiteSpace(recurso.Asignado.TelefonoContacto))
                                             {
                                                 <span class="detalle-recurso">
-                                                    Tel. de contacto: <a href="tel:@recurso.Asignado.TelefonoContacto"><strong>@recurso.Asignado.TelefonoContacto</strong></a>
-                                                    <span class="texto-suave">(visible hasta que confirmes la recepción)</span>
+                                                    Tel. de contacto: <a href="tel:@recurso.Asignado.TelefonoContacto.Replace(" ", "").Replace("-", "")"><strong>@recurso.Asignado.TelefonoContacto</strong></a>                                                    <span class="texto-suave">(visible hasta que confirmes la recepción)</span>
                                                 </span>
                                             }
                                         }
@@ -122,7 +121,7 @@
             {
                 <section class="tarjeta" aria-labelledby="t-contacto">
                     <h2 id="t-contacto">@(Model.EsDelSolicitante ? "Tus datos de contacto" : "Datos de contacto")</h2>
-                    <p class="nota-privada">@Iconos.Candado<span>Solo los ve @(Model.EsDelSolicitante ? "vos" : "el solicitante"), quienes lo asisten y el equipo administrador.</span></p>
+                    <p class="nota-privada">@Iconos.Candado<span>@(Model.EsDelSolicitante ? "Solo los ves vos" : "Solo los ve el solicitante"), quienes lo asisten y el equipo administrador.</span></p>
                     <dl class="datos-contacto">
                         <div><dt>Dirección</dt><dd>@Model.Contacto.Direccion</dd></div>
                         <div><dt>Teléfono</dt><dd>@Model.Contacto.Telefono</dd></div>
