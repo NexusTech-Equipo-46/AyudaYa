@@ -51,49 +51,49 @@
 
             <section aria-labelledby="titulo-disponibles" id="disponibles">
                 <h2 id="titulo-disponibles">Solicitudes disponibles</h2>
-                <p class="texto-suave">@(Model.Ampliar ? "Pedidos pendientes en toda la ciudad." : $"Pedidos pendientes en {v.ZonaNombre}.") Los críticos van primero. No incluyen la dirección: la ves cuando tomás el recurso.</p>
-                <details class="panel-filtros" open>
-                    <summary>Filtros</summary>
-                    <form method="get" class="filtros filtros-voluntario" role="search" aria-label="Filtrar solicitudes">
-                        <div class="campo">
-                            <label for="filtro-tipo">Tipo de ayuda</label>
-                            <select id="filtro-tipo" name="tipoRecurso">
-                                <option value="">Todos los tipos</option>
-                                @foreach (var tipo in Model.TiposRecurso)
-                                {
-                                    <option value="@tipo.Codigo" selected="@(Model.TipoRecurso == tipo.Codigo)">@tipo.Nombre</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="campo">
-                            <label for="filtro-urgencia">Urgencia</label>
-                            <select id="filtro-urgencia" name="urgencia">
-                                <option value="">Todas las urgencias</option>
-                                <option value="critica" selected="@(Model.Urgencia == "critica")">Crítica</option>
-                                <option value="normal" selected="@(Model.Urgencia == "normal")">Normal</option>
-                            </select>
-                        </div>
-                        <div class="campo">
-                            <button type="submit" class="boton">Filtrar</button>
-                        </div>
-                        @if (v.ZonaId is not null || Model.HayFiltros)
-                        {
-                            <div class="filtros-extra">
-                                @if (v.ZonaId is not null)
-                                {
-                                    <label class="check"><input type="checkbox" name="ampliar" value="true" checked="@Model.Ampliar"> Ver también otras zonas de @v.CiudadNombre</label>
-                                }
-                                @if (Model.HayFiltros || (v.ZonaId is not null && Model.Ampliar))
-                                {
-                                    <a class="boton-texto" asp-action="Panel">Limpiar filtros</a>
-                                }
-                            </div>
-                        }
-                    </form>
-                </details>
-
                 @if (v.Activo)
                 {
+                    <p class="texto-suave">@(Model.Ampliar ? "Pedidos pendientes en toda la ciudad." : $"Pedidos pendientes en {v.ZonaNombre}.") Los críticos van primero. No incluyen la dirección: la ves cuando tomás el recurso.</p>
+                    <details class="panel-filtros" open>
+                        <summary>Filtros</summary>
+                        <form method="get" class="filtros filtros-voluntario" role="search" aria-label="Filtrar solicitudes">
+                            <div class="campo">
+                                <label for="filtro-tipo">Tipo de ayuda</label>
+                                <select id="filtro-tipo" name="tipoRecurso">
+                                    <option value="">Todos los tipos</option>
+                                    @foreach (var tipo in Model.TiposRecurso)
+                                    {
+                                        <option value="@tipo.Codigo" selected="@(Model.TipoRecurso == tipo.Codigo)">@tipo.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label for="filtro-urgencia">Urgencia</label>
+                                <select id="filtro-urgencia" name="urgencia">
+                                    <option value="">Todas las urgencias</option>
+                                    <option value="critica" selected="@(Model.Urgencia == "critica")">Crítica</option>
+                                    <option value="normal" selected="@(Model.Urgencia == "normal")">Normal</option>
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <button type="submit" class="boton">Filtrar</button>
+                            </div>
+                            @if (v.ZonaId is not null || Model.HayFiltros)
+                            {
+                                <div class="filtros-extra">
+                                    @if (v.ZonaId is not null)
+                                    {
+                                        <label class="check"><input type="checkbox" name="ampliar" value="true" checked="@Model.Ampliar"> Ver también otras zonas de @v.CiudadNombre</label>
+                                    }
+                                    @if (Model.HayFiltros || (v.ZonaId is not null && Model.Ampliar))
+                                    {
+                                        <a class="boton-texto" asp-action="Panel">Limpiar filtros</a>
+                                    }
+                                </div>
+                            }
+                        </form>
+                    </details>
+
                     <div class="barra-resultados">
                         <p role="status" class="texto-suave">
                             @if (Model.ListaRecortada)

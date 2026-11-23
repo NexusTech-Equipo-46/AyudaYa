@@ -1,7 +1,3 @@
-// Validación de formularios del prototipo.
-// Patrón: al enviar se muestra un resumen de errores arriba (recibe el foco y
-// enlaza a cada campo) y el mensaje junto a cada campo, asociado con
-// aria-describedby. Los errores se corrigen en vivo una vez mostrados.
 (function () {
     "use strict";
 
@@ -9,15 +5,22 @@
     const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
     function iniciar(form, opciones) {
+        if (!form) return;
         const resumen = document.getElementById(opciones.resumen);
+        if (!resumen) return;
         let intentado = false;
         let enviando = false;
+
+        function setBotonesDeshabilitados(deshabilitar) {
+            form.querySelectorAll('button[type="submit"], button:not([type]), input[type="submit"], input[type="image"]').forEach((boton) => {
+                boton.disabled = deshabilitar;
+            });
+        }
+
         window.addEventListener("pageshow", (evento) => {
             if (!evento.persisted || !enviando) return;
             enviando = false;
-            form.querySelectorAll('button[type="submit"], button:not([type]), input[type="submit"], input[type="image"]').forEach((boton) => {
-                boton.disabled = false;
-            });
+            setBotonesDeshabilitados(false);
         });
 
         function errorDe(input) {
@@ -26,25 +29,31 @@
 
         function limpiar(input) {
             input.removeAttribute("aria-invalid");
-            errorDe(input).textContent = "";
+            const err = errorDe(input);
+            if (err) err.textContent = "";
         }
 
         function marcar(input, mensaje) {
             input.setAttribute("aria-invalid", "true");
-            errorDe(input).textContent = mensaje;
+            const err = errorDe(input);
+            if (err) err.textContent = mensaje;
         }
 
         function aplicar(errores) {
-            form.querySelectorAll("input[id], select[id], textarea[id], fieldset[id]").forEach((i) => { if (errorDe(i)) limpiar(i); });
+            form.querySelectorAll("input[id], select[id], textarea[id], fieldset[id]").forEach((i) => {
+                if (errorDe(i)) limpiar(i);
+            });
             errores.forEach((e) => marcar(e.campo, e.mensaje));
         }
 
         function mostrarResumen(errores, enfocar = true) {
             const idTitulo = opciones.tituloResumen || "titulo-resumen";
+            const icono = A?.iconos?.alerta || "";
+            const escapar = A?.escapar || ((t) => t);
             resumen.innerHTML =
-                A.iconos.alerta +
+                icono +
                 '<div><h2 id="' + idTitulo + '">' + (errores.length === 1 ? "Hay 1 dato para corregir" : "Hay " + errores.length + " datos para corregir") + "</h2>" +
-                "<ul>" + errores.map((e) => '<li><a href="#' + e.campo.id + '">' + A.escapar(e.mensaje) + "</a></li>").join("") + "</ul></div>";
+                "<ul>" + errores.map((e) => '<li><a href="#' + e.campo.id + '">' + escapar(e.mensaje) + "</a></li>").join("") + "</ul></div>";
             resumen.setAttribute("aria-labelledby", idTitulo);
             resumen.hidden = false;
             if (enfocar) resumen.focus();
@@ -54,7 +63,7 @@
             const enlace = e.target.closest("a[href^='#']");
             if (!enlace) return;
             e.preventDefault();
-            document.getElementById(enlace.getAttribute("href").slice(1)).focus();
+            document.getElementById(enlace.getAttribute("href").slice(1))?.focus();
         });
 
         form.addEventListener("input", () => {
@@ -66,44 +75,52 @@
         });
 
         form.addEventListener("submit", (e) => {
-            e.preventDefault();
-            if (enviando) return;
+            if (enviando) {
+                e.preventDefault();
+                return;
+            }
 
             intentado = true;
             const errores = opciones.validar();
             aplicar(errores);
             if (errores.length) {
+                e.preventDefault();
                 mostrarResumen(errores);
             } else {
                 resumen.hidden = true;
                 enviando = true;
-                form.querySelectorAll('button[type="submit"], button:not([type]), input[type="submit"], input[type="image"]').forEach((boton) => {
-                    boton.disabled = true;
-                });
-                opciones.alEnviar();
+                setBotonesDeshabilitados(true);
+                if (typeof opciones.alEnviar === "function") {
+                    e.preventDefault();
+                    opciones.alEnviar();
+                }
             }
         });
     }
 
-    // Botones "Mostrar / Ocultar" contraseña.
     function iniciarMostrarContrasena() {
         document.querySelectorAll("[data-mostrar]").forEach((boton) => {
             const input = document.getElementById(boton.dataset.mostrar);
+            if (!input) return;
             boton.addEventListener("click", () => {
                 const mostrar = input.type === "password";
                 input.type = mostrar ? "text" : "password";
                 boton.setAttribute("aria-pressed", String(mostrar));
-                boton.firstChild.textContent = mostrar ? "Ocultar" : "Mostrar";
+                if (boton.firstChild) {
+                    boton.firstChild.textContent = mostrar ? "Ocultar" : "Mostrar";
+                }
             });
         });
     }
 
-    // Reemplaza el formulario por un mensaje de éxito y le pasa el foco.
     function mostrarExito(contenedor, html) {
+        if (!contenedor) return;
         contenedor.innerHTML = html;
         const titulo = contenedor.querySelector("h1, h2");
-        titulo.setAttribute("tabindex", "-1");
-        titulo.focus();
+        if (titulo) {
+            titulo.setAttribute("tabindex", "-1");
+            titulo.focus();
+        }
     }
 
     document.addEventListener("DOMContentLoaded", iniciarMostrarContrasena);

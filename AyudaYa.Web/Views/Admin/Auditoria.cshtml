@@ -20,7 +20,7 @@
                 <option value="">Todos</option>
                 @foreach (var entidad in new[] { "ciudad", "zona", "organizacion", "centro", "usuario", "solicitud" })
                 {
-                    <option value="@entidad" selected="@(Model.Entidad == entidad)">@entidad</option>
+                    <option value="@entidad" selected="@(Model.Entidad == entidad)">@NombreEntidad(entidad)</option>
                 }
             </select>
         </div>
@@ -42,7 +42,7 @@
                         <tr>
                             <th scope="row"><time datetime="@e.Cuando.ToUniversalTime().ToString("O")">@Formato.FechaHora(e.Cuando)</time></th>
                             <td>@e.Administrador</td>
-                            <td>@e.Entidad</td>
+                            <td>@NombreEntidad(e.Entidad)</td>
                             <td>@e.Accion.Replace('_', ' ')</td>
                             <td>@e.Detalle</td>
                         </tr>
@@ -56,3 +56,18 @@
         </div>
     }
 </div>
+
+@functions {
+    static string NombreEntidad(string? entidad) => entidad?.ToLowerInvariant() switch
+    {
+        "ciudad" => "Ciudad",
+        "zona" => "Zona",
+        "organizacion" => "Organización",
+        "centro" => "Centro",
+        "usuario" => "Usuario",
+        "solicitud" => "Solicitud",
+        _ => string.IsNullOrWhiteSpace(entidad)
+            ? ""
+            : char.ToUpper(entidad[0]) + entidad.Substring(1).Replace('_', ' ')
+    };
+}

@@ -17,7 +17,7 @@
         <div class="campo"><label for="q">Buscar por nombre o correo</label><input id="q" name="q" type="search" value="@Model.Busqueda" autocomplete="off" /></div>
         <button type="submit" class="boton">Buscar</button>
     </form>
-    <p role="status" class="texto-suave">@Formato.Plural(Model.Usuarios.Count, "usuario", "usuarios")</p>
+    <p role="status" class="texto-suave">@Formato.Plural(Model.Usuarios.Count, "usuario", "usuarios")@(Model.Usuarios.Count >= 200 ? " (los 200 más recientes)" : "")</p>
 
     <div class="tabla-scroll" tabindex="0" role="region" aria-label="Usuarios">
         <table class="tabla-recursos">
