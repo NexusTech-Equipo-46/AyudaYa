@@ -21,6 +21,13 @@ builder.Services.AddAyudaYa(builder.Configuration);
 builder.Services.AddControllersWithViews(opciones =>
     opciones.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 
+// Igual que la cookie de sesión: Secure cuando el pedido llega por HTTPS.
+// SameAsRequest y no Always para que el desarrollo local por http siga andando.
+builder.Services.AddAntiforgery(opciones =>
+    opciones.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest);
+builder.Services.Configure<CookieTempDataProviderOptions>(opciones =>
+    opciones.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest);
+
 // Freno a la fuerza bruta en login y registro (además del bloqueo de cuenta).
 builder.Services.AddRateLimiter(opciones =>
 {
