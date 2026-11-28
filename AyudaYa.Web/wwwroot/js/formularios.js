@@ -90,6 +90,7 @@
                 resumen.hidden = true;
                 enviando = true;
                 setBotonesDeshabilitados(true);
+                e.submitter?.classList.add("cargando");
                 if (typeof opciones.alEnviar === "function") {
                     e.preventDefault();
                     opciones.alEnviar();

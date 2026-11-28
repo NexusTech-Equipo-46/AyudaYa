@@ -4,10 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@ViewData["Title"] · AyudaYa</title>
-    <link rel="icon" href="~/favicon.ico">
+    <meta name="theme-color" content="#0F766E">
+    <link rel="icon" href="~/favicon.ico" sizes="32x32" asp-append-version="true">
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" asp-append-version="true">
     <link rel="stylesheet" href="~/css/ayudaya.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/movimiento.css" asp-append-version="true">
     @await RenderSectionAsync("Head", required: false)
     <script src="~/js/base.js" asp-append-version="true"></script>
+    <script src="~/js/movimiento.js" asp-append-version="true" defer></script>
 </head>
 <body>
     <a class="saltar" href="#contenido">Saltar al contenido</a>
