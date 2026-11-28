@@ -26,9 +26,12 @@
             return;
         }
         formulariosEnviando.add(formulario);
+        evento.submitter?.classList.add("cargando");
     });
     window.addEventListener("pageshow", (evento) => {
-        if (evento.persisted) formulariosEnviando = new WeakSet();
+        if (!evento.persisted) return;
+        formulariosEnviando = new WeakSet();
+        document.querySelectorAll(".cargando").forEach((boton) => boton.classList.remove("cargando"));
     });
 
     function iniciarMenu() {
